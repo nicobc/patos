@@ -40,3 +40,23 @@ tickets:
       - workflow_dispatch from a feature branch deploys a preview build
       - workflow_dispatch from main or a tag is blocked by the guard step
       - patos.casa serves the deployed app after a tag push
+  - id: T4
+    type: ci
+    status: READY
+    title: PR check workflow
+    description: GHA workflow on pull_request to main. Path-filtered to app/** changes. Runs build + lint. Status sentinel job for branch protection. Requires a gh api call to register the sentinel as a required status check on main.
+    acceptance_criteria:
+      - workflow triggers on PRs targeting main when app/** files change
+      - workflow is skipped (not failed) when no app/** files change
+      - status sentinel job fails the check if build or lint fails
+      - status sentinel job passes when the test job is skipped
+      - sentinel registered as required status check on main via gh api
+  - id: T5
+    type: test
+    status: READY
+    title: Vitest setup
+    description: Install and configure Vitest. Add npm test script. Unblocks adding npm test to the T4 PR check workflow.
+    acceptance_criteria:
+      - vitest installed and configured
+      - npm test exits 0
+      - T4 workflow updated to include npm test step

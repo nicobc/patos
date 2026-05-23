@@ -2,7 +2,7 @@ id: EPIC-002
 title: Auth
 scope: auth
 category: infrastructure
-status: READY
+status: IN PROGRESS
 description: Supabase magic link auth for two users. Sign-in flow, session management, protected routes, and a welcome page that greets the authenticated user by name.
 notes:
   - Supabase project creation and email allowlist configuration are manual prerequisites done via the Supabase dashboard — no emails in the repo
@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: READY
+    status: IN PROGRESS
     title: Create Supabase project and configure auth
     description: Create Supabase project via dashboard. Enable magic link. Configure email allowlist to the two user emails. Manual, no code. Prerequisite for all other tickets in this epic.
     acceptance_criteria:

@@ -37,6 +37,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run lint
+      - run: npm test
 
   status:
     needs: [changes, build-and-lint]

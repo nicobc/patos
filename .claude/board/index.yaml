@@ -1,9 +1,10 @@
-in_progress:
-  - id: EPIC-001
-    title: Site skeleton
+in_progress: []
 ready:
   - id: EPIC-002
     title: Auth
+done:
+  - id: EPIC-001
+    title: Site skeleton
 ideation:
   - id: EPIC-003
     title: Data model

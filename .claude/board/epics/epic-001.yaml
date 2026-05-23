@@ -1,6 +1,6 @@
 id: EPIC-001
 title: Site skeleton
-scope: site
+scope: app
 category: infrastructure
 status: IN PROGRESS
 description: patos.casa DNS configured on Cloudflare, React + Vite app scaffolded in app/, deployed to Cloudflare Pages via CalVer-tagged CI pipeline.
@@ -42,7 +42,7 @@ tickets:
       - patos.casa serves the deployed app after a tag push
   - id: T4
     type: ci
-    status: READY
+    status: DONE
     title: PR check workflow
     description: GHA workflow on pull_request to main. Path-filtered to app/** changes. Runs build + lint. Status sentinel job for branch protection. Requires a gh api call to register the sentinel as a required status check on main.
     acceptance_criteria:

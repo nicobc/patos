@@ -1,0 +1,48 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: dorny/paths-filter@v4.0.1
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'app/**'
+
+  build-and-lint:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+
+  status:
+    needs: [changes, build-and-lint]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          result="${{ needs.build-and-lint.result }}"
+          [[ "$result" == "failure" || "$result" == "cancelled" ]] && exit 1 || exit 0

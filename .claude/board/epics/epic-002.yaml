@@ -14,7 +14,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: IN PROGRESS
+    status: TESTING
     title: Create Supabase project and configure auth
     description: Create Supabase project via dashboard. Enable magic link. Manual, no code. Prerequisite for all other tickets in this epic.
     acceptance_criteria:

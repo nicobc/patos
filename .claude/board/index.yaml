@@ -1,17 +1,19 @@
 in_progress: []
-ready: []
-ideation:
+ready:
   - id: EPIC-001
     title: Site skeleton
   - id: EPIC-002
-    title: Data model
+    title: Auth
+ideation:
   - id: EPIC-003
-    title: Basic Kanban
+    title: Data model
   - id: EPIC-004
-    title: DAG resolver
+    title: Basic Kanban
   - id: EPIC-005
-    title: Cost tracker
+    title: DAG resolver
   - id: EPIC-006
+    title: Cost tracker
+  - id: EPIC-007
     title: Drag and drop + Gantt
 done: []
 maintenance: []

@@ -1,12 +1,12 @@
 id: EPIC-006
-title: Drag and drop + Gantt
-scope: dnd-gantt
+title: Cost tracker
+scope: cost-tracker
 category: feature
 status: IDEATION
-description: Drag and drop status transitions on the Kanban board via dnd-kit. Gantt chart visualization of the task timeline built on the DAG resolver output from EPIC-004. Timeline conflict highlighting where dependency ordering violates scheduled dates.
+description: Costs tracked per room, type of work, and contractor. Payment status (paid / pending). Savings balance updated manually via CRUD. Dashboard visualizations — costs by breakdown, payment completion rate, savings timeline, and simple rolling-average projection toward next payment target.
 notes:
-  - dnd-kit preferred over react-beautiful-dnd (actively maintained, better TypeScript support)
-  - Gantt scope TBD at grooming — a library (frappe-gantt, or a D3-based solution) vs. custom; decide at spike
-  - depends on EPIC-004 being stable — Gantt reads from the same dependency graph
+  - savings balance is manual input — no bank API, no automatic sync
+  - projection = rolling average of monthly savings delta extrapolated to target; simple, not ML
+  - short-term and mid-term renovation phases should be filterable separately
 
 tickets: []

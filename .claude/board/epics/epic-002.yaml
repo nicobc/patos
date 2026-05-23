@@ -1,12 +1,62 @@
 id: EPIC-002
-title: Data model
-scope: data-model
+title: Auth
+scope: auth
 category: infrastructure
-status: IDEATION
-description: Supabase project setup, schema design for rooms, tasks, phases, costs, contractors, and task dependencies. Migrations, TypeScript type generation via supabase gen types, RLS policies (owners only), and fake seed data for development.
+status: READY
+description: Supabase magic link auth for two users. Sign-in flow, session management, protected routes, and a welcome page that greets the authenticated user by name.
 notes:
-  - schema must support both Kanban (EPIC-003) and cost tracker (EPIC-005) without a redesign — think through both before committing to migrations
-  - dependency representation (task → task edges) must support the DAG resolver in EPIC-004
-  - fake seed data only — no real renovation data ever in the repo
+  - Supabase project creation and email allowlist configuration are manual prerequisites done via the Supabase dashboard — no emails in the repo
+  - Cloudflare Access deliberately excluded — RLS + email allowlist is sufficient for the threat model (2 users, manual CRUD, no bank API)
+  - depends on EPIC-001 — a live CF Pages URL is required to configure Supabase auth redirect URLs
+  - T5 (welcome page) is the end-to-end smoke test for the full auth flow
 
-tickets: []
+tickets:
+  - id: T1
+    type: chore
+    status: READY
+    title: Create Supabase project and configure auth
+    description: Create Supabase project via dashboard. Enable magic link. Configure email allowlist to the two user emails. Manual, no code. Prerequisite for all other tickets in this epic.
+    acceptance_criteria:
+      - Supabase project exists and is active
+      - magic link auth provider enabled
+      - email allowlist restricts sign-in to exactly the two user emails
+      - redirect URL configured to patos.casa
+  - id: T2
+    type: feat
+    status: READY
+    title: Supabase client config
+    description: Add Supabase client singleton and env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) to the app. .env.local gitignored.
+    acceptance_criteria:
+      - supabase-js installed
+      - client singleton exported from a single module
+      - VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY read from env
+      - .env.local present in .gitignore
+  - id: T3
+    type: feat
+    status: READY
+    title: Magic link sign-in page and auth state
+    description: Sign-in form that triggers a magic link email. Auth state management — session persistence across page loads, sign-out.
+    acceptance_criteria:
+      - sign-in page accepts an email and submits a magic link request
+      - confirmation message shown after submission
+      - clicking the magic link establishes a session
+      - session persists across page reloads
+      - sign-out clears the session and redirects to sign-in
+  - id: T4
+    type: feat
+    status: READY
+    title: Protected route wrapper
+    description: Unauthenticated users redirected to sign-in. Authenticated users pass through.
+    acceptance_criteria:
+      - navigating to any protected route without a session redirects to sign-in
+      - authenticated users reach the protected route without redirect
+      - redirect preserves the intended destination after sign-in
+  - id: T5
+    type: feat
+    status: READY
+    title: Welcome page
+    description: Landing page post-auth. Reads display name from Supabase session and greets the user by name.
+    acceptance_criteria:
+      - authenticated user sees a personalised greeting using their display name
+      - page is only reachable when authenticated (protected by T4 wrapper)
+      - sign-out accessible from the welcome page

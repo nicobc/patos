@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint-app
+        name: lint app (eslint)
+        entry: npm --prefix app run lint
+        language: system
+        files: ^app/src/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: typecheck-app
+        name: typecheck app (tsc)
+        entry: npm --prefix app run typecheck
+        language: system
+        files: ^app/src/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: format-app
+        name: format app (prettier)
+        entry: npm --prefix app run format
+        language: system
+        files: ^app/src/.*\.(ts|tsx|css)$
+        pass_filenames: false

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "ask": [
+      "Edit(.claude/**)"
+    ],
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(/opt/homebrew/bin/gh pr checks:*)",
+      "Bash(/opt/homebrew/bin/gh pr list:*)",
+      "Bash(/opt/homebrew/bin/gh pr view:*)",
+      "Bash(/opt/homebrew/bin/gh run watch:*)",
+      "Bash(/opt/homebrew/bin/gh run view:*)",
+      "Bash(/opt/homebrew/bin/gh run list:*)"
+    ]
+  }
+}

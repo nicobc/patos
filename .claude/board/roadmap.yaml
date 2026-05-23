@@ -1,0 +1,6 @@
+# bundle = complete epics + maintenance tickets. partial epics never ship.
+# deploy: true = non-test files under app/src/ changed.
+# tag cut from main once all bundled tickets DONE. ~ = tag not yet assigned.
+
+planned: []
+done: []

@@ -42,7 +42,7 @@ tickets:
       - patos.casa serves the deployed app after a tag push
   - id: T4
     type: ci
-    status: READY
+    status: IN PROGRESS
     title: PR check workflow
     description: GHA workflow on pull_request to main. Path-filtered to app/** changes. Runs build + lint. Status sentinel job for branch protection. Requires a gh api call to register the sentinel as a required status check on main.
     acceptance_criteria:

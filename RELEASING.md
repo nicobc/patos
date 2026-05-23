@@ -35,8 +35,10 @@ Before writing any status value to a board file, confirm the ticket's current st
    ```
 2. Commit following conventional commits.
 3. `git push origin type/scope`
-4. Create the PR and mark the ticket TESTING in a board commit:
+4. Create the PR:
    `/opt/homebrew/bin/gh pr create --base main --head type/scope --repo nicobc/patos`
+   - If the PR has a test plan (manual verification needed): commit the TESTING board update now, before watching CI.
+   - If the PR has no test plan: skip the TESTING commit — go straight to step 6 after CI passes.
 5. `sleep 5` then watch all PR checks: `/opt/homebrew/bin/gh pr checks <n> --repo nicobc/patos --watch`
    - CI is the authoritative source of truth — local tests passing is not sufficient.
    - CI failure → fix and return to step 2. Never merge a failing PR.

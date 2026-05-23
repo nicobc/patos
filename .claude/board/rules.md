@@ -22,7 +22,9 @@ Valid values: IDEATION, READY, IN PROGRESS, TESTING, DONE, DISCARDED.
 Lifecycle: READY → IN PROGRESS → TESTING → DONE. All ticket types go through TESTING.
 
 TESTING: PR open, CI running or awaiting manual verification.
-DONE: CI passed and ticket is verified working. Never skip TESTING.
+DONE: CI passed and ticket is verified working.
+
+When a PR has no test plan (no manual verification needed), the TESTING board commit may be skipped — make a single DONE commit after CI passes instead of two separate commits.
 
 CI tickets requiring a live trigger to validate (tag push, scheduled run, webhook): add `workflow_dispatch:` temporarily during TESTING, remove it in the DONE commit.
 

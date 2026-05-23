@@ -36,13 +36,13 @@ Before writing any status value to a board file, confirm the ticket's current st
 2. Commit following conventional commits.
 3. `git push origin type/scope`
 4. Create the PR and mark the ticket TESTING in a board commit:
-   `/opt/homebrew/bin/gh pr create --base main --head type/scope --repo nicobc/the-patos-project`
-5. `sleep 5` then watch all PR checks: `/opt/homebrew/bin/gh pr checks <n> --repo nicobc/the-patos-project --watch`
+   `/opt/homebrew/bin/gh pr create --base main --head type/scope --repo nicobc/patos`
+5. `sleep 5` then watch all PR checks: `/opt/homebrew/bin/gh pr checks <n> --repo nicobc/patos --watch`
    - CI is the authoritative source of truth — local tests passing is not sufficient.
    - CI failure → fix and return to step 2. Never merge a failing PR.
 6. CI passes. Commit the DONE board update with `Closes EPIC-XXX/TN` footer before merging.
 7. Get explicit approval before merging. PR title must follow conventional commits — it becomes the squash commit message on main.
-   `/opt/homebrew/bin/gh pr merge <n> --squash --delete-branch --repo nicobc/the-patos-project`
+   `/opt/homebrew/bin/gh pr merge <n> --squash --delete-branch --repo nicobc/patos`
 8. Clean up local branch:
    ```bash
    git switch main
@@ -57,8 +57,8 @@ Before writing any status value to a board file, confirm the ticket's current st
    git push origin vYYYY.MM.N
    ```
    Increment the patch number within the month (e.g. `v2026.05.2` follows `v2026.05.1`).
-   Watch deploy: `/opt/homebrew/bin/gh run watch <run-id> --repo nicobc/the-patos-project`. Report success or failure.
+   Watch deploy: `/opt/homebrew/bin/gh run watch <run-id> --repo nicobc/patos`. Report success or failure.
 
 ## GHA workflow testing
 
-When iterating on a GHA workflow: commit and push the change, dispatch with `gh workflow run <file> --ref <branch> --repo nicobc/the-patos-project`, then immediately watch with `gh run watch <run-id> --repo nicobc/the-patos-project`. On failure, fetch logs with `gh run view <run-id> --log-failed --repo nicobc/the-patos-project`, diagnose, fix, and repeat — without waiting for the user to paste output. `gh` is at `/opt/homebrew/bin/gh`.
+When iterating on a GHA workflow: commit and push the change, dispatch with `gh workflow run <file> --ref <branch> --repo nicobc/patos`, then immediately watch with `gh run watch <run-id> --repo nicobc/patos`. On failure, fetch logs with `gh run view <run-id> --log-failed --repo nicobc/patos`, diagnose, fix, and repeat — without waiting for the user to paste output. `gh` is at `/opt/homebrew/bin/gh`.

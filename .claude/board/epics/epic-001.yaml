@@ -5,7 +5,7 @@ category: infrastructure
 status: IDEATION
 description: Domain configured on Cloudflare, app deployed as Cloudflare Pages, Supabase Auth with magic link + email allowlist for two users, Cloudflare Access as URL gate, welcome page that greets the authenticated user by name.
 notes:
-  - domain patos.app availability TBC — manual prerequisite before any ticket can start
+  - domain is patos.casa — manual prerequisite: configure on Cloudflare before any ticket can start
   - auth strategy = Supabase magic link + email allowlist; Cloudflare Access as secondary gate on the URL
   - welcome page is the smoke test for the full auth flow end to end
 

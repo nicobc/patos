@@ -2,7 +2,7 @@ id: EPIC-001
 title: Site skeleton
 scope: site
 category: infrastructure
-status: READY
+status: IN PROGRESS
 description: patos.casa DNS configured on Cloudflare, React + Vite app scaffolded in app/, deployed to Cloudflare Pages via CalVer-tagged CI pipeline.
 notes:
   - domain is patos.casa — T1 (DNS) is a manual prerequisite and must be DONE before T3 can be verified end-to-end
@@ -12,7 +12,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: READY
+    status: IN PROGRESS
     title: Configure patos.casa DNS on Cloudflare
     description: Point patos.casa to the Cloudflare Pages deployment. Manual, no code. Prerequisite for T3 verification.
     acceptance_criteria:
@@ -20,7 +20,7 @@ tickets:
       - HTTPS works on patos.casa
   - id: T2
     type: build
-    status: READY
+    status: DONE
     title: React + Vite app scaffold
     description: Initialise the React + Vite app in app/. Minimal shell — index route, no auth. Must pass npm run build.
     acceptance_criteria:
@@ -31,7 +31,7 @@ tickets:
       - No default Vite boilerplate remaining
   - id: T3
     type: ci
-    status: READY
+    status: TESTING
     title: Cloudflare Pages deploy pipeline
     description: GHA workflow triggered by CalVer tags. Builds the Vite app, deploys via Wrangler to CF Pages project patos, creates a GitHub release. workflow_dispatch enabled for branch preview builds.
     acceptance_criteria:
@@ -40,3 +40,23 @@ tickets:
       - workflow_dispatch from a feature branch deploys a preview build
       - workflow_dispatch from main or a tag is blocked by the guard step
       - patos.casa serves the deployed app after a tag push
+  - id: T4
+    type: ci
+    status: READY
+    title: PR check workflow
+    description: GHA workflow on pull_request to main. Path-filtered to app/** changes. Runs build + lint. Status sentinel job for branch protection. Requires a gh api call to register the sentinel as a required status check on main.
+    acceptance_criteria:
+      - workflow triggers on PRs targeting main when app/** files change
+      - workflow is skipped (not failed) when no app/** files change
+      - status sentinel job fails the check if build or lint fails
+      - status sentinel job passes when the test job is skipped
+      - sentinel registered as required status check on main via gh api
+  - id: T5
+    type: test
+    status: READY
+    title: Vitest setup
+    description: Install and configure Vitest. Add npm test script. Unblocks adding npm test to the T4 PR check workflow.
+    acceptance_criteria:
+      - vitest installed and configured
+      - npm test exits 0
+      - T4 workflow updated to include npm test step

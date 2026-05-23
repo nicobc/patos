@@ -1,7 +1,7 @@
-in_progress: []
-ready:
+in_progress:
   - id: EPIC-001
     title: Site skeleton
+ready:
   - id: EPIC-002
     title: Auth
 ideation:

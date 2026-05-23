@@ -1,0 +1,13 @@
+id: EPIC-003
+title: Basic Kanban
+scope: kanban
+category: feature
+status: IDEATION
+description: Board UI with configurable columns representing task phases, task cards with full CRUD, and status transitions. Status updated via card controls — no drag and drop yet (deferred to EPIC-006).
+notes:
+  - columns map to renovation phases (e.g. planning, in progress, blocked, done) — configurable, not hardcoded
+  - cards show task title, room, phase, assigned contractor, and status at minimum
+  - hierarchy (task → subtask) to be groomed — keep flat until there is a concrete need
+  - drag and drop explicitly out of scope here; deferred to EPIC-006
+
+tickets: []

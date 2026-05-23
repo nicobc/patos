@@ -1,0 +1,12 @@
+id: EPIC-002
+title: Data model
+scope: data-model
+category: infrastructure
+status: IDEATION
+description: Supabase project setup, schema design for rooms, tasks, phases, costs, contractors, and task dependencies. Migrations, TypeScript type generation via supabase gen types, RLS policies (owners only), and fake seed data for development.
+notes:
+  - schema must support both Kanban (EPIC-003) and cost tracker (EPIC-005) without a redesign — think through both before committing to migrations
+  - dependency representation (task → task edges) must support the DAG resolver in EPIC-004
+  - fake seed data only — no real renovation data ever in the repo
+
+tickets: []

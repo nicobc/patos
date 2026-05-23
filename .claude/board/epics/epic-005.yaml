@@ -1,0 +1,12 @@
+id: EPIC-005
+title: Cost tracker
+scope: cost-tracker
+category: feature
+status: IDEATION
+description: Costs tracked per room, type of work, and contractor. Payment status (paid / pending). Savings balance updated manually via CRUD. Dashboard visualizations — costs by breakdown, payment completion rate, savings timeline, and simple rolling-average projection toward next payment target.
+notes:
+  - savings balance is manual input — no bank API, no automatic sync
+  - projection = rolling average of monthly savings delta extrapolated to target; simple, not ML
+  - short-term and mid-term renovation phases should be filterable separately
+
+tickets: []

@@ -1,0 +1,13 @@
+id: EPIC-004
+title: DAG resolver
+scope: dag
+category: feature
+status: IDEATION
+description: Dependency graph for tasks represented as a directed adjacency map (k:v). Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Blocking dependency surfaced on the Kanban card. Basic dependency visualization on the board.
+notes:
+  - pure TypeScript, no graph library needed — Kahn's algorithm is ~30 lines
+  - conflict = cycle detected or dependency not yet DONE blocks a task from starting
+  - visualization scope TBD at grooming — could be inline on cards (blocked badge) or a separate graph view; keep simple first
+  - Gantt-level timeline visualization is a separate concern deferred to EPIC-006
+
+tickets: []

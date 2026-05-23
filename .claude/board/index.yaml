@@ -1,7 +1,7 @@
-in_progress: []
-ready:
+in_progress:
   - id: EPIC-002
     title: Auth
+ready: []
 done:
   - id: EPIC-001
     title: Site skeleton
@@ -16,5 +16,4 @@ ideation:
     title: Cost tracker
   - id: EPIC-007
     title: Drag and drop + Gantt
-done: []
 maintenance: []

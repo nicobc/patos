@@ -2,5 +2,40 @@
 # deploy: true = non-test files under app/src/ changed.
 # tag cut from main once all bundled tickets DONE. ~ = tag not yet assigned.
 
-planned: []
-done: []
+planned:
+  - tag: ~
+    epics:
+      - EPIC-002
+    maintenance: []
+    deploy: true
+  - tag: ~
+    epics:
+      - EPIC-003
+    maintenance: []
+    deploy: true
+  - tag: ~
+    epics:
+      - EPIC-004
+    maintenance: []
+    deploy: true
+  - tag: ~
+    epics:
+      - EPIC-005
+    maintenance: []
+    deploy: true
+  - tag: ~
+    epics:
+      - EPIC-006
+    maintenance: []
+    deploy: true
+  - tag: ~
+    epics:
+      - EPIC-007
+    maintenance: []
+    deploy: true
+done:
+  - tag: v2026.05.1
+    epics:
+      - EPIC-001
+    maintenance: []
+    deploy: true

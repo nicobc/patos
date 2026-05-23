@@ -5,8 +5,9 @@ category: infrastructure
 status: IN PROGRESS
 description: Supabase magic link auth for two users. Sign-in flow, session management, protected routes, and a welcome page that greets the authenticated user by name.
 notes:
-  - Supabase project creation and email allowlist configuration are manual prerequisites done via the Supabase dashboard — no emails in the repo
-  - Cloudflare Access deliberately excluded — RLS + email allowlist is sufficient for the threat model (2 users, manual CRUD, no bank API)
+  - Supabase project creation is a manual prerequisite done via the dashboard — no emails in the repo
+  - email allowlist is app-level (not dashboard — Supabase removed that feature): sign-in form checks submitted email against VITE_ALLOWED_EMAILS before calling signInWithOtp; env var keeps emails out of source
+  - Cloudflare Access deliberately excluded — RLS + app-level allowlist is sufficient for the threat model (2 users, manual CRUD, no bank API)
   - depends on EPIC-001 — a live CF Pages URL is required to configure Supabase auth redirect URLs
   - T5 (welcome page) is the end-to-end smoke test for the full auth flow
 
@@ -15,30 +16,31 @@ tickets:
     type: chore
     status: IN PROGRESS
     title: Create Supabase project and configure auth
-    description: Create Supabase project via dashboard. Enable magic link. Configure email allowlist to the two user emails. Manual, no code. Prerequisite for all other tickets in this epic.
+    description: Create Supabase project via dashboard. Enable magic link. Manual, no code. Prerequisite for all other tickets in this epic.
     acceptance_criteria:
       - Supabase project exists and is active
       - magic link auth provider enabled
-      - email allowlist restricts sign-in to exactly the two user emails
       - redirect URL configured to patos.casa
   - id: T2
     type: feat
     status: READY
     title: Supabase client config
-    description: Add Supabase client singleton and env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) to the app. .env.local gitignored.
+    description: Add Supabase client singleton and env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ALLOWED_EMAILS) to the app. .env.local gitignored.
     acceptance_criteria:
       - supabase-js installed
       - client singleton exported from a single module
       - VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY read from env
+      - VITE_ALLOWED_EMAILS read from env (comma-separated)
       - .env.local present in .gitignore
   - id: T3
     type: feat
     status: READY
     title: Magic link sign-in page and auth state
-    description: Sign-in form that triggers a magic link email. Auth state management — session persistence across page loads, sign-out.
+    description: Sign-in form that triggers a magic link email. App-level allowlist check against VITE_ALLOWED_EMAILS before calling signInWithOtp. Auth state management — session persistence across page loads, sign-out.
     acceptance_criteria:
       - sign-in page accepts an email and submits a magic link request
-      - confirmation message shown after submission
+      - email rejected with an error if not in VITE_ALLOWED_EMAILS — no magic link sent
+      - confirmation message shown after successful submission
       - clicking the magic link establishes a session
       - session persists across page reloads
       - sign-out clears the session and redirects to sign-in

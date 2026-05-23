@@ -53,7 +53,7 @@ tickets:
       - sentinel registered as required status check on main via gh api
   - id: T5
     type: test
-    status: READY
+    status: IN PROGRESS
     title: Vitest setup
     description: Install and configure Vitest. Add npm test script. Unblocks adding npm test to the T4 PR check workflow.
     acceptance_criteria:

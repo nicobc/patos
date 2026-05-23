@@ -23,7 +23,7 @@ tickets:
       - redirect URL configured to patos.casa
   - id: T2
     type: feat
-    status: IN PROGRESS
+    status: TESTING
     title: Supabase client config
     description: Add Supabase client singleton and env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ALLOWED_EMAILS) to the app. .env.local gitignored.
     acceptance_criteria:

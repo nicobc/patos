@@ -2,7 +2,7 @@ id: EPIC-001
 title: Site skeleton
 scope: app
 category: infrastructure
-status: IN PROGRESS
+status: DONE
 description: patos.casa DNS configured on Cloudflare, React + Vite app scaffolded in app/, deployed to Cloudflare Pages via CalVer-tagged CI pipeline.
 notes:
   - domain is patos.casa — T1 (DNS) is a manual prerequisite and must be DONE before T3 can be verified end-to-end
@@ -53,7 +53,7 @@ tickets:
       - sentinel registered as required status check on main via gh api
   - id: T5
     type: test
-    status: IN PROGRESS
+    status: DONE
     title: Vitest setup
     description: Install and configure Vitest. Add npm test script. Unblocks adding npm test to the T4 PR check workflow.
     acceptance_criteria:

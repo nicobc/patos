@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, type Project } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
 import { listTasksByProject, subscribeToTaskChanges, updateTask, buildStatusTransition, type Task, type TaskChangeEvent } from '../services/tasksService'
 import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import { TaskForm } from './TaskForm'
+import { Settings } from './Settings'
 import './Board.css'
 
 const COLUMNS = [
@@ -21,6 +24,7 @@ type View =
   | { kind: 'board' }
   | { kind: 'detail'; task: Task }
   | { kind: 'form'; task?: Task }
+  | { kind: 'settings' }
 
 type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
@@ -55,6 +59,10 @@ export function Board() {
     ? tasksResult.items
     : []
 
+  function loadContractors() {
+    listContractors().then(setContractors).catch(() => {})
+  }
+
   useEffect(() => {
     listProjects()
       .then((data) => {
@@ -64,7 +72,7 @@ export function Board() {
       .catch(() => setProjectsError('Failed to load projects'))
       .finally(() => setProjectsLoading(false))
 
-    listContractors().then(setContractors).catch(() => {})
+    loadContractors()
   }, [])
 
   useEffect(() => {
@@ -115,6 +123,14 @@ export function Board() {
   const contractorName = (id: string | null) =>
     id ? (contractors.find((c) => c.id === id)?.name ?? null) : null
 
+  if (view.kind === 'settings') {
+    return (
+      <div className="board">
+        <Settings onBack={() => { setView({ kind: 'board' }); loadContractors() }} />
+      </div>
+    )
+  }
+
   if (view.kind === 'detail') {
     return (
       <div className="board">
@@ -157,13 +173,23 @@ export function Board() {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-          <button
-            className="btn-outline"
-            onClick={() => setView({ kind: 'form' })}
-            disabled={!selectedId}
-          >
-            + New task
-          </button>
+          <div className="board-toolbar-actions">
+            <button
+              className="btn-outline"
+              onClick={() => setView({ kind: 'form' })}
+              disabled={!selectedId}
+              aria-label="New task"
+            >
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+            <button
+              className="btn-icon"
+              onClick={() => setView({ kind: 'settings' })}
+              aria-label="Settings"
+            >
+              <FontAwesomeIcon icon={faGear} />
+            </button>
+          </div>
         </div>
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
         {transitionError && <p className="board-message board-message--error">{transitionError}</p>}

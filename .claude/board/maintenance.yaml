@@ -32,7 +32,7 @@ tickets:
   - id: T3
     type: ci
     scope: supabase
-    status: READY
+    status: IN PROGRESS
     title: Add optional seed parameter to migrate-db workflow
     description: Add an optional boolean input `seed` to the migrate-db workflow_dispatch. When true, run the seed script after migrations complete. Guard against accidental seeding in production — if `seed` is true and the selected environment is not `dev`, the job must fail immediately with a clear error.
     acceptance_criteria:

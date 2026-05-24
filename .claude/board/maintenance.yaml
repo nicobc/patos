@@ -51,3 +51,15 @@ tickets:
       - test-app job renamed from build-and-lint to test
       - scripts/tag-release.sh renamed to scripts/create-release-tag.sh
       - truncate statement removed from seed.sql
+
+  - id: T4
+    type: ci
+    scope: deploy
+    status: DONE
+    title: Allow workflow_dispatch from main for dev preview builds
+    description: Relax the dispatch guard in deploy-app.yml so main can be dispatched. A dispatch from main deploys to the CF Pages 'dev' branch (preview URL) with DEV secrets — never to the production 'main' branch. Tag pushes continue to deploy to CF Pages 'main' (production) with PRD secrets.
+    acceptance_criteria:
+      - workflow_dispatch from main no longer errors; from a tag still errors
+      - dispatch from main deploys to CF Pages branch 'dev' with DEV secrets
+      - dispatch from a feature branch deploys to that branch name (unchanged)
+      - tag push deploys to CF Pages branch 'main' with PRD secrets (unchanged)

@@ -18,8 +18,4 @@ ideation:
     title: Cost tracker
   - id: EPIC-007
     title: Drag and drop + Gantt
-maintenance:
-  - id: MAINT/T3
-    scope: supabase
-    status: DONE
-    title: Add optional seed parameter to migrate-db workflow
+maintenance: []

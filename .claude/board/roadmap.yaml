@@ -10,6 +10,11 @@ planned:
     deploy: true
   - tag: ~
     epics:
+      - EPIC-008
+    maintenance: []
+    deploy: false
+  - tag: ~
+    epics:
       - EPIC-005
     maintenance: []
     deploy: true

@@ -1,0 +1,48 @@
+id: EPIC-008
+title: CI & local dev environment
+scope: dev-infra
+category: infra
+status: READY
+description: Local Supabase dev environment and a test-migrations CI workflow that validates migrations and keeps database.ts in sync. Eliminates dependency on the linked dev project for type generation in both agent and CI contexts.
+notes:
+  - local Supabase requires Docker Desktop; supabase/config.toml already initialised with project_id = "patos"
+  - typegen must use --local (not --linked) once T1 is done; never edit database.ts manually after that
+  - test-migrations and test-app both emit a status job; branch protection requires both
+  - test-app.yml already uses dorny/paths-filter@v4.0.1 on app/** — no changes needed there
+
+tickets:
+  - id: T1
+    type: chore
+    status: READY
+    title: Local Supabase dev instance
+    description: Verify and document the local Supabase workflow so Docker-based development works end-to-end. Update the supabase skill to reflect the new typegen command.
+    acceptance_criteria:
+      - supabase start brings up a clean local instance against supabase/migrations/
+      - supabase db reset applies all migrations from scratch without errors
+      - supabase db reset --seed applies migrations then runs supabase/seed.sql
+      - supabase gen types --local > app/src/types/database.ts produces types that match the current schema
+      - supabase.md skill updated — typegen command is supabase gen types --local, --linked removed as an option
+
+  - id: T2
+    type: ci
+    status: READY
+    title: test-migrations GHA workflow with typegen diff check
+    description: New workflow that validates migrations and asserts database.ts is up to date. Mirrors the dorny + status pattern from test-app.yml.
+    acceptance_criteria:
+      - workflow triggers on pull_request to main
+      - dorny filter runs only when supabase/migrations/** or app/src/types/database.ts changes
+      - when filter matches, spins up local Supabase via supabase/setup-cli and supabase start
+      - applies migrations with supabase db reset
+      - runs supabase gen types --local and diffs against committed app/src/types/database.ts
+      - fails with a clear message if database.ts is stale; passes if up to date
+      - status job follows the same always() pattern as test-app.yml
+
+  - id: T3
+    type: chore
+    status: READY
+    title: Branch protection — require migration check
+    description: Update GitHub branch protection on main so merges require both the app check and the new migration check to pass.
+    acceptance_criteria:
+      - branch protection on main requires PR Check / status (existing) and Migration Check / status (new)
+      - a PR that only touches app/** skips test-migrations but still passes the migration status job (via dorny skip path)
+      - a PR that only touches supabase/migrations/** skips test-app but still passes the app status job

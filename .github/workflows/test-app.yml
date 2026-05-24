@@ -20,7 +20,7 @@ jobs:
             app:
               - 'app/**'
 
-  build-and-lint:
+  test:
     needs: changes
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
@@ -40,10 +40,10 @@ jobs:
       - run: npm test
 
   status:
-    needs: [changes, build-and-lint]
+    needs: [changes, test]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - run: |
-          result="${{ needs.build-and-lint.result }}"
+          result="${{ needs.test.result }}"
           [[ "$result" == "failure" || "$result" == "cancelled" ]] && exit 1 || exit 0

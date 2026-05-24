@@ -19,4 +19,5 @@ ideation:
 maintenance:
   - id: MAINT/T3
     scope: supabase
+    status: DONE
     title: Add optional seed parameter to migrate-db workflow

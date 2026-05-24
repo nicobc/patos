@@ -75,7 +75,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Seed data
     description: SQL seed file with fake renovation data. Two projects (short-term, long-term). Five or six spaces (bathroom, kitchen, bedroom 1, bedroom 2, living room, hallway). Three or four contractors with name, email, and phone. Ten to fifteen tasks spread across projects and spaces, covering all status values, with a handful of task_deps edges to exercise the DAG.
     acceptance_criteria:

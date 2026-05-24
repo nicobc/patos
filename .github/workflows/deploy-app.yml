@@ -14,9 +14,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Guard — disallow dispatch from main or a tag
-        if: github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/'))
-        run: echo "Dispatch from main or from a tag is forbidden. Dispatch from a feature branch for preview builds or push a new CalVer tag for production." && exit 1
+      - name: Guard — disallow dispatch from a tag
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/')
+        run: echo "Dispatch from a tag is forbidden. Use a feature branch or main for dev preview builds, or push a new CalVer tag for production." && exit 1
 
   build:
     needs: validate
@@ -57,6 +57,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then BRANCH=main
+          elif [ "${{ github.ref_name }}" = "main" ]; then BRANCH=dev
           else BRANCH="${{ github.ref_name }}"
           fi
           npx wrangler pages deploy app/dist --project-name=patos --branch="$BRANCH"

@@ -9,6 +9,8 @@ vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
 vi.mock('../services/tasksService', () => ({
   listTasksByProject: vi.fn(),
   subscribeToTaskChanges: vi.fn(),
+  updateTask: vi.fn(),
+  deleteTask: vi.fn(),
 }))
 
 import { listProjects } from '../services/projectsService'
@@ -115,6 +117,23 @@ describe('Board — task cards', () => {
     await waitFor(() =>
       expect(screen.getByText('Failed to load tasks')).toBeInTheDocument()
     )
+  })
+
+  it('shows task detail view when a card is clicked', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask()])
+    render(<Board />)
+    const card = await screen.findByRole('button', { name: /paint walls/i })
+    await userEvent.click(card)
+    expect(screen.getByRole('heading', { name: 'Paint walls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /board/i })).toBeInTheDocument()
+  })
+
+  it('returns to board when Back is clicked from detail view', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask()])
+    render(<Board />)
+    await userEvent.click(await screen.findByRole('button', { name: /paint walls/i }))
+    await userEvent.click(screen.getByRole('button', { name: /board/i }))
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
   it('subscribes to task changes for the selected project', async () => {

@@ -1,8 +1,8 @@
-in_progress:
+in_progress: []
+ready: []
+done:
   - id: EPIC-003
     title: Data model
-ready:
-done:
   - id: EPIC-002
     title: Auth
   - id: EPIC-001

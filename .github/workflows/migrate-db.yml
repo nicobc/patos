@@ -58,7 +58,7 @@ jobs:
       - name: Reset and seed
         run: |
           supabase link --project-ref "$PROJECT_REF"
-          supabase db reset --linked
+          echo y | supabase db reset --linked
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_ID_DEV }}

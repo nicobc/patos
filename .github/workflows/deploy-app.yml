@@ -32,6 +32,10 @@ jobs:
         run: |
           npm ci
           npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ github.ref_type == 'tag' && secrets.VITE_SUPABASE_URL_PRD || secrets.VITE_SUPABASE_URL_DEV }}
+          VITE_SUPABASE_ANON_KEY: ${{ github.ref_type == 'tag' && secrets.VITE_SUPABASE_ANON_KEY_PRD || secrets.VITE_SUPABASE_ANON_KEY_DEV }}
+          VITE_ALLOWED_EMAILS: ${{ github.ref_type == 'tag' && secrets.VITE_ALLOWED_EMAILS_PRD || secrets.VITE_ALLOWED_EMAILS_DEV }}
       - name: Deploy to Cloudflare Pages
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then BRANCH=main

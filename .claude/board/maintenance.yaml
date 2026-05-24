@@ -1,1 +1,12 @@
-tickets: []
+tickets:
+  - id: T1
+    type: fix
+    scope: deploy
+    status: IN PROGRESS
+    title: Pass VITE_ env vars to GitHub Actions build
+    description: Build runs on GitHub Actions, not CF Pages — VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_ALLOWED_EMAILS must be GitHub secrets threaded into the Build step. CF Pages env vars are never seen by this pipeline. Dev/prod separation is natural — .env.local holds dev values for local builds; GitHub secrets hold prod values for tag-triggered CI builds.
+    acceptance_criteria:
+      - six GitHub Actions secrets: VITE_SUPABASE_URL_PRD/DEV, VITE_SUPABASE_ANON_KEY_PRD/DEV, VITE_ALLOWED_EMAILS_PRD/DEV
+      - Build step in deploy-app.yml selects PRD set on tag push, DEV set otherwise
+      - production deploy (tag) bakes prod values; preview deploy (dispatch) bakes dev values
+      - dev Supabase project allows CF Pages preview redirect URL (*.patos.pages.dev)

@@ -53,7 +53,7 @@ tickets:
 
   - id: T4
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: Task detail view
     description: Inline detail view that replaces the board when a task card is clicked. Displays all task fields read-only. Includes a discard action (sets status to discarded) and a delete action (removes the row). Wires up the onSelect callback from T3. Entry point for the edit flow in T6.
     acceptance_criteria:

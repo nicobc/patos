@@ -54,7 +54,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: RLS policies
     description: Enable RLS on all six tables. Authenticated users may select, insert, update, and delete any row. Anon role is denied all access. No per-user row scoping — both owners see everything.
     acceptance_criteria:

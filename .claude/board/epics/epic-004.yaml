@@ -40,7 +40,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Task cards
     description: Fetch tasks for the selected project via tasksService, group by status, and render minimal cards in their respective columns. Clicking a card opens the detail modal (wired in T4). Discarded tasks are excluded.
     acceptance_criteria:

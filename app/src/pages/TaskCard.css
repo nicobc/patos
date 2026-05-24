@@ -1,0 +1,31 @@
+.task-card {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--br-md);
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+
+  &:hover {
+    border-color: var(--border);
+    background: var(--surface-faint);
+  }
+}
+
+.task-card-title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+}
+
+.task-card-contractor {
+  font-size: var(--fs-xs);
+  opacity: var(--opacity-muted);
+}

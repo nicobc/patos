@@ -116,3 +116,10 @@ tickets:
     title: Manage contractors
     description: Inline page (no modal) for managing the contractor list. Accessible from the board header. Supports adding, editing, and deleting contractors. Each contractor has name, email, and phone number fields.
     acceptance_criteria: []
+
+  - id: T10
+    type: feat
+    status: IDEATION
+    title: Task dependencies
+    description: Allow tasks to declare which other tasks they are blocked by. The edit form gains a "Blocked by" multi-select (writable) scoped to the current project's tasks. TaskDetail gains a read-only "Blocks" field showing tasks that depend on this one. Backed by the existing task_deps table.
+    acceptance_criteria: []

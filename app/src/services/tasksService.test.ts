@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import {
   listTasksByProject,
@@ -47,7 +48,7 @@ describe('listTasksByProject', () => {
           order: vi.fn().mockResolvedValue({ data: [task], error: null }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     expect(await listTasksByProject('proj-1')).toEqual([task])
   })
@@ -59,7 +60,7 @@ describe('listTasksByProject', () => {
           order: vi.fn().mockResolvedValue({ data: null, error: new Error('fail') }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(listTasksByProject('proj-1')).rejects.toThrow('fail')
   })
@@ -73,7 +74,7 @@ describe('createTask', () => {
           single: vi.fn().mockResolvedValue({ data: task, error: null }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     expect(await createTask({ title: 'Paint walls', project_id: 'proj-1' })).toEqual(task)
   })
@@ -85,7 +86,7 @@ describe('createTask', () => {
           single: vi.fn().mockResolvedValue({ data: null, error: new Error('fail') }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(createTask({ title: 'x' })).rejects.toThrow('fail')
   })
@@ -101,7 +102,7 @@ describe('updateTask', () => {
           }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     expect(await updateTask('abc', { status: 'planned' })).toEqual(task)
   })
@@ -115,7 +116,7 @@ describe('updateTask', () => {
           }),
         }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(updateTask('abc', { status: 'planned' })).rejects.toThrow('fail')
   })
@@ -127,7 +128,7 @@ describe('deleteTask', () => {
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(deleteTask('abc')).resolves.toBeUndefined()
   })
@@ -137,7 +138,7 @@ describe('deleteTask', () => {
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: new Error('fail') }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(deleteTask('abc')).rejects.toThrow('fail')
   })
@@ -145,15 +146,17 @@ describe('deleteTask', () => {
 
 describe('subscribeToTaskChanges', () => {
   it('sets up a channel with the correct filter and returns an unsubscribe fn', () => {
-    let capturedCallback: ((payload: any) => void) | null = null
+    let capturedCallback: ((payload: RealtimePostgresChangesPayload<Task>) => void) | null = null
     const fakeChannel: { on: Mock; subscribe: Mock } = {
-      on: vi.fn().mockImplementation((_event: string, _filter: unknown, cb: (p: any) => void) => {
-        capturedCallback = cb
-        return fakeChannel
-      }),
+      on: vi.fn().mockImplementation(
+        (_event: string, _filter: unknown, cb: (p: RealtimePostgresChangesPayload<Task>) => void) => {
+          capturedCallback = cb
+          return fakeChannel
+        }
+      ),
       subscribe: vi.fn().mockImplementation(() => fakeChannel),
     }
-    mockChannel.mockReturnValue(fakeChannel as any)
+    mockChannel.mockReturnValue(fakeChannel as unknown as ReturnType<typeof supabase.channel>)
     mockRemoveChannel.mockResolvedValue('ok')
 
     const listener = vi.fn()
@@ -166,13 +169,13 @@ describe('subscribeToTaskChanges', () => {
       expect.any(Function)
     )
 
-    capturedCallback!({ eventType: 'INSERT', new: task, old: {} })
+    capturedCallback!({ eventType: 'INSERT', new: task, old: {} } as RealtimePostgresChangesPayload<Task>)
     expect(listener).toHaveBeenCalledWith({ eventType: 'INSERT', record: task })
 
-    capturedCallback!({ eventType: 'UPDATE', new: { ...task, status: 'planned' }, old: task })
+    capturedCallback!({ eventType: 'UPDATE', new: { ...task, status: 'planned' }, old: task } as RealtimePostgresChangesPayload<Task>)
     expect(listener).toHaveBeenCalledWith({ eventType: 'UPDATE', record: { ...task, status: 'planned' } })
 
-    capturedCallback!({ eventType: 'DELETE', new: {}, old: { id: 'abc' } })
+    capturedCallback!({ eventType: 'DELETE', new: {}, old: { id: 'abc' } } as RealtimePostgresChangesPayload<Task>)
     expect(listener).toHaveBeenCalledWith({ eventType: 'DELETE', id: 'abc' })
 
     unsubscribe()

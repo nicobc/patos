@@ -17,7 +17,7 @@ describe('listProjects', () => {
       select: vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({ data: rows, error: null }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     expect(await listProjects()).toEqual(rows)
     expect(mockFrom).toHaveBeenCalledWith('projects')
@@ -28,7 +28,7 @@ describe('listProjects', () => {
       select: vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({ data: null, error: new Error('db error') }),
       }),
-    } as any)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(listProjects()).rejects.toThrow('db error')
   })

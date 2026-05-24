@@ -34,7 +34,7 @@ tickets:
       - .env.local present in .gitignore
   - id: T3
     type: feat
-    status: TESTING
+    status: DONE
     title: Magic link sign-in page and auth state
     description: Google OAuth sign-in (both users have Gmail). Auto-redirects to Google on load — no UI shown. Allowlist check in AuthContext post-auth; non-allowlisted accounts are signed out and redirected to Google account picker. Auth state management — session persistence across page loads, sign-out.
     acceptance_criteria:

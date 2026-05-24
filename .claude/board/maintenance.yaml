@@ -14,7 +14,7 @@ tickets:
   - id: T2
     type: ci
     scope: supabase
-    status: IN PROGRESS
+    status: TESTING
     title: GHA workflow for DB migrations with env selector
     description: |
       workflow_dispatch workflow that links to the selected Supabase project and pushes

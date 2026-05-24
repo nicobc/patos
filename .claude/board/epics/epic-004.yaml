@@ -121,7 +121,7 @@ tickets:
 
   - id: T9
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Manage contractors
     description: Settings surface entry point (gear icon in board toolbar) and contractor CRUD. The gear icon navigates to an inline settings page; the Contractors section is the only content until T11 ships. Manage projects is added in T11.
     acceptance_criteria:

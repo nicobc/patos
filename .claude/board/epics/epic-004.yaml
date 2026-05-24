@@ -28,7 +28,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: TESTING
+    status: DONE
     title: Board shell and project selector
     description: Implement the Board page — a project selector at the top and five horizontally scrollable columns (ideation, planned, ready, in_progress, done) with empty states per column. No task rendering yet. Reads projects from projectsService.
     acceptance_criteria:

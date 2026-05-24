@@ -2,12 +2,89 @@ id: EPIC-004
 title: Basic Kanban
 scope: kanban
 category: feature
-status: IDEATION
-description: Board UI with configurable columns representing task phases, task cards with full CRUD, and status transitions. Status updated via card controls — no drag and drop yet (deferred to EPIC-006).
+status: READY
+description: Board UI with project selector, horizontally scrollable columns mapping to task statuses (ideation → planned → ready → in_progress → done), minimal task cards, status transitions via card controls, and a detail modal with full CRUD. Discarded tasks are filtered from the board. Mobile-first.
 notes:
-  - columns map to renovation phases (e.g. planning, in progress, blocked, done) — configurable, not hardcoded
-  - cards show task title, room, phase, assigned contractor, and status at minimum
-  - hierarchy (task → subtask) to be groomed — keep flat until there is a concrete need
-  - drag and drop explicitly out of scope here; deferred to EPIC-007
+  - columns are the five non-discarded status values left to right; discarded tasks are filtered out
+  - horizontally scrollable layout — columns are full-height, user swipes left/right on mobile
+  - board is always scoped to one project at a time via a project selector
+  - I/O isolation enforced: Supabase calls only in src/services/; components never import from lib/supabase.ts
+  - task cards show minimal info (title + contractor); full detail in a modal
+  - discarded status is reachable only from the detail modal, not from card transition controls
 
-tickets: []
+tickets:
+  - id: T1
+    type: chore
+    status: READY
+    title: Service layer
+    description: Create src/services/projectsService.ts, src/services/tasksService.ts, and src/services/contractorsService.ts with typed functions wrapping Supabase calls. No UI changes. Establishes the I/O isolation pattern — all subsequent tickets import from these modules; no component or hook touches lib/supabase.ts directly.
+    acceptance_criteria:
+      - projectsService exports listProjects() returning typed Project[]
+      - tasksService exports listTasksByProject(projectId), createTask(data), updateTask(id, data), deleteTask(id) with types derived from database.ts
+      - contractorsService exports listContractors() returning typed Contractor[]
+      - tasksService exports subscribeToTaskChanges(projectId, callback) returning an unsubscribe function; callback receives the changed row and event type (INSERT, UPDATE, DELETE)
+      - no Supabase imports outside of src/services/ and src/lib/supabase.ts
+      - unit tests cover each service function with a mocked Supabase client
+
+  - id: T2
+    type: feat
+    status: READY
+    title: Board shell and project selector
+    description: Implement the Board page — a project selector at the top and five horizontally scrollable columns (ideation, planned, ready, in_progress, done) with empty states per column. No task rendering yet. Reads projects from projectsService.
+    acceptance_criteria:
+      - project selector renders all projects fetched via projectsService; selecting one updates board scope in local state
+      - five columns rendered left to right in status enum order with a human-readable header each
+      - layout is horizontally scrollable on mobile; columns are full-height
+      - each column shows an empty state when it has no tasks
+      - loading and error states handled for the projects fetch
+
+  - id: T3
+    type: feat
+    status: READY
+    title: Task cards
+    description: Fetch tasks for the selected project via tasksService, group by status, and render minimal cards in their respective columns. Clicking a card opens the detail modal (wired in T4). Discarded tasks are excluded.
+    acceptance_criteria:
+      - tasks fetched via listTasksByProject on initial project selection, then kept live via subscribeToTaskChanges for the selected project
+      - INSERT events add the new card to the correct column; UPDATE events move or refresh the card; DELETE events remove it — no full refetch needed
+      - tasks with status 'discarded' are excluded from all columns (including real-time events)
+      - each card displays the task title and contractor name (or an unassigned indicator if contractor_id is null)
+      - clicking a card triggers an onSelect callback (stubbed until T4 is merged)
+      - loading and error states handled for the tasks fetch
+
+  - id: T4
+    type: feat
+    status: READY
+    title: Task detail modal
+    description: Modal that opens when a task card is clicked. Displays all task fields read-only. Includes a discard action (sets status to discarded) and a delete action (removes the row). Wires up the onSelect callback from T3. Entry point for the edit flow in T6.
+    acceptance_criteria:
+      - modal renders title, description, contractor, expected_cost, actual_cost, expected_duration_days, actual_start, actual_end, status, and created_at
+      - discard action calls tasksService.updateTask with status 'discarded'; task is removed from board on success
+      - delete action calls tasksService.deleteTask; task is removed from board on success
+      - both destructive actions require an explicit confirmation step before executing
+      - modal is dismissible via backdrop click and a close button
+      - edit button is present (wired to no-op until T6 is merged)
+
+  - id: T5
+    type: feat
+    status: READY
+    title: Status transitions
+    description: Add prev/next status controls to each task card so the user can move a task to an adjacent non-discarded status without opening the detail modal. Optimistic update with rollback on error.
+    acceptance_criteria:
+      - each card shows a prev and next control; prev is disabled on ideation, next is disabled on done
+      - tapping a control calls tasksService.updateTask and moves the card to the correct column immediately (optimistic)
+      - on error the card reverts to its original column and an error state is shown
+      - discarded is never offered as a transition target from these controls
+
+  - id: T6
+    type: feat
+    status: READY
+    title: Task create and edit
+    description: Shared modal form for creating a new task (+ button on the board) and editing an existing task (edit button in the detail modal). On create, project_id is set from the selected project and owner_id from the auth context.
+    acceptance_criteria:
+      - form fields: title (required), description, contractor (select populated from contractorsService), expected_cost, expected_duration_days, actual_start, actual_end
+      - edit pre-fills all fields from the existing task
+      - create calls tasksService.createTask; new card appears in the ideation column on success
+      - edit calls tasksService.updateTask; updated card reflects changes immediately
+      - title is required; cost and duration accept numbers only; dates are valid
+      - unsaved changes prompt for confirmation before the modal closes
+      - uses .input, .btn-primary, .btn-ghost from the design system

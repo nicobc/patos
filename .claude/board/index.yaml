@@ -1,5 +1,7 @@
 in_progress: []
-ready: []
+ready:
+  - id: EPIC-004
+    title: Basic Kanban
 done:
   - id: EPIC-003
     title: Data model
@@ -8,8 +10,6 @@ done:
   - id: EPIC-001
     title: Site skeleton
 ideation:
-  - id: EPIC-004
-    title: Basic Kanban
   - id: EPIC-005
     title: DAG resolver
   - id: EPIC-006

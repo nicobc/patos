@@ -1,77 +1,156 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
+import type { TaskChangeEvent } from '../services/tasksService'
 
-vi.mock('../services/projectsService', () => ({
-  listProjects: vi.fn(),
+vi.mock('../services/projectsService', () => ({ listProjects: vi.fn() }))
+vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
+vi.mock('../services/tasksService', () => ({
+  listTasksByProject: vi.fn(),
+  subscribeToTaskChanges: vi.fn(),
 }))
 
 import { listProjects } from '../services/projectsService'
-const mockListProjects = vi.mocked(listProjects)
+import { listContractors } from '../services/contractorsService'
+import { listTasksByProject, subscribeToTaskChanges } from '../services/tasksService'
+
+const mockListProjects          = vi.mocked(listProjects)
+const mockListContractors       = vi.mocked(listContractors)
+const mockListTasksByProject    = vi.mocked(listTasksByProject)
+const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
 
 const projects = [
   { id: 'p1', name: 'Short-term reno', description: null, created_at: '' },
   { id: 'p2', name: 'Long-term reno',  description: null, created_at: '' },
 ]
 
-beforeEach(() => vi.clearAllMocks())
+const contractors = [
+  { id: 'c1', name: 'Alice', email: null, phone: null, created_at: '' },
+]
 
-describe('Board', () => {
+const makeTask = (overrides = {}) => ({
+  id: 't1', title: 'Paint walls', description: null,
+  project_id: 'p1', owner_id: null, contractor_id: null,
+  expected_cost: null, actual_cost: null, expected_duration_days: null,
+  actual_start: null, actual_end: null, status: 'ideation',
+  created_at: '2026-01-01T00:00:00Z',
+  ...overrides,
+})
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockListProjects.mockResolvedValue(projects)
+  mockListContractors.mockResolvedValue(contractors)
+  mockListTasksByProject.mockResolvedValue([])
+  mockSubscribeToTaskChanges.mockReturnValue(vi.fn())
+})
+
+describe('Board — project selector', () => {
   it('shows loading state initially', () => {
     mockListProjects.mockImplementation(() => new Promise(() => {}))
     render(<Board />)
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
-  it('renders project selector and 5 columns after load', async () => {
-    mockListProjects.mockResolvedValue(projects)
+  it('renders selector and 5 columns after load', async () => {
     render(<Board />)
-
     await waitFor(() =>
       expect(screen.getByRole('combobox', { name: /select project/i })).toBeInTheDocument()
     )
-
     for (const label of ['Ideation', 'Planned', 'Ready', 'In Progress', 'Done']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
   })
 
   it('auto-selects the first project', async () => {
-    mockListProjects.mockResolvedValue(projects)
     render(<Board />)
-
     await waitFor(() => {
-      const select = screen.getByRole('combobox') as HTMLSelectElement
-      expect(select.value).toBe('p1')
+      expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('p1')
     })
   })
 
   it('updates selected project on change', async () => {
-    mockListProjects.mockResolvedValue(projects)
     render(<Board />)
-
     const select = await screen.findByRole('combobox')
     await userEvent.selectOptions(select, 'p2')
-
     expect((select as HTMLSelectElement).value).toBe('p2')
   })
 
-  it('shows 5 empty-state messages', async () => {
-    mockListProjects.mockResolvedValue(projects)
-    render(<Board />)
-
-    await waitFor(() => {
-      expect(screen.getAllByText('No tasks')).toHaveLength(5)
-    })
-  })
-
-  it('shows error state when fetch fails', async () => {
+  it('shows error state when projects fetch fails', async () => {
     mockListProjects.mockRejectedValue(new Error('network error'))
     render(<Board />)
-
     await waitFor(() =>
       expect(screen.getByText('Failed to load projects')).toBeInTheDocument()
     )
+  })
+})
+
+describe('Board — task cards', () => {
+  it('renders cards in the correct column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask()])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    expect(screen.getAllByText('No tasks')).toHaveLength(4)
+  })
+
+  it('shows contractor name when present', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ contractor_id: 'c1' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument())
+  })
+
+  it('excludes discarded tasks', async () => {
+    mockListTasksByProject.mockResolvedValue([
+      makeTask({ status: 'discarded', title: 'Hidden task' }),
+    ])
+    render(<Board />)
+    await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(5))
+    expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
+  })
+
+  it('shows tasks error when fetch fails', async () => {
+    mockListTasksByProject.mockRejectedValue(new Error('fail'))
+    render(<Board />)
+    await waitFor(() =>
+      expect(screen.getByText('Failed to load tasks')).toBeInTheDocument()
+    )
+  })
+
+  it('subscribes to task changes for the selected project', async () => {
+    render(<Board />)
+    await waitFor(() =>
+      expect(mockSubscribeToTaskChanges).toHaveBeenCalledWith('p1', expect.any(Function))
+    )
+  })
+
+  it('adds an inserted task to the board', async () => {
+    let changeCallback: ((e: TaskChangeEvent) => void) | null = null
+    mockSubscribeToTaskChanges.mockImplementation((_id, cb) => {
+      changeCallback = cb
+      return vi.fn()
+    })
+
+    render(<Board />)
+    await waitFor(() => expect(changeCallback).not.toBeNull())
+
+    act(() => changeCallback!({ eventType: 'INSERT', record: makeTask({ title: 'New task' }) }))
+    expect(screen.getByText('New task')).toBeInTheDocument()
+  })
+
+  it('removes a deleted task from the board', async () => {
+    const task = makeTask()
+    mockListTasksByProject.mockResolvedValue([task])
+    let changeCallback: ((e: TaskChangeEvent) => void) | null = null
+    mockSubscribeToTaskChanges.mockImplementation((_id, cb) => {
+      changeCallback = cb
+      return vi.fn()
+    })
+
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    act(() => changeCallback!({ eventType: 'DELETE', id: 't1' }))
+    expect(screen.queryByText('Paint walls')).not.toBeInTheDocument()
   })
 })

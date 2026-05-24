@@ -79,3 +79,45 @@ describe('TaskCard', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 })
+
+describe('TaskCard — hold toggle', () => {
+  it('shows hold button for in_progress task', () => {
+    render(<TaskCard {...defaultProps} task={{ ...task, status: 'in_progress' }} />)
+    expect(screen.getByRole('button', { name: /put task on hold/i })).toBeInTheDocument()
+  })
+
+  it('shows hold button for on_hold task', () => {
+    render(<TaskCard {...defaultProps} task={{ ...task, status: 'on_hold' }} />)
+    expect(screen.getByRole('button', { name: /resume task/i })).toBeInTheDocument()
+  })
+
+  it('does not show hold button for other statuses', () => {
+    for (const status of ['ideation', 'planned', 'ready', 'done', 'discarded']) {
+      const { unmount } = render(<TaskCard {...defaultProps} task={{ ...task, status }} />)
+      expect(screen.queryByRole('button', { name: /put task on hold|resume task/i })).not.toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('calls onStatusChange with on_hold when hold is clicked on an in_progress task', async () => {
+    const onStatusChange = vi.fn()
+    const inProgressTask = { ...task, status: 'in_progress' }
+    render(<TaskCard {...defaultProps} task={inProgressTask} onStatusChange={onStatusChange} />)
+    await userEvent.click(screen.getByRole('button', { name: /put task on hold/i }))
+    expect(onStatusChange).toHaveBeenCalledWith(inProgressTask, 'on_hold')
+  })
+
+  it('calls onStatusChange with in_progress when hold is clicked on an on_hold task', async () => {
+    const onStatusChange = vi.fn()
+    const onHoldTask = { ...task, status: 'on_hold' }
+    render(<TaskCard {...defaultProps} task={onHoldTask} onStatusChange={onStatusChange} />)
+    await userEvent.click(screen.getByRole('button', { name: /resume task/i }))
+    expect(onStatusChange).toHaveBeenCalledWith(onHoldTask, 'in_progress')
+  })
+
+  it('disables prev and next buttons when task is on_hold', () => {
+    render(<TaskCard {...defaultProps} task={{ ...task, status: 'on_hold' }} prevStatus="ready" nextStatus="done" />)
+    expect(screen.getByRole('button', { name: /previous status/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /next status/i })).toBeDisabled()
+  })
+})

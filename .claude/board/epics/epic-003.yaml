@@ -26,7 +26,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: READY
+    status: DONE
     title: Schema migration
     description: |
       Single migration file defining all six tables:

@@ -34,11 +34,11 @@ tickets:
     scope: supabase
     status: IN PROGRESS
     title: Add optional seed parameter to migrate-db workflow
-    description: Add an optional boolean input `seed` to the migrate-db workflow_dispatch. Seeding uses `supabase db reset --linked` (drops schema, replays all migrations, applies seed.sql) and is dev-only. The workflow splits into three jobs — validate, migrate, reset — where migrate and reset are mutually exclusive based on the seed flag. The redundant truncate at the top of seed.sql is removed since db reset always starts from a clean slate.
+    description: Add tag push trigger and an optional `seed` boolean to migrate-db. Tag push auto-migrates prd (consistent with deploy-app.yml). Manual dispatch is dev-only — no environment input, prd is unreachable by design. Seeding uses `supabase db reset --linked` (drops schema, replays all migrations, applies seed.sql). The redundant truncate at the top of seed.sql is removed since db reset always starts from a clean slate.
     acceptance_criteria:
-      - workflow_dispatch gains an optional boolean input `seed` (default false)
-      - validate job runs first and fails immediately with a clear error if seed is true and env is not dev
-      - when seed is false, migrate job runs supabase db push --linked (identical behaviour to today)
-      - when seed is true and env is dev, reset job runs supabase db reset --linked (drops schema, replays migrations, applies seed.sql)
-      - migrate and reset are mutually exclusive — only one runs per dispatch
+      - tag push triggers migrate job against prd automatically (consistent with deploy-app.yml)
+      - workflow_dispatch gains an optional boolean input `seed` (default false); no environment input — dispatch always targets dev
+      - when seed is false, migrate job runs supabase db push --linked
+      - when seed is true, reset job runs supabase db reset --linked against dev (drops schema, replays migrations, applies seed.sql)
+      - migrate and reset are mutually exclusive — only one runs per trigger
       - truncate statement removed from seed.sql (redundant under db reset)

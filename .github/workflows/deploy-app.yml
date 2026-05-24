@@ -11,17 +11,20 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    defaults:
-      run:
-        working-directory: app
     steps:
       - name: Guard — disallow dispatch from main or a tag
         if: github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || startsWith(github.ref, 'refs/tags/'))
         run: echo "Dispatch from main or from a tag is forbidden. Dispatch from a feature branch for preview builds or push a new CalVer tag for production." && exit 1
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -36,12 +39,27 @@ jobs:
           VITE_SUPABASE_URL: ${{ github.ref_type == 'tag' && secrets.VITE_SUPABASE_URL_PRD || secrets.VITE_SUPABASE_URL_DEV }}
           VITE_SUPABASE_ANON_KEY: ${{ github.ref_type == 'tag' && secrets.VITE_SUPABASE_ANON_KEY_PRD || secrets.VITE_SUPABASE_ANON_KEY_DEV }}
           VITE_ALLOWED_EMAILS: ${{ github.ref_type == 'tag' && secrets.VITE_ALLOWED_EMAILS_PRD || secrets.VITE_ALLOWED_EMAILS_DEV }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: app/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: app/dist
       - name: Deploy to Cloudflare Pages
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then BRANCH=main
           else BRANCH="${{ github.ref_name }}"
           fi
-          npx wrangler pages deploy dist --project-name=patos --branch="$BRANCH"
+          npx wrangler pages deploy app/dist --project-name=patos --branch="$BRANCH"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

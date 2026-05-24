@@ -1,4 +1,5 @@
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider } from './context/AuthContext'
+import { useAuth } from './context/useAuth'
 import { SignIn } from './pages/SignIn'
 
 function AppContent() {

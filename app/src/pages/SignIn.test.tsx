@@ -2,7 +2,7 @@ import { render, waitFor } from '@testing-library/react'
 import { expect, test, vi, type Mock } from 'vitest'
 import { SignIn } from './SignIn'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
@@ -13,7 +13,7 @@ vi.mock('../lib/supabase', () => ({
   allowedEmails: [],
 }))
 
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: vi.fn(),
 }))
 

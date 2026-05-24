@@ -66,7 +66,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: DONE
     title: Status transitions
     description: Add prev/next status controls to each task card so the user can move a task to an adjacent non-discarded status without opening the detail modal. Optimistic update with rollback on error.
     acceptance_criteria:
@@ -74,6 +74,8 @@ tickets:
       - tapping a control calls tasksService.updateTask and moves the card to the correct column immediately (optimistic)
       - on error the card reverts to its original column and an error state is shown
       - discarded is never offered as a transition target from these controls
+      - transitioning to in_progress sets actual_start to today if not already set
+      - transitioning to done sets actual_end to today if not already set
 
   - id: T6
     type: feat

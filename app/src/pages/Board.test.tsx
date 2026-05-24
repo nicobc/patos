@@ -15,12 +15,13 @@ vi.mock('../services/tasksService', () => ({
 
 import { listProjects } from '../services/projectsService'
 import { listContractors } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges } from '../services/tasksService'
+import { listTasksByProject, subscribeToTaskChanges, updateTask } from '../services/tasksService'
 
-const mockListProjects          = vi.mocked(listProjects)
-const mockListContractors       = vi.mocked(listContractors)
-const mockListTasksByProject    = vi.mocked(listTasksByProject)
+const mockListProjects           = vi.mocked(listProjects)
+const mockListContractors        = vi.mocked(listContractors)
+const mockListTasksByProject     = vi.mocked(listTasksByProject)
 const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
+const mockUpdateTask             = vi.mocked(updateTask)
 
 const projects = [
   { id: 'p1', name: 'Short-term reno', description: null, created_at: '' },
@@ -46,6 +47,7 @@ beforeEach(() => {
   mockListContractors.mockResolvedValue(contractors)
   mockListTasksByProject.mockResolvedValue([])
   mockSubscribeToTaskChanges.mockReturnValue(vi.fn())
+  mockUpdateTask.mockResolvedValue(makeTask())
 })
 
 describe('Board — project selector', () => {
@@ -171,5 +173,50 @@ describe('Board — task cards', () => {
 
     act(() => changeCallback!({ eventType: 'DELETE', id: 't1' }))
     expect(screen.queryByText('Paint walls')).not.toBeInTheDocument()
+  })
+})
+
+describe('Board — status transitions', () => {
+  it('optimistically moves a card to the next column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
+    mockUpdateTask.mockResolvedValue(makeTask({ status: 'planned' }))
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'planned' })
+    )
+  })
+
+  it('prev button is disabled in ideation column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /previous status/i })).toBeDisabled()
+  })
+
+  it('next button is disabled in done column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'done' })])
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /next status/i })).toBeDisabled()
+  })
+
+  it('re-fetches from server and shows error on transition failure', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
+    mockUpdateTask.mockRejectedValue(new Error('network error'))
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/failed to move task/i)).toBeInTheDocument()
+    )
+    expect(mockListTasksByProject).toHaveBeenCalledTimes(2)
   })
 })

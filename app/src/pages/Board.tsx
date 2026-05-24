@@ -3,6 +3,7 @@ import { listProjects, type Project } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
 import { listTasksByProject, subscribeToTaskChanges, type Task, type TaskChangeEvent } from '../services/tasksService'
 import { TaskCard } from './TaskCard'
+import { TaskDetail } from './TaskDetail'
 import './Board.css'
 
 const COLUMNS = [
@@ -35,7 +36,8 @@ export function Board() {
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [projectsError, setProjectsError]     = useState<string | null>(null)
-  const [tasksResult, setTasksResult] = useState<TasksResult | null>(null)
+  const [tasksResult, setTasksResult]   = useState<TasksResult | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   // Derived task state — no synchronous setState needed in effects
   const tasksLoading = tasksResult === null ||
@@ -82,6 +84,18 @@ export function Board() {
   const contractorName = (id: string | null) =>
     id ? (contractors.find((c) => c.id === id)?.name ?? null) : null
 
+  if (selectedTask) {
+    return (
+      <div className="board">
+        <TaskDetail
+          task={selectedTask}
+          contractorName={contractorName(selectedTask.contractor_id)}
+          onBack={() => setSelectedTask(null)}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="board">
       <div className="board-toolbar">
@@ -115,7 +129,7 @@ export function Board() {
                       key={task.id}
                       task={task}
                       contractorName={contractorName(task.contractor_id)}
-                      onSelect={() => {}}
+                      onSelect={setSelectedTask}
                     />
                   ))
                 )}

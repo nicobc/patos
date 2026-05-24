@@ -1,0 +1,2 @@
+-- Seed data — fake only, no real names, emails, costs, or phone numbers.
+-- Idempotent: safe to re-run.

@@ -1,5 +1,10 @@
 {
   "permissions": {
+    "deny": [
+      "Bash(cat app/.env*)",
+      "Bash(cat:app/.env*)",
+      "Read(app/.env*)"
+    ],
     "ask": [
       "Edit(.claude/**)"
     ],

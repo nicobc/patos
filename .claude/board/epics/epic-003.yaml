@@ -2,11 +2,85 @@ id: EPIC-003
 title: Data model
 scope: data-model
 category: infrastructure
-status: IDEATION
-description: Supabase project setup, schema design for rooms, tasks, phases, costs, contractors, and task dependencies. Migrations, TypeScript type generation via supabase gen types, RLS policies (owners only), and fake seed data for development.
+status: IN PROGRESS
+description: Supabase CLI setup, schema migrations for projects, spaces, contractors, tasks, task_spaces (junction), and task_deps (edge table). RLS policies (authenticated read/write, anon denied), TypeScript type generation, and fake seed data for development.
 notes:
-  - schema must support both Kanban (EPIC-003) and cost tracker (EPIC-005) without a redesign — think through both before committing to migrations
-  - dependency representation (task → task edges) must support the DAG resolver in EPIC-004
+  - schema is the contract for all subsequent epics — do not start EPIC-004 or later until T4 (types) is DONE
+  - one normalized schema serves both the Kanban board and cost tracker; no separate DM
+  - dependency representation is a task_deps edge table (task_id, depends_on_task_id) with no room/space scoping — cross-space deps are allowed
   - fake seed data only — no real renovation data ever in the repo
+  - remote-only workflow (no local Docker); supabase CLI pushes directly to the remote project
+  - supabase/ directory lives at repo root; type generation output lands in app/src/types/database.ts
 
-tickets: []
+tickets:
+  - id: T1
+    type: chore
+    status: DONE
+    title: Supabase CLI init and project link
+    description: Initialise the Supabase CLI at repo root, link to the existing remote project, gitignore transient files, and wire up db:push, types:gen, and db:seed scripts.
+    acceptance_criteria:
+      - supabase/ directory created at repo root via supabase init
+      - project linked to remote via supabase link
+      - supabase/.temp and supabase/seed.sql excluded from git appropriately (seed tracked, .temp not)
+      - root-level package.json (or app/package.json) exposes db:push, types:gen, db:seed scripts runnable from repo root
+
+  - id: T2
+    type: feat
+    status: READY
+    title: Schema migration
+    description: |
+      Single migration file defining all six tables:
+        projects   — id uuid pk, name text not null, description text, created_at timestamptz
+        spaces     — id uuid pk, name text not null, zone text check (zone in ('day','night')), created_at timestamptz
+        contractors — id uuid pk, name text not null, email text, phone text, created_at timestamptz
+        tasks      — id uuid pk, title text not null, description text,
+                     project_id uuid references projects(id),
+                     owner_id uuid references auth.users(id),
+                     contractor_id uuid references contractors(id),
+                     expected_cost numeric(10,2), actual_cost numeric(10,2),
+                     expected_duration_days integer,
+                     actual_start date, actual_end date,
+                     status text not null default 'ideation'
+                       check (status in ('ideation','planned','ready','in_progress','done','discarded')),
+                     created_at timestamptz
+        task_spaces — task_id uuid references tasks(id), space_id uuid references spaces(id), primary key (task_id, space_id)
+        task_deps   — task_id uuid references tasks(id), depends_on_task_id uuid references tasks(id), primary key (task_id, depends_on_task_id)
+      Indexes on all FK columns (project_id, owner_id, contractor_id on tasks; task_id on task_spaces and task_deps).
+    acceptance_criteria:
+      - supabase db push applies cleanly against remote with no errors
+      - all six tables present with correct columns, types, and constraints
+      - FK indexes exist on all foreign key columns
+      - no renovation-specific language in table or column names
+
+  - id: T3
+    type: feat
+    status: READY
+    title: RLS policies
+    description: Enable RLS on all six tables. Authenticated users may select, insert, update, and delete any row. Anon role is denied all access. No per-user row scoping — both owners see everything.
+    acceptance_criteria:
+      - RLS enabled on projects, spaces, contractors, tasks, task_spaces, task_deps
+      - authenticated role has full CRUD on all tables
+      - anon role has no access (verified by attempting a select without a session)
+      - policies applied in the same migration or a follow-on migration pushed cleanly
+
+  - id: T4
+    type: feat
+    status: READY
+    title: TypeScript type generation
+    description: Run supabase gen types typescript against the remote project and commit the output to app/src/types/database.ts. Add a types:gen npm script so types can be regenerated after future migrations.
+    acceptance_criteria:
+      - app/src/types/database.ts committed and reflects the T2 schema exactly
+      - types:gen script regenerates the file cleanly when run
+      - no manual edits to database.ts — it is machine-generated only
+
+  - id: T5
+    type: feat
+    status: READY
+    title: Seed data
+    description: SQL seed file with fake renovation data. Two projects (short-term, long-term). Five or six spaces (bathroom, kitchen, bedroom 1, bedroom 2, living room, hallway). Three or four contractors with name, email, and phone. Ten to fifteen tasks spread across projects and spaces, covering all status values, with a handful of task_deps edges to exercise the DAG.
+    acceptance_criteria:
+      - supabase/seed.sql applies cleanly via db:seed script
+      - seed is idempotent (safe to re-run without duplicate key errors)
+      - all status values represented across the seeded tasks
+      - at least three task_deps edges present
+      - no real names, emails, phone numbers, or cost figures — all fake

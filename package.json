@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "db:push": "supabase db push --linked",
+    "db:seed": "supabase db query --linked --file supabase/seed.sql",
+    "types:gen": "supabase gen types --linked --lang typescript > app/src/types/database.ts"
+  }
+}

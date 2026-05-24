@@ -1,13 +1,13 @@
 in_progress: []
-ready: []
+ready:
+  - id: EPIC-003
+    title: Data model
 done:
   - id: EPIC-002
     title: Auth
   - id: EPIC-001
     title: Site skeleton
 ideation:
-  - id: EPIC-003
-    title: Data model
   - id: EPIC-004
     title: Basic Kanban
   - id: EPIC-005

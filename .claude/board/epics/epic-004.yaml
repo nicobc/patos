@@ -105,10 +105,19 @@ tickets:
 
   - id: T8
     type: feat
-    status: IDEATION
+    status: READY
     title: Add status 'on hold'
-    description: Introduce an 'on_hold' status value between ready and in_progress. Update the board columns, status transition controls, and any status-aware logic accordingly.
-    acceptance_criteria: []
+    description: Introduce 'on_hold' as a status value reachable only from in_progress. on_hold tasks render in the in_progress column — no new board column. A stop-sign icon button on each in_progress/on_hold card toggles the hold state. All on_hold transitions are recorded by the existing trigger, enabling future KPI computation (e.g. cost per active day).
+    acceptance_criteria:
+      - migration adds 'on_hold' to the check constraint on tasks.status and task_status_history.status; no other schema changes needed — the existing trigger records on_hold transitions automatically
+      - on_hold tasks render in the in_progress board column alongside in_progress tasks; no new column is added
+      - task cards with status in_progress or on_hold show a stop-sign FontAwesome icon button in the top-right corner
+      - icon color uses a fg design-system token at reduced opacity when status is in_progress; uses the accent color token when status is on_hold
+      - clicking the icon when status is in_progress calls tasksService.updateTask with status 'on_hold'; clicking when on_hold transitions back to in_progress; both use optimistic update with rollback on error
+      - prev/next transition controls are disabled while status is on_hold
+      - on_hold ↔ in_progress transitions do not modify actual_start or actual_end
+      - on_hold is not reachable from any status other than in_progress and is not offered via prev/next controls or any other transition path
+      - the edit form status dropdown includes on_hold; it is only selectable when the task's current status is in_progress or on_hold
 
   - id: T9
     type: feat

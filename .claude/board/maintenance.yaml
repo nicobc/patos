@@ -34,9 +34,11 @@ tickets:
     scope: supabase
     status: IN PROGRESS
     title: Add optional seed parameter to migrate-db workflow
-    description: Add an optional boolean input `seed` to the migrate-db workflow_dispatch. When true, run the seed script after migrations complete. Guard against accidental seeding in production — if `seed` is true and the selected environment is not `dev`, the job must fail immediately with a clear error.
+    description: Add an optional boolean input `seed` to the migrate-db workflow_dispatch. Seeding uses `supabase db reset --linked` (drops schema, replays all migrations, applies seed.sql) and is dev-only. The workflow splits into three jobs — validate, migrate, reset — where migrate and reset are mutually exclusive based on the seed flag. The redundant truncate at the top of seed.sql is removed since db reset always starts from a clean slate.
     acceptance_criteria:
       - workflow_dispatch gains an optional boolean input `seed` (default false)
-      - when seed is false the workflow behaves identically to today
-      - when seed is true and env is dev, the seed script runs after migrations complete successfully
-      - when seed is true and env is not dev, the job fails immediately with a descriptive error message before any migration or seeding runs
+      - validate job runs first and fails immediately with a clear error if seed is true and env is not dev
+      - when seed is false, migrate job runs supabase db push --linked (identical behaviour to today)
+      - when seed is true and env is dev, reset job runs supabase db reset --linked (drops schema, replays migrations, applies seed.sql)
+      - migrate and reset are mutually exclusive — only one runs per dispatch
+      - truncate statement removed from seed.sql (redundant under db reset)

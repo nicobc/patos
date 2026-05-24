@@ -15,7 +15,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: IN PROGRESS
+    status: DONE
     title: Service layer
     description: Create src/services/projectsService.ts, src/services/tasksService.ts, and src/services/contractorsService.ts with typed functions wrapping Supabase calls. No UI changes. Establishes the I/O isolation pattern — all subsequent tickets import from these modules; no component or hook touches lib/supabase.ts directly.
     acceptance_criteria:

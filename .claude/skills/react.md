@@ -2,6 +2,10 @@
 
 MUST follow idiomatic conventions for the tools and libraries in use.
 
+## Mobile first
+
+The app is mobile-first. Never use modals for multi-field forms or navigational flows — render an inline page instead (same pattern as the task detail view in the board). Modals are acceptable only for simple single-action confirmations (e.g. "Delete this task?").
+
 ## Single-action flows
 
 Don't add a confirmation screen or button for an action that has no alternative. If there is only one thing the user can do, do it directly — an extra click is pure friction. Trigger the action on mount instead of rendering a button.

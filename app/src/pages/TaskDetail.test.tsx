@@ -80,6 +80,13 @@ describe('TaskDetail — navigation', () => {
     await userEvent.click(screen.getByRole('button', { name: /board/i }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
+
+  it('Edit button calls onEdit', async () => {
+    const onEdit = vi.fn()
+    render(<TaskDetail task={task} contractorName={null} onBack={vi.fn()} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(onEdit).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('TaskDetail — discard', () => {

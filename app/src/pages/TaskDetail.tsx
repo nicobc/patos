@@ -15,9 +15,10 @@ interface Props {
   task: Task
   contractorName: string | null
   onBack: () => void
+  onEdit?: () => void
 }
 
-export function TaskDetail({ task, contractorName, onBack }: Props) {
+export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export function TaskDetail({ task, contractorName, onBack }: Props) {
     <div className="task-detail">
       <div className="task-detail-toolbar">
         <button className="btn-ghost task-detail-back" onClick={onBack}>← Board</button>
-        <button className="btn-outline" onClick={() => {}}>Edit</button>
+        <button className="btn-outline" onClick={onEdit}>Edit</button>
       </div>
 
       <h2 className="task-detail-title">{task.title}</h2>

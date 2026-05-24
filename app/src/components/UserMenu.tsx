@@ -37,7 +37,7 @@ export function UserMenu() {
       </button>
 
       {open && (
-        <div className="user-menu-dropdown">
+        <div className="user-menu-dropdown dropdown">
           <button className="btn-ghost user-menu-signout" onClick={signOut}>
             <FontAwesomeIcon icon={faRightFromBracket} />
             Sign out

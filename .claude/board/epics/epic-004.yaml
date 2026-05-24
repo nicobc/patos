@@ -79,7 +79,7 @@ tickets:
 
   - id: T6
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: Task create and edit
     description: Shared modal form for creating a new task (+ button on the board) and editing an existing task (edit button in the detail modal). On create, project_id is set from the selected project and owner_id from the auth context.
     acceptance_criteria:

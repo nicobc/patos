@@ -121,10 +121,18 @@ tickets:
 
   - id: T9
     type: feat
-    status: IDEATION
+    status: READY
     title: Manage contractors
-    description: Inline page (no modal) for managing the contractor list. Accessible from the board header. Supports adding, editing, and deleting contractors. Each contractor has name, email, and phone number fields.
-    acceptance_criteria: []
+    description: Settings surface entry point (gear icon in board toolbar) and contractor CRUD. The gear icon navigates to an inline settings page; the Contractors section is the only content until T11 ships. Manage projects is added in T11.
+    acceptance_criteria:
+      - gear icon button added to the board toolbar (right side of the toolbar row); navigates to an inline settings page with a ← Board back button
+      - settings page renders a Contractors section listing all contractors (name, email, phone) fetched via contractorsService.listContractors
+      - each contractor row has Edit and Delete buttons
+      - Edit navigates to an inline contractor form (← Settings back) with name (required), email, phone pre-filled; save calls contractorsService.updateContractor and returns to the settings page
+      - Add contractor button opens the same form empty; save calls contractorsService.createContractor and returns to the settings page
+      - Delete: calls contractorsService.countTasksByContractor first; if count > 0 shows a block message ("N tasks are assigned to this contractor — reassign them before deleting") with no destructive action available; if count is 0 shows a soft confirmation before calling contractorsService.deleteContractor
+      - contractorsService gains createContractor(data), updateContractor(id, data), deleteContractor(id), countTasksByContractor(id) with typed signatures derived from database.ts
+      - unit tests cover all four new service functions
 
   - id: T10
     type: feat
@@ -132,3 +140,19 @@ tickets:
     title: Task dependencies
     description: Allow tasks to declare which other tasks they are blocked by. The edit form gains a "Blocked by" multi-select (writable) scoped to the current project's tasks. TaskDetail gains a read-only "Blocks" field showing tasks that depend on this one. Backed by the existing task_deps table.
     acceptance_criteria: []
+
+  - id: T11
+    type: feat
+    status: READY
+    title: Manage projects
+    description: Projects section added to the existing settings page (above Contractors). Full CRUD with a two-tier delete confirmation — soft confirmation when the project has no tasks, hard confirmation (must type "delete") when tasks exist. Migration changes tasks.project_id to ON DELETE CASCADE so a confirmed hard delete removes all tasks atomically via the DB.
+    acceptance_criteria:
+      - migration alters the tasks.project_id FK from NO ACTION to ON DELETE CASCADE
+      - settings page gains a Projects section above the Contractors section, listing all projects (name, description) fetched via projectsService.listProjects
+      - each project row has Edit and Delete buttons
+      - Edit navigates to an inline project form (← Settings back) with name (required) and description pre-filled; save calls projectsService.updateProject and returns to the settings page
+      - Add project button opens the same form empty; save calls projectsService.createProject and returns to the settings page
+      - Delete: calls projectsService.countTasksByProject first; if count is 0 shows a soft confirmation ("Delete project?") before calling projectsService.deleteProject; if count > 0 shows a hard confirmation warning that all tasks will be permanently deleted and requires the user to type "delete" before the confirm button is enabled
+      - on successful project deletion the board reloads the project list; if the deleted project was selected the board clears to an empty/unselected state
+      - projectsService gains createProject(data), updateProject(id, data), deleteProject(id), countTasksByProject(id) with typed signatures derived from database.ts
+      - unit tests cover all four new service functions

@@ -1,17 +1,14 @@
 name: DB Migrate
 
 on:
+  push:
+    tags:
+      - 'v20[2-9][0-9].0[1-9].[0-9]*'
+      - 'v20[2-9][0-9].1[0-2].[0-9]*'
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        type: choice
-        options:
-          - dev
-          - prd
       seed:
-        description: 'Reset and re-seed database (dev only)'
+        description: 'Reset and re-seed dev database'
         required: false
         type: boolean
         default: false
@@ -20,17 +17,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Guard — reset is dev-only
-        if: ${{ inputs.seed && inputs.environment != 'dev' }}
-        run: |
-          echo "::error::seed=true is only permitted for the dev environment (got: ${{ inputs.environment }})"
-          exit 1
-
   migrate:
-    needs: validate
     if: ${{ !inputs.seed }}
     runs-on: ubuntu-latest
     steps:
@@ -44,10 +31,9 @@ jobs:
           supabase db push --linked
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          PROJECT_REF: ${{ inputs.environment == 'prd' && secrets.SUPABASE_PROJECT_ID_PRD || secrets.SUPABASE_PROJECT_ID_DEV }}
+          PROJECT_REF: ${{ github.ref_type == 'tag' && secrets.SUPABASE_PROJECT_ID_PRD || secrets.SUPABASE_PROJECT_ID_DEV }}
 
   reset:
-    needs: validate
     if: ${{ inputs.seed }}
     runs-on: ubuntu-latest
     steps:

@@ -34,16 +34,16 @@ tickets:
       - .env.local present in .gitignore
   - id: T3
     type: feat
-    status: READY
+    status: TESTING
     title: Magic link sign-in page and auth state
-    description: Sign-in form that triggers a magic link email. App-level allowlist check against VITE_ALLOWED_EMAILS before calling signInWithOtp. Auth state management — session persistence across page loads, sign-out.
+    description: Google OAuth sign-in (both users have Gmail). Auto-redirects to Google on load — no UI shown. Allowlist check in AuthContext post-auth; non-allowlisted accounts are signed out and redirected to Google account picker. Auth state management — session persistence across page loads, sign-out.
     acceptance_criteria:
-      - sign-in page accepts an email and submits a magic link request
-      - email rejected with an error if not in VITE_ALLOWED_EMAILS — no magic link sent
-      - confirmation message shown after successful submission
-      - clicking the magic link establishes a session
+      - opening the app unauthenticated redirects immediately to Google OAuth
+      - session established after Google auth completes
+      - non-allowlisted Google account is signed out and Google account picker shown
       - session persists across page reloads
-      - sign-out clears the session and redirects to sign-in
+      - sign-out clears the session and triggers Google OAuth again
+      - App.test.tsx updated to mock supabase and verify OAuth is triggered
   - id: T4
     type: feat
     status: READY

@@ -9,6 +9,13 @@ vi.mock('../lib/supabase', () => ({
 }))
 vi.mock('../services/projectsService', () => ({ listProjects: vi.fn() }))
 vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
+vi.mock('../services/contractorsService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../services/contractorsService')>()
+  return { ...actual, listContractors: vi.fn() }
+})
+vi.mock('../pages/Settings', () => ({ Settings: ({ onBack }: { onBack: () => void }) =>
+  <div><span>Settings page</span><button onClick={onBack}>← Board</button></div>
+}))
 vi.mock('../services/tasksService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/tasksService')>()
   return {
@@ -55,6 +62,23 @@ beforeEach(() => {
   mockListTasksByProject.mockResolvedValue([])
   mockSubscribeToTaskChanges.mockReturnValue(vi.fn())
   mockUpdateTask.mockResolvedValue(makeTask())
+})
+
+describe('Board — settings', () => {
+  it('navigates to settings when gear icon is clicked', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /settings/i }))
+    await userEvent.click(screen.getByRole('button', { name: /settings/i }))
+    expect(screen.getByText('Settings page')).toBeInTheDocument()
+  })
+
+  it('returns to board when back is clicked from settings', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /settings/i }))
+    await userEvent.click(screen.getByRole('button', { name: /settings/i }))
+    await userEvent.click(screen.getByRole('button', { name: /← board/i }))
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+  })
 })
 
 describe('Board — project selector', () => {

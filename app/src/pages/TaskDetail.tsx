@@ -104,7 +104,7 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
                 Cancel
               </button>
               <button
-                className="btn-primary task-detail-confirm--danger"
+                className="btn-danger"
                 onClick={commit}
                 disabled={loading}
               >

@@ -29,6 +29,17 @@
   gap: 0.75rem;
 }
 
+.board-toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .btn-icon {
+    padding: 0.45rem 0.625rem;
+  }
+}
+
 .board-select {
   width: auto;
   min-width: 180px;

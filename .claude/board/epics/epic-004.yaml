@@ -53,15 +53,15 @@ tickets:
 
   - id: T4
     type: feat
-    status: READY
-    title: Task detail modal
-    description: Modal that opens when a task card is clicked. Displays all task fields read-only. Includes a discard action (sets status to discarded) and a delete action (removes the row). Wires up the onSelect callback from T3. Entry point for the edit flow in T6.
+    status: IN PROGRESS
+    title: Task detail view
+    description: Inline detail view that replaces the board when a task card is clicked. Displays all task fields read-only. Includes a discard action (sets status to discarded) and a delete action (removes the row). Wires up the onSelect callback from T3. Entry point for the edit flow in T6.
     acceptance_criteria:
-      - modal renders title, description, contractor, expected_cost, actual_cost, expected_duration_days, actual_start, actual_end, status, and created_at
-      - discard action calls tasksService.updateTask with status 'discarded'; task is removed from board on success
-      - delete action calls tasksService.deleteTask; task is removed from board on success
+      - detail view renders title, description, contractor, expected_cost, actual_cost, expected_duration_days, actual_start, actual_end, status, and created_at
+      - discard action calls tasksService.updateTask with status 'discarded'; navigates back to board on success
+      - delete action calls tasksService.deleteTask; navigates back to board on success
       - both destructive actions require an explicit confirmation step before executing
-      - modal is dismissible via backdrop click and a close button
+      - back button returns to the board without performing any action
       - edit button is present (wired to no-op until T6 is merged)
 
   - id: T5

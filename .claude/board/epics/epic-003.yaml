@@ -2,7 +2,7 @@ id: EPIC-003
 title: Data model
 scope: data-model
 category: infrastructure
-status: IN PROGRESS
+status: DONE
 description: Supabase CLI setup, schema migrations for projects, spaces, contractors, tasks, task_spaces (junction), and task_deps (edge table). RLS policies (authenticated read/write, anon denied), TypeScript type generation, and fake seed data for development.
 notes:
   - schema is the contract for all subsequent epics — do not start EPIC-004 or later until T4 (types) is DONE
@@ -75,7 +75,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: DONE
     title: Seed data
     description: SQL seed file with fake renovation data. Two projects (short-term, long-term). Five or six spaces (bathroom, kitchen, bedroom 1, bedroom 2, living room, hallway). Three or four contractors with name, email, and phone. Ten to fifteen tasks spread across projects and spaces, covering all status values, with a handful of task_deps edges to exercise the DAG.
     acceptance_criteria:

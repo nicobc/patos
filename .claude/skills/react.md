@@ -14,6 +14,10 @@ Don't add a confirmation screen or button for an action that has no alternative.
 
 Supabase calls live exclusively in `src/services/` modules (e.g. `projectsService.ts`, `tasksService.ts`). Components and hooks import from services only — never from `lib/supabase.ts` directly. Service functions return typed data using the generated `src/types/database.ts` types. Unit tests mock the service module, not the Supabase client.
 
+## Real-time multi-user design
+
+Design services for concurrent users from the start. Every table that drives UI state needs a `subscribeTo*Changes` counterpart — not just the primary entity table but also join/relation tables (e.g. `task_deps`) whose mutations affect visible state. Subscriptions filter server-side where possible and client-side otherwise; callbacks carry enough context (affected id + event type) to update local state surgically without a full refetch. Never assume a single active session.
+
 ## CSS
 
 Component-specific styles live in a colocated `.css` file next to the component (e.g. `SignIn.css` next to `SignIn.tsx`) and are imported directly in that file. `index.css` is reserved for design-system primitives only: tokens, resets, base elements, and utility classes that are genuinely reusable across the entire app. If a style only applies to one component, it does not belong in `index.css`.

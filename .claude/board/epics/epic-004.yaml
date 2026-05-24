@@ -136,10 +136,22 @@ tickets:
 
   - id: T10
     type: feat
-    status: IDEATION
+    status: READY
     title: Task dependencies
     description: Allow tasks to declare which other tasks they are blocked by. The edit form gains a "Blocked by" multi-select (writable) scoped to the current project's tasks. TaskDetail gains a read-only "Blocks" field showing tasks that depend on this one. Backed by the existing task_deps table.
-    acceptance_criteria: []
+    acceptance_criteria:
+      - migration drops 'ready' from the check constraint on tasks.status and task_status_history.status; seed.sql updated to replace all 'ready' values with 'planned'
+      - the board removes the ready column entirely; the five visible columns become ideation, planned, in_progress (includes on_hold tasks), done — four columns total; all board logic, transition maps, and column ordering updated accordingly
+      - tasksService gains listBlockers(taskId) returning Task[] (tasks this task depends on), listBlocks(taskId) returning Task[] (tasks that depend on this task), and setBlockers(taskId, blockerIds[]) replacing the full blocker set atomically; all three have typed signatures derived from database.ts
+      - unit tests cover listBlockers, listBlocks, and setBlockers with a mocked Supabase client
+      - the edit form gains a "Blocked by" closed multi-select populated from all tasks in the current project except the task being edited; options are grouped into two sections — active statuses (ideation, planned, in_progress, on_hold) and a visually separated completed section (done, discarded); currently selected blockers are pre-checked on open
+      - saving the edit form calls setBlockers with the selected ids; an empty selection calls setBlockers with an empty array (removes all blockers)
+      - TaskDetail gains a read-only "Blocks" section listing tasks that depend on this task (titles only), fetched via listBlocks; section is omitted when the list is empty
+      - board cards with at least one blocker not in done status show a lock icon (FontAwesome); the lock icon and the on_hold stop-sign icon share identical size, padding, and positioning treatment — they form a consistent icon family in the card
+      - transitioning a task to in_progress via the card prev/next controls when it has at least one blocker not in done shows an inline warning naming the unresolved blockers, with a confirm CTA to proceed and a cancel CTA to abort; confirming executes the transition normally
+      - transitioning a task to in_progress via the edit form status dropdown under the same condition shows the same warning + confirm/cancel before the save completes; cancelling leaves the form open with the previous status restored
+      - the edit form status dropdown removes 'ready' as a selectable option
+      - tasksService gains subscribeToDepsChanges(projectId, callback) returning an unsubscribe function; it subscribes to INSERT and DELETE events on task_deps, filters client-side to rows whose task_id belongs to the current project's tasks, and invokes the callback with the affected task_id and event type so the board can refresh blocker state for that card without a full refetch; unit test covers the subscription with a mocked Supabase client
 
   - id: T11
     type: feat

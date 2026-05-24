@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listProjects, type Project } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges, type Task, type TaskChangeEvent } from '../services/tasksService'
+import { listTasksByProject, subscribeToTaskChanges, updateTask, type Task, type TaskChangeEvent } from '../services/tasksService'
 import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import './Board.css'
@@ -13,6 +13,8 @@ const COLUMNS = [
   { status: 'in_progress', label: 'In Progress' },
   { status: 'done',        label: 'Done'        },
 ] as const
+
+const STATUSES = COLUMNS.map((c) => c.status)
 
 type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
@@ -36,8 +38,9 @@ export function Board() {
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [projectsError, setProjectsError]     = useState<string | null>(null)
-  const [tasksResult, setTasksResult]   = useState<TasksResult | null>(null)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [tasksResult, setTasksResult]     = useState<TasksResult | null>(null)
+  const [selectedTask, setSelectedTask]   = useState<Task | null>(null)
+  const [transitionError, setTransitionError] = useState<string | null>(null)
 
   // Derived task state — no synchronous setState needed in effects
   const tasksLoading = tasksResult === null ||
@@ -78,6 +81,23 @@ export function Board() {
     )
   }, [selectedId])
 
+  function handleStatusChange(task: Task, newStatus: string) {
+    setTransitionError(null)
+    setTasksResult((prev) => {
+      if (prev?.status !== 'ready') return prev
+      return { ...prev, items: prev.items.map((t) => t.id === task.id ? { ...t, status: newStatus } : t) }
+    })
+    updateTask(task.id, { status: newStatus }).catch(() => {
+      listTasksByProject(selectedId)
+        .then((data) => setTasksResult((prev) => {
+          if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev
+          return { ...prev, items: data.filter((t) => t.status !== 'discarded') }
+        }))
+        .catch(() => {})
+      setTransitionError('Failed to move task — refreshed from server')
+    })
+  }
+
   if (projectsLoading) return <p className="board-message">Loading…</p>
   if (projectsError)   return <p className="board-message board-message--error">{projectsError}</p>
 
@@ -110,6 +130,7 @@ export function Board() {
           ))}
         </select>
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
+        {transitionError && <p className="board-message board-message--error">{transitionError}</p>}
       </div>
 
       <div className="board-columns">
@@ -124,14 +145,20 @@ export function Board() {
                 ) : colTasks.length === 0 ? (
                   <p className="board-column-empty">No tasks</p>
                 ) : (
-                  colTasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      contractorName={contractorName(task.contractor_id)}
-                      onSelect={setSelectedTask}
-                    />
-                  ))
+                  colTasks.map((task) => {
+                    const idx = STATUSES.indexOf(task.status as typeof STATUSES[number])
+                    return (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        contractorName={contractorName(task.contractor_id)}
+                        prevStatus={idx > 0 ? STATUSES[idx - 1] : null}
+                        nextStatus={idx < STATUSES.length - 1 ? STATUSES[idx + 1] : null}
+                        onSelect={setSelectedTask}
+                        onStatusChange={handleStatusChange}
+                      />
+                    )
+                  })
                 )}
               </div>
             </div>

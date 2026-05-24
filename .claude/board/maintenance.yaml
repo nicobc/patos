@@ -2,7 +2,7 @@ tickets:
   - id: T1
     type: fix
     scope: deploy
-    status: IN PROGRESS
+    status: DONE
     title: Pass VITE_ env vars to GitHub Actions build
     description: Build runs on GitHub Actions, not CF Pages — VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_ALLOWED_EMAILS must be GitHub secrets threaded into the Build step. CF Pages env vars are never seen by this pipeline. Dev/prod separation is natural — .env.local holds dev values for local builds; GitHub secrets hold prod values for tag-triggered CI builds.
     acceptance_criteria:
@@ -10,3 +10,21 @@ tickets:
       - Build step in deploy-app.yml selects PRD set on tag push, DEV set otherwise
       - production deploy (tag) bakes prod values; preview deploy (dispatch) bakes dev values
       - dev Supabase project allows CF Pages preview redirect URL (*.patos.pages.dev)
+
+  - id: T2
+    type: ci
+    scope: supabase
+    status: TESTING
+    title: GHA workflow for DB migrations with env selector
+    description: |
+      workflow_dispatch workflow that links to the selected Supabase project and pushes
+      pending migrations. Environment input (dev | prd) selects the project ref via
+      SUPABASE_PROJECT_ID_PRD / SUPABASE_PROJECT_ID_DEV secrets. Auth via
+      SUPABASE_ACCESS_TOKEN. Replaces the manual `npm run db:push` step that was
+      previously run from a developer's laptop.
+    acceptance_criteria:
+      - .github/workflows/migrate-db.yml triggers on workflow_dispatch with environment input (dev | prd)
+      - dispatching with dev targets the dev project; prd targets the prod project
+      - workflow installs supabase CLI via supabase/setup-cli@v1 and authenticates via SUPABASE_ACCESS_TOKEN
+      - dispatching against a project with no pending migrations completes successfully (no-op is not an error)
+      - dispatching against a project with pending migrations applies them cleanly

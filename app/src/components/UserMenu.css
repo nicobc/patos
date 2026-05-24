@@ -1,0 +1,43 @@
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  opacity: var(--opacity-secondary);
+
+  &:hover { opacity: 1; }
+}
+
+.user-menu-chevron {
+  font-size: 0.65em;
+  transition: transform var(--transition-fast);
+
+  &.open { transform: rotate(180deg); }
+}
+
+.user-menu-dropdown {
+  position: fixed;
+  top: var(--nav-height);
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  height: var(--nav-height);
+  background: var(--bg);
+  border-left: 1px solid var(--border-faint);
+  border-bottom: 1px solid var(--border-faint);
+  border-radius: 0 0 0 var(--br-md);
+  z-index: 100;
+}
+
+.user-menu-signout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+}

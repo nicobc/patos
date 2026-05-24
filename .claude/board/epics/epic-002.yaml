@@ -2,14 +2,14 @@ id: EPIC-002
 title: Auth
 scope: auth
 category: infrastructure
-status: IN PROGRESS
-description: Supabase magic link auth for two users. Sign-in flow, session management, protected routes, and a welcome page that greets the authenticated user by name.
+status: DONE
+description: Supabase Google OAuth auth for two users. Sign-in flow, session management, protected routes, and an app shell with per-user menu.
 notes:
   - Supabase project creation is a manual prerequisite done via the dashboard — no emails in the repo
   - email allowlist is app-level (not dashboard — Supabase removed that feature): sign-in form checks submitted email against VITE_ALLOWED_EMAILS before calling signInWithOtp; env var keeps emails out of source
   - Cloudflare Access deliberately excluded — RLS + app-level allowlist is sufficient for the threat model (2 users, manual CRUD, no bank API)
   - depends on EPIC-001 — a live CF Pages URL is required to configure Supabase auth redirect URLs
-  - T5 (welcome page) is the end-to-end smoke test for the full auth flow
+  - T5 (app shell) is the end-to-end smoke test for the full auth flow
 
 tickets:
   - id: T1
@@ -55,10 +55,12 @@ tickets:
       - redirect preserves the intended destination after sign-in
   - id: T5
     type: feat
-    status: READY
-    title: Welcome page
-    description: Landing page post-auth. Reads display name from Supabase session and greets the user by name.
+    status: DONE
+    title: App shell
+    description: Persistent app shell post-auth. Mobile-first layout with bottom tab nav (Board, Costs) and header user menu showing first name. Desktop promotes to a thin icon sidebar. Lands directly on the Board.
     acceptance_criteria:
-      - authenticated user sees a personalised greeting using their display name
-      - page is only reachable when authenticated (protected by T4 wrapper)
-      - sign-out accessible from the welcome page
+      - authenticated user lands on the Board with no intermediate screen
+      - shell is only reachable when authenticated (protected by T4 wrapper)
+      - bottom tab nav visible on mobile; icon sidebar on desktop (≥768px)
+      - user first name shown in header as dropdown trigger
+      - sign-out accessible from the user menu dropdown

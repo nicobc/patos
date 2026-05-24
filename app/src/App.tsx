@@ -1,18 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { useAuth } from './context/useAuth'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AppShell } from './components/AppShell'
 import { SignIn } from './pages/SignIn'
-
-function Home() {
-  const { signOut } = useAuth()
-  return (
-    <main>
-      <h1>patos</h1>
-      <button className="btn-ghost" onClick={signOut}>Sign out</button>
-    </main>
-  )
-}
+import { Board } from './pages/Board'
 
 function App() {
   return (
@@ -21,7 +12,9 @@ function App() {
         <Routes>
           <Route path="/sign-in" element={<SignIn />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Home />} />
+            <Route element={<AppShell />}>
+              <Route path="/" element={<Board />} />
+            </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

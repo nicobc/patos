@@ -123,7 +123,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     <span className="settings-item-confirm-msg">Delete {c.name}?</span>
                     <div className="settings-item-confirm-actions">
                       <button className="btn-ghost" onClick={() => setDeleteState(null)}>Cancel</button>
-                      <button className="btn-primary" onClick={() => handleConfirmDelete(c.id)} disabled={deleting}>
+                      <button className="btn-danger" onClick={() => handleConfirmDelete(c.id)} disabled={deleting}>
                         {deleting ? '…' : 'Delete'}
                       </button>
                     </div>

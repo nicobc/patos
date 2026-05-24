@@ -32,13 +32,22 @@ tickets:
   - id: T3
     type: ci
     scope: supabase
-    status: IN PROGRESS
-    title: Add optional seed parameter to migrate-db workflow
-    description: Add tag push trigger and an optional `seed` boolean to migrate-db. Tag push auto-migrates prd (consistent with deploy-app.yml). Manual dispatch is dev-only — no environment input, prd is unreachable by design. Seeding uses `supabase db reset --linked` (drops schema, replays all migrations, applies seed.sql). The redundant truncate at the top of seed.sql is removed since db reset always starts from a clean slate.
+    status: DONE
+    title: CI workflow cleanup and migrate-db seed support
+    description: |
+      Broad CI cleanup pass across all three workflows plus the release script.
+      migrate-db: tag push auto-migrates prd (consistent with deploy-app); manual dispatch is dev-only with an optional seed boolean that triggers supabase db reset --linked instead of db push.
+      deploy-app: single job split into validate→build→deploy with dist artifact passed between jobs.
+      test-app: build-and-lint job renamed to test (reflects that build + lint + test all run).
+      scripts/create-release-tag.sh: renamed from tag-release.sh for clarity.
+      seed.sql: redundant truncate removed (db reset always starts clean).
     acceptance_criteria:
-      - tag push triggers migrate job against prd automatically (consistent with deploy-app.yml)
-      - workflow_dispatch gains an optional boolean input `seed` (default false); no environment input — dispatch always targets dev
-      - when seed is false, migrate job runs supabase db push --linked
-      - when seed is true, reset job runs supabase db reset --linked against dev (drops schema, replays migrations, applies seed.sql)
-      - migrate and reset are mutually exclusive — only one runs per trigger
-      - truncate statement removed from seed.sql (redundant under db reset)
+      - migrate-db tag push triggers migrate job against prd automatically
+      - migrate-db workflow_dispatch targets dev only; environment input removed
+      - migrate-db seed=false dispatch runs supabase db push --linked (migrate job)
+      - migrate-db seed=true dispatch runs supabase db reset --linked against dev, pipes y to skip confirmation (reset job)
+      - migrate and reset jobs are mutually exclusive
+      - deploy-app splits into validate→build→deploy; dist artifact uploaded by build and downloaded by deploy
+      - test-app job renamed from build-and-lint to test
+      - scripts/tag-release.sh renamed to scripts/create-release-tag.sh
+      - truncate statement removed from seed.sql

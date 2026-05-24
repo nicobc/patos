@@ -105,7 +105,7 @@ tickets:
 
   - id: T8
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Add status 'on hold'
     description: Introduce 'on_hold' as a status value reachable only from in_progress. on_hold tasks render in the in_progress column — no new board column. A stop-sign icon button on each in_progress/on_hold card toggles the hold state. All on_hold transitions are recorded by the existing trigger, enabling future KPI computation (e.g. cost per active day).
     acceptance_criteria:

@@ -88,3 +88,10 @@ tickets:
       - title is required; cost and duration accept numbers only; dates are valid
       - unsaved changes prompt for confirmation before the modal closes
       - uses .input, .btn-primary, .btn-ghost from the design system
+
+  - id: T7
+    type: feat
+    status: IDEATION
+    title: Board UI/UX polish
+    description: Final polish pass across the entire kanban surface.
+    acceptance_criteria: []

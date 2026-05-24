@@ -22,7 +22,17 @@ test('redirects to Google on mount', async () => {
   render(<SignIn />)
   await waitFor(() => expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
     provider: 'google',
-    options: { redirectTo: window.location.origin },
+    options: { redirectTo: window.location.origin + '/' },
+  }))
+})
+
+test('redirects to stored destination after protected route redirect', async () => {
+  sessionStorage.setItem('auth_redirect', '/dashboard')
+  ;(useAuth as Mock).mockReturnValue({ authError: null })
+  render(<SignIn />)
+  await waitFor(() => expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/dashboard' },
   }))
 })
 
@@ -31,6 +41,6 @@ test('forces account picker after auth rejection', async () => {
   render(<SignIn />)
   await waitFor(() => expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
     provider: 'google',
-    options: { redirectTo: window.location.origin, queryParams: { prompt: 'select_account' } },
+    options: { redirectTo: window.location.origin + '/', queryParams: { prompt: 'select_account' } },
   }))
 })

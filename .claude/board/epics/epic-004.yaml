@@ -66,7 +66,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Status transitions
     description: Add prev/next status controls to each task card so the user can move a task to an adjacent non-discarded status without opening the detail modal. Optimistic update with rollback on error.
     acceptance_criteria:

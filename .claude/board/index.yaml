@@ -18,8 +18,4 @@ ideation:
     title: Cost tracker
   - id: EPIC-007
     title: Drag and drop + Gantt
-maintenance:
-  - id: MAINT/T4
-    scope: deploy
-    status: IN PROGRESS
-    title: Allow workflow_dispatch from main for dev preview builds
+maintenance: []

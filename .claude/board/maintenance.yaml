@@ -55,7 +55,7 @@ tickets:
   - id: T4
     type: ci
     scope: deploy
-    status: IN PROGRESS
+    status: DONE
     title: Allow workflow_dispatch from main for dev preview builds
     description: Relax the dispatch guard in deploy-app.yml so main can be dispatched. A dispatch from main deploys to the CF Pages 'dev' branch (preview URL) with DEV secrets — never to the production 'main' branch. Tag pushes continue to deploy to CF Pages 'main' (production) with PRD secrets.
     acceptance_criteria:

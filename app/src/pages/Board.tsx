@@ -4,6 +4,7 @@ import { listContractors, type Contractor } from '../services/contractorsService
 import { listTasksByProject, subscribeToTaskChanges, updateTask, buildStatusTransition, type Task, type TaskChangeEvent } from '../services/tasksService'
 import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
+import { TaskForm } from './TaskForm'
 import './Board.css'
 
 const COLUMNS = [
@@ -15,6 +16,11 @@ const COLUMNS = [
 ] as const
 
 const STATUSES = COLUMNS.map((c) => c.status)
+
+type View =
+  | { kind: 'board' }
+  | { kind: 'detail'; task: Task }
+  | { kind: 'form'; task?: Task }
 
 type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
@@ -39,10 +45,9 @@ export function Board() {
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [projectsError, setProjectsError]     = useState<string | null>(null)
   const [tasksResult, setTasksResult]     = useState<TasksResult | null>(null)
-  const [selectedTask, setSelectedTask]   = useState<Task | null>(null)
+  const [view, setView]                   = useState<View>({ kind: 'board' })
   const [transitionError, setTransitionError] = useState<string | null>(null)
 
-  // Derived task state — no synchronous setState needed in effects
   const tasksLoading = tasksResult === null ||
     (tasksResult.status === 'ready' && tasksResult.projectId !== selectedId)
   const tasksError   = tasksResult?.status === 'error' ? tasksResult.message : null
@@ -105,13 +110,29 @@ export function Board() {
   const contractorName = (id: string | null) =>
     id ? (contractors.find((c) => c.id === id)?.name ?? null) : null
 
-  if (selectedTask) {
+  if (view.kind === 'detail') {
     return (
       <div className="board">
         <TaskDetail
-          task={selectedTask}
-          contractorName={contractorName(selectedTask.contractor_id)}
-          onBack={() => setSelectedTask(null)}
+          task={view.task}
+          contractorName={contractorName(view.task.contractor_id)}
+          onBack={() => setView({ kind: 'board' })}
+          onEdit={() => setView({ kind: 'form', task: view.task })}
+        />
+      </div>
+    )
+  }
+
+  if (view.kind === 'form') {
+    const formTask = view.task
+    return (
+      <div className="board">
+        <TaskForm
+          task={formTask}
+          projectId={selectedId}
+          contractors={contractors}
+          onBack={() => setView(formTask ? { kind: 'detail', task: formTask } : { kind: 'board' })}
+          onSaved={(saved) => setView(formTask ? { kind: 'detail', task: saved } : { kind: 'board' })}
         />
       </div>
     )
@@ -120,16 +141,25 @@ export function Board() {
   return (
     <div className="board">
       <div className="board-toolbar">
-        <select
-          className="input board-select"
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          aria-label="Select project"
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <div className="board-toolbar-controls">
+          <select
+            className="input board-select"
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            aria-label="Select project"
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button
+            className="btn-outline"
+            onClick={() => setView({ kind: 'form' })}
+            disabled={!selectedId}
+          >
+            + New task
+          </button>
+        </div>
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
         {transitionError && <p className="board-message board-message--error">{transitionError}</p>}
       </div>
@@ -155,7 +185,7 @@ export function Board() {
                         contractorName={contractorName(task.contractor_id)}
                         prevStatus={idx > 0 ? STATUSES[idx - 1] : null}
                         nextStatus={idx < STATUSES.length - 1 ? STATUSES[idx + 1] : null}
-                        onSelect={setSelectedTask}
+                        onSelect={(t) => setView({ kind: 'detail', task: t })}
                         onStatusChange={handleStatusChange}
                       />
                     )

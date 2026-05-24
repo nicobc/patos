@@ -209,6 +209,15 @@ main {
   &::placeholder   { opacity: var(--opacity-subtle); }
 }
 
+/* ── dropdown panel ─────────────────────────────────────────────────────────── */
+
+.dropdown {
+  background: var(--bg);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--br-md);
+  z-index: 100;
+}
+
 /* ── utilities ───────────────────────────────────────────────────────────────── */
 
 .eyebrow {

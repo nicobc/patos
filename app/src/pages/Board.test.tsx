@@ -4,6 +4,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
 import type { TaskChangeEvent } from '../services/tasksService'
 
+vi.mock('../lib/supabase', () => ({
+  supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
+}))
 vi.mock('../services/projectsService', () => ({ listProjects: vi.fn() }))
 vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
 vi.mock('../services/tasksService', async (importOriginal) => {

@@ -192,6 +192,23 @@ main {
   &:hover { opacity: 1; }
 }
 
+/* ── form inputs ─────────────────────────────────────────────────────────────── */
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--br);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+
+  &:focus          { outline: none; border-color: var(--border-emphasis); }
+  &::placeholder   { opacity: var(--opacity-subtle); }
+}
+
 /* ── utilities ───────────────────────────────────────────────────────────────── */
 
 .eyebrow {

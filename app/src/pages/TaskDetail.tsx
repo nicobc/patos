@@ -7,6 +7,7 @@ const STATUS_LABELS: Record<string, string> = {
   planned:     'Planned',
   ready:       'Ready',
   in_progress: 'In Progress',
+  on_hold:     'On Hold',
   done:        'Done',
   discarded:   'Discarded',
 }

@@ -9,6 +9,7 @@ const STATUSES = [
   { value: 'planned',     label: 'Planned'     },
   { value: 'ready',       label: 'Ready'       },
   { value: 'in_progress', label: 'In Progress' },
+  { value: 'on_hold',     label: 'On Hold'     },
   { value: 'done',        label: 'Done'        },
 ] as const
 
@@ -20,7 +21,7 @@ interface Props {
   onSaved: (task: Task) => void
 }
 
-function startRequired(status: string) { return status === 'in_progress' || status === 'done' }
+function startRequired(status: string) { return status === 'in_progress' || status === 'on_hold' || status === 'done' }
 function endRequired(status: string)   { return status === 'done' }
 
 export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Props) {
@@ -158,9 +159,13 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
           <label className="task-form-label">
             <span>Status</span>
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-              {STATUSES.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
+              {STATUSES
+                .filter(({ value }) =>
+                  value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
+                )
+                .map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
             </select>
           </label>
         )}

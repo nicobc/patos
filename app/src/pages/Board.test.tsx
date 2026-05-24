@@ -120,6 +120,14 @@ describe('Board — task cards', () => {
     expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
   })
 
+  it('renders on_hold task in the in_progress column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'on_hold' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    expect(screen.getAllByText('No tasks')).toHaveLength(4)
+    expect(screen.getByRole('button', { name: /resume task/i })).toBeInTheDocument()
+  })
+
   it('shows tasks error when fetch fails', async () => {
     mockListTasksByProject.mockRejectedValue(new Error('fail'))
     render(<Board />)

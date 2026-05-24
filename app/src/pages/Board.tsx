@@ -100,7 +100,12 @@ export function Board() {
           return { ...prev, items: data.filter((t) => t.status !== 'discarded') }
         }))
         .catch(() => {})
-      setTransitionError('Failed to move task — refreshed from server')
+      const msg = newStatus === 'on_hold'
+        ? 'Failed to pause task — refreshed from server'
+        : task.status === 'on_hold'
+          ? 'Failed to resume task — refreshed from server'
+          : 'Failed to move task — refreshed from server'
+      setTransitionError(msg)
     })
   }
 
@@ -166,7 +171,9 @@ export function Board() {
 
       <div className="board-columns">
         {COLUMNS.map(({ status, label }) => {
-          const colTasks = tasks.filter((t) => t.status === status)
+          const colTasks = tasks.filter((t) =>
+            t.status === status || (status === 'in_progress' && t.status === 'on_hold')
+          )
           return (
             <div key={status} className="board-column">
               <span className="eyebrow">{label}</span>
@@ -177,14 +184,15 @@ export function Board() {
                   <p className="board-column-empty">No tasks</p>
                 ) : (
                   colTasks.map((task) => {
-                    const idx = STATUSES.indexOf(task.status as typeof STATUSES[number])
+                    const isOnHold = task.status === 'on_hold'
+                    const idx = isOnHold ? -1 : STATUSES.indexOf(task.status as typeof STATUSES[number])
                     return (
                       <TaskCard
                         key={task.id}
                         task={task}
                         contractorName={contractorName(task.contractor_id)}
-                        prevStatus={idx > 0 ? STATUSES[idx - 1] : null}
-                        nextStatus={idx < STATUSES.length - 1 ? STATUSES[idx + 1] : null}
+                        prevStatus={isOnHold || idx <= 0 ? null : STATUSES[idx - 1]}
+                        nextStatus={isOnHold || idx < 0 || idx >= STATUSES.length - 1 ? null : STATUSES[idx + 1]}
                         onSelect={(t) => setView({ kind: 'detail', task: t })}
                         onStatusChange={handleStatusChange}
                       />

@@ -69,6 +69,16 @@ describe('buildStatusTransition', () => {
     const result = buildStatusTransition({ ...task, status: 'in_progress', actual_end: '2026-03-10' }, 'done')
     expect(result).toEqual({ status: 'done' })
   })
+
+  it('does not set actual_start when transitioning to on_hold', () => {
+    const result = buildStatusTransition({ ...task, status: 'in_progress', actual_start: '2026-01-01' }, 'on_hold')
+    expect(result).toEqual({ status: 'on_hold' })
+  })
+
+  it('does not set actual_start when resuming from on_hold to in_progress', () => {
+    const result = buildStatusTransition({ ...task, status: 'on_hold', actual_start: '2026-01-01' }, 'in_progress')
+    expect(result).toEqual({ status: 'in_progress' })
+  })
 })
 
 describe('listTasksByProject', () => {

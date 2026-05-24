@@ -65,7 +65,7 @@ tickets:
 
   - id: T4
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: TypeScript type generation
     description: Run supabase gen types typescript against the remote project and commit the output to app/src/types/database.ts. Add a types:gen npm script so types can be regenerated after future migrations.
     acceptance_criteria:

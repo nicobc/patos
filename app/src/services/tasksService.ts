@@ -11,6 +11,17 @@ export type TaskChangeEvent =
   | { eventType: 'UPDATE'; record: Task }
   | { eventType: 'DELETE'; id: string }
 
+export function buildStatusTransition(task: Task, newStatus: string): TaskUpdate {
+  const update: TaskUpdate = { status: newStatus }
+  if (newStatus === 'in_progress' && !task.actual_start) {
+    update.actual_start = new Date().toISOString().split('T')[0]
+  }
+  if (newStatus === 'done' && !task.actual_end) {
+    update.actual_end = new Date().toISOString().split('T')[0]
+  }
+  return update
+}
+
 export async function listTasksByProject(projectId: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')

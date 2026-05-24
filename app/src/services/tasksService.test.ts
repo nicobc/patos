@@ -7,6 +7,7 @@ import {
   updateTask,
   deleteTask,
   subscribeToTaskChanges,
+  buildStatusTransition,
 } from './tasksService'
 import type { Task } from './tasksService'
 
@@ -39,6 +40,36 @@ const task: Task = {
 }
 
 beforeEach(() => vi.clearAllMocks())
+
+describe('buildStatusTransition', () => {
+  it('returns only status for a plain transition', () => {
+    expect(buildStatusTransition({ ...task, status: 'ideation' }, 'planned')).toEqual({ status: 'planned' })
+  })
+
+  it('sets actual_start when transitioning to in_progress with no start date', () => {
+    vi.setSystemTime(new Date('2026-05-24'))
+    const result = buildStatusTransition({ ...task, status: 'planned', actual_start: null }, 'in_progress')
+    expect(result).toEqual({ status: 'in_progress', actual_start: '2026-05-24' })
+    vi.useRealTimers()
+  })
+
+  it('does not overwrite actual_start when already set', () => {
+    const result = buildStatusTransition({ ...task, status: 'planned', actual_start: '2026-01-15' }, 'in_progress')
+    expect(result).toEqual({ status: 'in_progress' })
+  })
+
+  it('sets actual_end when transitioning to done with no end date', () => {
+    vi.setSystemTime(new Date('2026-05-24'))
+    const result = buildStatusTransition({ ...task, status: 'in_progress', actual_end: null }, 'done')
+    expect(result).toEqual({ status: 'done', actual_end: '2026-05-24' })
+    vi.useRealTimers()
+  })
+
+  it('does not overwrite actual_end when already set', () => {
+    const result = buildStatusTransition({ ...task, status: 'in_progress', actual_end: '2026-03-10' }, 'done')
+    expect(result).toEqual({ status: 'done' })
+  })
+})
 
 describe('listTasksByProject', () => {
   it('returns tasks for a project', async () => {

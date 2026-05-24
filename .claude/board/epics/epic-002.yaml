@@ -46,7 +46,7 @@ tickets:
       - App.test.tsx updated to mock supabase and verify OAuth is triggered
   - id: T4
     type: feat
-    status: READY
+    status: DONE
     title: Protected route wrapper
     description: Unauthenticated users redirected to sign-in. Authenticated users pass through.
     acceptance_criteria:

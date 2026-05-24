@@ -1,13 +1,11 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/useAuth'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { SignIn } from './pages/SignIn'
 
-function AppContent() {
-  const { session, loading, signOut } = useAuth()
-
-  if (loading) return null
-  if (!session) return <SignIn />
-
+function Home() {
+  const { signOut } = useAuth()
   return (
     <main>
       <h1>patos</h1>
@@ -19,7 +17,15 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/sign-in" element={<SignIn />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Home />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   )
 }

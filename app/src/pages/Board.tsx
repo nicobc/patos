@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listProjects, type Project } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges, updateTask, type Task, type TaskChangeEvent } from '../services/tasksService'
+import { listTasksByProject, subscribeToTaskChanges, updateTask, buildStatusTransition, type Task, type TaskChangeEvent } from '../services/tasksService'
 import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import './Board.css'
@@ -83,11 +83,12 @@ export function Board() {
 
   function handleStatusChange(task: Task, newStatus: string) {
     setTransitionError(null)
+    const update = buildStatusTransition(task, newStatus)
     setTasksResult((prev) => {
       if (prev?.status !== 'ready') return prev
-      return { ...prev, items: prev.items.map((t) => t.id === task.id ? { ...t, status: newStatus } : t) }
+      return { ...prev, items: prev.items.map((t) => t.id === task.id ? { ...t, ...update } : t) }
     })
-    updateTask(task.id, { status: newStatus }).catch(() => {
+    updateTask(task.id, update).catch(() => {
       listTasksByProject(selectedId)
         .then((data) => setTasksResult((prev) => {
           if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev

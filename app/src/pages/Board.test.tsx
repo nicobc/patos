@@ -4,14 +4,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
 import type { TaskChangeEvent } from '../services/tasksService'
 
+vi.mock('../lib/supabase', () => ({
+  supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
+}))
 vi.mock('../services/projectsService', () => ({ listProjects: vi.fn() }))
 vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
-vi.mock('../services/tasksService', () => ({
-  listTasksByProject: vi.fn(),
-  subscribeToTaskChanges: vi.fn(),
-  updateTask: vi.fn(),
-  deleteTask: vi.fn(),
-}))
+vi.mock('../services/tasksService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../services/tasksService')>()
+  return {
+    ...actual,
+    listTasksByProject: vi.fn(),
+    subscribeToTaskChanges: vi.fn(),
+    updateTask: vi.fn(),
+    deleteTask: vi.fn(),
+  }
+})
 
 import { listProjects } from '../services/projectsService'
 import { listContractors } from '../services/contractorsService'
@@ -186,8 +193,38 @@ describe('Board — status transitions', () => {
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
 
     await waitFor(() =>
-      expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'planned' })
+      expect(mockUpdateTask).toHaveBeenCalledWith('t1', expect.objectContaining({ status: 'planned' }))
     )
+  })
+
+  it('sets actual_start when transitioning to in_progress', async () => {
+    vi.setSystemTime(new Date('2026-05-24'))
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ready', actual_start: null })])
+    mockUpdateTask.mockResolvedValue(makeTask({ status: 'in_progress', actual_start: '2026-05-24' }))
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'in_progress', actual_start: '2026-05-24' })
+    )
+    vi.useRealTimers()
+  })
+
+  it('sets actual_end when transitioning to done', async () => {
+    vi.setSystemTime(new Date('2026-05-24'))
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'in_progress', actual_end: null })])
+    mockUpdateTask.mockResolvedValue(makeTask({ status: 'done', actual_end: '2026-05-24' }))
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'done', actual_end: '2026-05-24' })
+    )
+    vi.useRealTimers()
   })
 
   it('prev button is disabled in ideation column', async () => {

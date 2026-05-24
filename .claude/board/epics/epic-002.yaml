@@ -55,7 +55,7 @@ tickets:
       - redirect preserves the intended destination after sign-in
   - id: T5
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Welcome page
     description: Landing page post-auth. Reads display name from Supabase session and greets the user by name.
     acceptance_criteria:

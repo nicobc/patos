@@ -65,7 +65,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: IN PROGRESS
+    status: TESTING
     title: DAG view — cycle error state
     description: When the resolver detects one or more cycles, the Dependencies tab renders the full dependency graph via dagre (same layout pipeline as the happy path) with cycle-participating nodes and edges highlighted in accent colour. An accent-coloured warning heading with icon appears above the graph. Dagre handles cycles internally via edge reversal so back-edges render as upward-flowing arrows, naturally signalling where the cycle closes. The error state resolves automatically once all cycles are fixed.
     acceptance_criteria:

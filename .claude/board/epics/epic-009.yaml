@@ -22,7 +22,7 @@ tickets:
 
   - id: T2
     type: fix
-    status: TODO
+    status: DONE
     title: Drive TaskDetail blockers from Board realtime state
     description: TaskDetail fetches listBlockers and listBlocks once on mount and never refreshes them. If a dependency is added or removed while TaskDetail is open the chips go stale. Fix by deriving the live blocker and block lists from Board's rawDeps state and passing them as props, removing the internal fetches entirely.
     acceptance_criteria:
@@ -35,7 +35,7 @@ tickets:
 
   - id: T3
     type: fix
-    status: TODO
+    status: READY
     title: Make actual_cost editable in TaskForm
     description: actual_cost exists in the schema and is displayed in TaskDetail but has no input in TaskForm, making it permanently uneditable from the UI. Add the field to the form.
     acceptance_criteria:
@@ -48,7 +48,7 @@ tickets:
 
   - id: T4
     type: fix
-    status: TODO
+    status: READY
     title: Reset blockerIds and rawDeps on project switch
     description: When the selected project changes, blockerIds and rawDeps retain the previous project's data until the new project's deps load. Task cards briefly show stale blocked state. Fix by clearing both immediately on project ID change.
     acceptance_criteria:
@@ -58,7 +58,7 @@ tickets:
 
   - id: T5
     type: fix
-    status: TODO
+    status: READY
     title: Restore blockers on setBlockers failure
     description: setBlockers does delete-then-insert with no rollback. If the insert step fails, all dependencies for the task are silently wiped. Fix by capturing the pre-operation state and attempting a restore on insert failure.
     acceptance_criteria:
@@ -70,7 +70,7 @@ tickets:
 
   - id: T6
     type: chore
-    status: TODO
+    status: READY
     title: Drop spaces and task_spaces tables
     description: The spaces and task_spaces tables were created in the initial migration but have never been used by the app. Dropping them now produces a clean schema before the Rooms epic re-introduces room concepts with a deliberate design from scratch. EPIC-011 will not assume this table shape.
     acceptance_criteria:

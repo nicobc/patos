@@ -257,11 +257,15 @@ export function Board() {
   }
 
   if (view.kind === 'detail') {
+    const blockerTasks = [...(blockerIds.get(view.task.id) ?? [])].map((id) => tasks.find((t) => t.id === id)).filter((t): t is Task => !!t)
+    const blocksTasks  = tasks.filter((t) => blockerIds.get(t.id)?.has(view.task.id))
     return (
       <div className="board">
         <TaskDetail
           task={view.task}
           contractorName={contractorName(view.task.contractor_id)}
+          blockers={blockerTasks}
+          blocks={blocksTasks}
           backLabel={view.from ? '← Back' : '← Board'}
           onBack={() => setView(view.from ?? { kind: 'board', scrollToStatus: view.task.status })}
           onEdit={() => setView({ kind: 'form', task: view.task })}

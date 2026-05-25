@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: fix
-    status: TODO
+    status: READY
     title: Fix iOS auto-zoom on input focus
     description: iOS Safari auto-zooms when a focused input has font-size < 16px. All .input elements use --fs-sm (0.875rem = 14px), triggering zoom on every tap on mobile. Fix with a targeted media query at the standard 768px mobile breakpoint — no changes to design tokens or desktop sizing. Do NOT modify the viewport meta tag with maximum-scale or user-scalable, which breaks intentional zoom and violates accessibility guidelines.
     acceptance_criteria:
@@ -24,7 +24,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: TODO
+    status: READY
     title: Replace <details> multi-select with a real popover
     description: The "Blocked by" multi-select in TaskForm uses a <details> HTML disclosure element. It does not close on outside click, has no animation, and is semantically wrong for a multi-select. Replace with a custom popover — a trigger button that shows a panel, closes on outside click and Escape, and is keyboard accessible.
     acceptance_criteria:
@@ -38,7 +38,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: TODO
+    status: READY
     title: Toast notifications after mutations
     description: All successful mutations return silently to the previous view with no feedback. Add a lightweight toast system so users know their action succeeded. Toasts are success-only — error states remain inline and are not duplicated here.
     acceptance_criteria:
@@ -52,7 +52,7 @@ tickets:
 
   - id: T4
     type: feat
-    status: TODO
+    status: READY
     title: Undo accidental status transitions on board cards
     description: The < > status arrows on board cards are instant and irreversible. A misclick moves a task permanently. Add an undo action via the toast from T3 — clicking < > shows a "Moved to [Status]. Undo?" toast for 7 seconds; clicking Undo restores the pre-transition state including actual_start and actual_end. Applies only to the card arrows, not to other status change surfaces.
     acceptance_criteria:
@@ -65,7 +65,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: TODO
+    status: READY
     title: Clarify Archive vs Delete in TaskDetail
     description: TaskDetail shows "Discard" (soft-delete to status discarded) and "Delete" (hard delete) as identical-looking ghost buttons. Users conflate them because the labels alone do not signal the difference in reversibility. Rename, add sub-labels, and colour the hard-delete path.
     acceptance_criteria:
@@ -78,7 +78,7 @@ tickets:
 
   - id: T6
     type: feat
-    status: TODO
+    status: READY
     title: Board search and filter
     description: With many tasks across columns, finding a specific task requires scrolling. Add a filter input to the board toolbar that narrows visible cards by title substring and contractor name simultaneously. No server round-trips — filtering is local over the already-loaded tasks array.
     acceptance_criteria:
@@ -91,7 +91,7 @@ tickets:
 
   - id: T7
     type: chore
-    status: TODO
+    status: READY
     title: Logo integration
     description: A reworked logo.svg containing the brand name has been prepared by the owner outside the repo. Integrate it as the primary app logo and favicon.
     acceptance_criteria:
@@ -103,7 +103,7 @@ tickets:
 
   - id: T8
     type: chore
-    status: TODO
+    status: READY
     title: Icon audit for micro-interactions
     description: Review and update FontAwesome icon choices for micro-interactions across the app based on the owner's selection. Specific icon swaps are defined by the owner at implementation time.
     acceptance_criteria:
@@ -113,7 +113,7 @@ tickets:
 
   - id: T9
     type: feat
-    status: TODO
+    status: READY
     title: DAG pan/zoom with lazy-loaded DagView
     description: The DAG SVG is fixed-size from dagre's layout output. With a large graph it overflows or becomes too small to read with no way to navigate. Add pan/zoom via react-zoom-pan-pinch. This is also the right moment to lazy-load DagView — dagre and the zoom library are split into a separate chunk that is only fetched when the Dependencies tab is first opened.
     acceptance_criteria:
@@ -127,7 +127,7 @@ tickets:
 
   - id: T10
     type: feat
-    status: TODO
+    status: READY
     title: Mobile layout and spacing pass
     description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed.
     acceptance_criteria:
@@ -139,7 +139,7 @@ tickets:
 
   - id: T11
     type: feat
-    status: TODO
+    status: READY
     title: Prompt to update dates on status transition
     description: When a task transitions to in_progress via the card < > arrows and actual_start is already set to a past date, the current behaviour silently leaves the stale date unchanged. Same issue applies to actual_end when transitioning to done. Add a lightweight inline prompt so the user can choose to update to today or keep the existing date. Prompt is suppressed when the date is null (auto-set path is unchanged) or already equals today.
     acceptance_criteria:

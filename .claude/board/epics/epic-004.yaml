@@ -155,7 +155,7 @@ tickets:
 
   - id: T11
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Manage projects
     description: Projects section added to the existing settings page (above Contractors). Full CRUD with a two-tier delete confirmation — soft confirmation when the project has no tasks, hard confirmation (must type "delete") when tasks exist. Migration changes tasks.project_id to ON DELETE CASCADE so a confirmed hard delete removes all tasks atomically via the DB.
     acceptance_criteria:

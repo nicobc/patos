@@ -33,13 +33,14 @@ vi.mock('../services/tasksService', async (importOriginal) => {
 
 import { listProjects, subscribeToProjectChanges } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges, subscribeToDepsChanges, updateTask } from '../services/tasksService'
+import { listTasksByProject, listRawDepsByTasks, subscribeToTaskChanges, subscribeToDepsChanges, updateTask } from '../services/tasksService'
 
 const mockListProjects              = vi.mocked(listProjects)
 const mockSubscribeToProjectChanges = vi.mocked(subscribeToProjectChanges)
 const mockListContractors           = vi.mocked(listContractors)
 const mockSubContractors            = vi.mocked(subscribeToContractorChanges)
 const mockListTasksByProject     = vi.mocked(listTasksByProject)
+const mockListRawDepsByTasks     = vi.mocked(listRawDepsByTasks)
 const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
 const mockSubscribeToDepsChanges = vi.mocked(subscribeToDepsChanges)
 const mockUpdateTask             = vi.mocked(updateTask)
@@ -296,6 +297,39 @@ describe('Board — status transitions', () => {
       expect(screen.getByText(/failed to move task/i)).toBeInTheDocument()
     )
     expect(mockListTasksByProject).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Board — project switch clears stale dep state', () => {
+  it('clears blockerIds on project switch so stale indicators do not appear on new-project tasks', async () => {
+    // t-shared exists in both projects with the same ID; t-blocker only in p1.
+    // After switching to p2, blockerIds from p1 would incorrectly mark t-shared as
+    // blocked (blocker not found in p2 tasks → treated as unresolved). The fix clears
+    // blockerIds synchronously before the p2 fetch so isBlocked returns false.
+    const sharedId  = 'shared-task'
+    const blockerId = 'blocker-task'
+
+    const p1Tasks = [
+      makeTask({ id: sharedId,  project_id: 'p1' }),
+      makeTask({ id: blockerId, project_id: 'p1', title: 'Blocker' }),
+    ]
+    const p2Tasks = [makeTask({ id: sharedId, project_id: 'p2' })]
+
+    mockListTasksByProject
+      .mockResolvedValueOnce(p1Tasks)
+      .mockResolvedValueOnce(p2Tasks)
+    mockListRawDepsByTasks
+      .mockResolvedValueOnce([{ task_id: sharedId, depends_on_task_id: blockerId }])
+      .mockImplementationOnce(() => new Promise(() => {})) // p2 deps never resolve
+
+    render(<Board />)
+
+    await waitFor(() => expect(screen.getByLabelText('Blocked')).toBeInTheDocument())
+
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'p2')
+
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    expect(screen.queryByLabelText('Blocked')).not.toBeInTheDocument()
   })
 })
 

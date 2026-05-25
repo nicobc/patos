@@ -42,6 +42,8 @@ type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
   | { status: 'error'; message: string }
 
+type DepsResult = { projectId: string; blockerIds: Map<string, Set<string>>; rawDeps: RawDep[] }
+
 type PendingTransition = { task: Task; newStatus: string; blockerTitles: string[] }
 
 function applyTaskChange(items: Task[], event: TaskChangeEvent): Task[] {
@@ -63,8 +65,7 @@ export function Board() {
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [projectsError, setProjectsError]     = useState<string | null>(null)
   const [tasksResult, setTasksResult]         = useState<TasksResult | null>(null)
-  const [blockerIds, setBlockerIds]           = useState<Map<string, Set<string>>>(new Map())
-  const [rawDeps, setRawDeps]                 = useState<RawDep[]>([])
+  const [depsResult, setDepsResult]           = useState<DepsResult | null>(null)
   const [view, setView]                       = useState<View>({ kind: 'board' })
   const [transitionError, setTransitionError] = useState<string | null>(null)
   const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
@@ -72,6 +73,9 @@ export function Board() {
   const columnsRef   = useRef<HTMLDivElement>(null)
   const columnRefs   = useRef<Map<string, HTMLDivElement>>(new Map())
   const taskIdsRef   = useRef<Set<string>>(new Set())
+
+  const blockerIds = depsResult?.projectId === selectedId ? depsResult.blockerIds : new Map<string, Set<string>>()
+  const rawDeps    = depsResult?.projectId === selectedId ? depsResult.rawDeps    : []
 
   useEffect(() => {
     if (view.kind !== 'board' || !view.scrollToStatus) return
@@ -143,7 +147,7 @@ export function Board() {
       .then((data) => {
         const visible = data.filter((t) => t.status !== 'discarded')
         setTasksResult({ status: 'ready', projectId: selectedId, items: visible })
-        if (visible.length === 0) { setBlockerIds(new Map()); setRawDeps([]); return }
+        if (visible.length === 0) { setDepsResult({ projectId: selectedId, blockerIds: new Map(), rawDeps: [] }); return }
         listRawDepsByTasks(visible.map((t) => t.id))
           .then((deps) => {
             const map = new Map<string, Set<string>>()
@@ -151,8 +155,11 @@ export function Board() {
               if (!map.has(dep.task_id)) map.set(dep.task_id, new Set())
               map.get(dep.task_id)!.add(dep.depends_on_task_id)
             }
-            setBlockerIds(map)
-            setRawDeps(deps.map(d => ({ task_id: d.task_id, depends_on_task_id: d.depends_on_task_id })))
+            setDepsResult({
+              projectId: selectedId,
+              blockerIds: map,
+              rawDeps: deps.map(d => ({ task_id: d.task_id, depends_on_task_id: d.depends_on_task_id })),
+            })
           })
           .catch(() => {})
       })
@@ -167,19 +174,18 @@ export function Board() {
 
     const unsubDeps = subscribeToDepsChanges(selectedId, (event: DepChangeEvent) => {
       if (!taskIdsRef.current.has(event.taskId)) return
-      setBlockerIds((prev) => {
-        const next = new Map(prev)
-        const blockers = new Set(next.get(event.taskId) ?? [])
+      setDepsResult((prev) => {
+        if (!prev || prev.projectId !== selectedId) return prev
+        const nextBlockerIds = new Map(prev.blockerIds)
+        const blockers = new Set(nextBlockerIds.get(event.taskId) ?? [])
         if (event.eventType === 'INSERT') blockers.add(event.blockerTaskId)
         else blockers.delete(event.blockerTaskId)
-        next.set(event.taskId, blockers)
-        return next
+        nextBlockerIds.set(event.taskId, blockers)
+        const nextRawDeps = event.eventType === 'INSERT'
+          ? [...prev.rawDeps, { task_id: event.taskId, depends_on_task_id: event.blockerTaskId }]
+          : prev.rawDeps.filter(d => !(d.task_id === event.taskId && d.depends_on_task_id === event.blockerTaskId))
+        return { projectId: prev.projectId, blockerIds: nextBlockerIds, rawDeps: nextRawDeps }
       })
-      setRawDeps((prev) =>
-        event.eventType === 'INSERT'
-          ? [...prev, { task_id: event.taskId, depends_on_task_id: event.blockerTaskId }]
-          : prev.filter(d => !(d.task_id === event.taskId && d.depends_on_task_id === event.blockerTaskId))
-      )
     })
 
     return () => {

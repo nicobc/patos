@@ -6,9 +6,34 @@
 
 /* ── header ──────────────────────────────────────────────── */
 
-.shell-logo {
-  line-height: 1;
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
 }
+
+.shell-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  flex-shrink: 0;
+  filter: brightness(0) invert(var(--logo-invert, 1));
+}
+
+.shell-brand-name {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.05em;
+  opacity: var(--opacity-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:root,
+[data-theme='dark']  { --logo-invert: 1; }
+[data-theme='light'] { --logo-invert: 0; }
 
 .shell-header {
   flex-shrink: 0;

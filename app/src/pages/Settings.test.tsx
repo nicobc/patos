@@ -13,11 +13,12 @@ vi.mock('../services/projectsService', () => ({
 }))
 
 vi.mock('../services/contractorsService', () => ({
-  listContractors:        vi.fn(),
-  createContractor:       vi.fn(),
-  updateContractor:       vi.fn(),
-  deleteContractor:       vi.fn(),
-  countTasksByContractor: vi.fn(),
+  listContractors:              vi.fn(),
+  createContractor:             vi.fn(),
+  updateContractor:             vi.fn(),
+  deleteContractor:             vi.fn(),
+  countTasksByContractor:       vi.fn(),
+  subscribeToContractorChanges: vi.fn(),
 }))
 
 import {
@@ -35,6 +36,7 @@ import {
   updateContractor,
   deleteContractor,
   countTasksByContractor,
+  subscribeToContractorChanges,
 } from '../services/contractorsService'
 
 const mockListProjects        = vi.mocked(listProjects)
@@ -49,6 +51,7 @@ const mockCreateContractor    = vi.mocked(createContractor)
 const mockUpdateContractor    = vi.mocked(updateContractor)
 const mockDeleteContractor    = vi.mocked(deleteContractor)
 const mockCountByContractor   = vi.mocked(countTasksByContractor)
+const mockSubContractors      = vi.mocked(subscribeToContractorChanges)
 
 const proj1 = { id: 'p1', name: 'Full Reno',    description: 'Complete overhaul', created_at: '' }
 const proj2 = { id: 'p2', name: 'Quick Fixes',  description: null,                created_at: '' }
@@ -62,6 +65,7 @@ beforeEach(() => {
   mockSubProjects.mockReturnValue(vi.fn())
   mockListContractors.mockResolvedValue([alice, bob])
   mockCountByContractor.mockResolvedValue(0)
+  mockSubContractors.mockReturnValue(vi.fn())
 })
 
 // ─── Projects list ────────────────────────────────────────────────────────────

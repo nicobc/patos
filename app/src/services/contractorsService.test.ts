@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { Mock } from 'vitest'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import {
   listContractors,
@@ -6,13 +8,17 @@ import {
   updateContractor,
   deleteContractor,
   countTasksByContractor,
+  subscribeToContractorChanges,
+  type Contractor,
 } from './contractorsService'
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { from: vi.fn() },
+  supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
 }))
 
-const mockFrom = vi.mocked(supabase.from)
+const mockFrom          = vi.mocked(supabase.from)
+const mockChannel       = vi.mocked(supabase.channel)
+const mockRemoveChannel = vi.mocked(supabase.removeChannel)
 
 const contractor = { id: '1', name: 'Alice', email: null, phone: null, created_at: '' }
 
@@ -148,5 +154,44 @@ describe('countTasksByContractor', () => {
     } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(countTasksByContractor('1')).rejects.toThrow('fail')
+  })
+})
+
+describe('subscribeToContractorChanges', () => {
+  it('sets up a channel and fires INSERT/UPDATE/DELETE events', () => {
+    let capturedCallback: ((payload: RealtimePostgresChangesPayload<Contractor>) => void) | null = null
+    const fakeChannel: { on: Mock; subscribe: Mock } = {
+      on: vi.fn().mockImplementation(
+        (_event: string, _filter: unknown, cb: (p: RealtimePostgresChangesPayload<Contractor>) => void) => {
+          capturedCallback = cb
+          return fakeChannel
+        }
+      ),
+      subscribe: vi.fn().mockImplementation(() => fakeChannel),
+    }
+    mockChannel.mockReturnValue(fakeChannel as unknown as ReturnType<typeof supabase.channel>)
+    mockRemoveChannel.mockResolvedValue('ok')
+
+    const listener = vi.fn()
+    const unsubscribe = subscribeToContractorChanges(listener)
+
+    expect(mockChannel).toHaveBeenCalledWith(expect.stringMatching(/^contractors-/))
+    expect(fakeChannel.on).toHaveBeenCalledWith(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'contractors' },
+      expect.any(Function)
+    )
+
+    capturedCallback!({ eventType: 'INSERT', new: contractor, old: {} } as RealtimePostgresChangesPayload<Contractor>)
+    expect(listener).toHaveBeenCalledWith({ eventType: 'INSERT', record: contractor })
+
+    capturedCallback!({ eventType: 'UPDATE', new: { ...contractor, name: 'Bob' }, old: contractor } as RealtimePostgresChangesPayload<Contractor>)
+    expect(listener).toHaveBeenCalledWith({ eventType: 'UPDATE', record: { ...contractor, name: 'Bob' } })
+
+    capturedCallback!({ eventType: 'DELETE', new: {}, old: { id: '1' } } as RealtimePostgresChangesPayload<Contractor>)
+    expect(listener).toHaveBeenCalledWith({ eventType: 'DELETE', id: '1' })
+
+    unsubscribe()
+    expect(mockRemoveChannel).toHaveBeenCalledWith(fakeChannel)
   })
 })

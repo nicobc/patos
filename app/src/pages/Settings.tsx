@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
 import {
   listContractors,
+  subscribeToContractorChanges,
   createContractor,
   updateContractor,
   deleteContractor,
@@ -78,7 +79,20 @@ export function Settings({ onBack }: { onBack: () => void }) {
       }
     })
 
-    return unsubProjects
+    const unsubContractors = subscribeToContractorChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setContractors((prev) => prev.filter((c) => c.id !== event.id))
+        setContractorDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        setContractors((prev) =>
+          event.eventType === 'INSERT'
+            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((c) => c.id === event.record.id ? event.record : c)
+        )
+      }
+    })
+
+    return () => { unsubProjects(); unsubContractors() }
   }, [])
 
   // --- Project handlers ---

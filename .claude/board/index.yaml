@@ -1,5 +1,9 @@
 in_progress:
 ready:
+  - id: EPIC-009
+    title: Tech debt
+  - id: EPIC-010
+    title: UI/UX improvements
 done:
   - id: EPIC-005
     title: DAG resolver
@@ -14,6 +18,8 @@ done:
   - id: EPIC-001
     title: Site skeleton
 ideation:
+  - id: EPIC-011
+    title: Rooms
   - id: EPIC-006
     title: Cost tracker
   - id: EPIC-007

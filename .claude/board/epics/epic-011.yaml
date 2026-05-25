@@ -1,0 +1,17 @@
+id: EPIC-011
+title: Rooms
+scope: rooms
+category: feature
+status: IDEATION
+description: Introduce rooms as a first-class concept for tagging tasks by physical space in the flat. Room metadata feeds both the board (pill on task cards) and the cost tracker (EPIC-006 breakdown by room). Designed from scratch — the original spaces and task_spaces tables were dropped in EPIC-009/T6.
+notes:
+  - tasks and rooms are many-to-many (a task can span multiple rooms, e.g. "repaint hallway and kitchen")
+  - the original schema had a day/night zone field on spaces — worth revisiting whether this is useful metadata or noise; decide at grooming time
+  - room pills on task cards are the primary UX entry point — small labeled pills below the task title on the board
+  - room assignment lives in the task form, using the popover multi-select pattern introduced in EPIC-010/T2
+  - rooms need a CRUD surface — extend Settings (same pattern as Contractors) or a dedicated Rooms page; decide at grooming
+  - consider whether rooms are global (shared across projects, like contractors) or per-project — renovation rooms are typically flat-wide so global is probably correct, but confirm at grooming
+  - the junction table schema must be compatible with the EPIC-006 cost-per-room aggregation query pattern; design with that join in mind
+  - EPIC-006 cost breakdown by room depends on this epic being stable — groom and ship EPIC-011 before EPIC-006
+
+tickets: []

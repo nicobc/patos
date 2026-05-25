@@ -1,0 +1,152 @@
+id: EPIC-010
+title: UI/UX improvements
+scope: ui-ux
+category: polish
+status: READY
+description: First-pass polish after the MVP. Covers mobile correctness, interaction quality, toast feedback, the broken details multi-select, search, undo for accidental status changes, brand application, and DAG navigability. No new data model changes — purely presentation and interaction improvements.
+notes:
+  - T3 (toast) must ship before or together with T4 (undo) since undo is delivered via a toast action
+  - T9 (DAG pan/zoom) is also the right moment to introduce React.lazy on DagView — bundle split comes for free
+  - T10 (mobile pass) is best done last so it catches any layout regressions from earlier tickets
+  - T7 and T8 are blocked on owner providing the new logo.svg file and the icon selection list
+
+tickets:
+  - id: T1
+    type: fix
+    status: TODO
+    title: Fix iOS auto-zoom on input focus
+    description: iOS Safari auto-zooms when a focused input has font-size < 16px. All .input elements use --fs-sm (0.875rem = 14px), triggering zoom on every tap on mobile. Fix with a targeted media query at the standard 768px mobile breakpoint — no changes to design tokens or desktop sizing. Do NOT modify the viewport meta tag with maximum-scale or user-scalable, which breaks intentional zoom and violates accessibility guidelines.
+    acceptance_criteria:
+      - index.css adds @media (width <= 768px) { .input { font-size: 1rem; } } (1rem = 16px, the iOS Safari threshold)
+      - tapping any form input in TaskForm, Settings, and the board search field (T6) no longer triggers auto-zoom on a mobile viewport
+      - desktop sizing and all token values are unchanged
+      - viewport <meta> tag is NOT modified
+
+  - id: T2
+    type: feat
+    status: TODO
+    title: Replace <details> multi-select with a real popover
+    description: The "Blocked by" multi-select in TaskForm uses a <details> HTML disclosure element. It does not close on outside click, has no animation, and is semantically wrong for a multi-select. Replace with a custom popover — a trigger button that shows a panel, closes on outside click and Escape, and is keyboard accessible.
+    acceptance_criteria:
+      - task-form-multiselect replaced with a div containing a trigger button and a conditionally rendered panel driven by local useState
+      - a useEffect with a mousedown listener on document closes the panel when the click target is outside the component's root ref; cleanup removes the listener on unmount
+      - pressing Escape while the panel is open closes it and returns focus to the trigger button
+      - the trigger button displays the current selection summary ("No blockers" / "N blocker(s)") using the .input style class so it visually matches other form controls
+      - the panel uses the .dropdown class for background, border, and border-radius treatment; renders below the trigger; scrolls internally if options overflow the viewport
+      - active and completed task grouping, checkbox behaviour, and dirty tracking are unchanged
+      - the <details> and <summary> elements are fully removed from the codebase
+
+  - id: T3
+    type: feat
+    status: TODO
+    title: Toast notifications after mutations
+    description: All successful mutations return silently to the previous view with no feedback. Add a lightweight toast system so users know their action succeeded. Toasts are success-only — error states remain inline and are not duplicated here.
+    acceptance_criteria:
+      - a useToast() hook exposes showToast(message string, options? { action?: { label string; onAction () => void } }) and is accessible anywhere within the Board subtree
+      - toasts render as fixed-position pills at bottom-center of the screen at a z-index above all other content
+      - each toast auto-dismisses after 5 seconds; a new toast replaces the current one immediately
+      - at most one toast is visible at a time
+      - toasts animate in (slide up + fade) and out (fade) using CSS transitions with --transition and --transition-fast tokens
+      - success messages triggered on each mutation — "Task created", "Task saved", "Task archived", "Task deleted", "Contractor created", "Contractor saved", "Contractor deleted", "Project created", "Project saved", "Project deleted"
+      - the optional action renders as a button inside the toast pill (used by T4 for undo)
+
+  - id: T4
+    type: feat
+    status: TODO
+    title: Undo accidental status transitions on board cards
+    description: The < > status arrows on board cards are instant and irreversible. A misclick moves a task permanently. Add an undo action via the toast from T3 — clicking < > shows a "Moved to [Status]. Undo?" toast for 7 seconds; clicking Undo restores the pre-transition state including actual_start and actual_end. Applies only to the card arrows, not to other status change surfaces.
+    acceptance_criteria:
+      - requires T3
+      - when < > is clicked, the full pre-transition task state { status, actual_start, actual_end } is captured before the optimistic update
+      - showToast is called with message "Moved to [Status Label]." and action { label "Undo", onAction } where onAction calls updateTask(task.id, preTransitionState) and applies the reverse optimistic update
+      - the undo toast uses a 7-second duration overriding the default 5-second auto-dismiss
+      - if the user navigates away or the toast auto-dismisses before Undo is clicked, no action is taken — the undo option expires silently
+      - the blocker-warning confirm flow (already present when moving a blocked task to in_progress) is unchanged — undo only applies to the direct < > tap path
+
+  - id: T5
+    type: feat
+    status: TODO
+    title: Clarify Archive vs Delete in TaskDetail
+    description: TaskDetail shows "Discard" (soft-delete to status discarded) and "Delete" (hard delete) as identical-looking ghost buttons. Users conflate them because the labels alone do not signal the difference in reversibility. Rename, add sub-labels, and colour the hard-delete path.
+    acceptance_criteria:
+      - "Discard" button renamed to "Archive"; gains a sub-label in --fs-xs muted text reading "Hidden from board, not permanent"
+      - "Delete" button retains its label; gains a sub-label reading "Permanent, cannot be undone"; button text and sub-label use --accent colour to signal danger without the full btn-danger treatment
+      - Archive confirmation prompt updated to "Archive this task?" with body "It will be hidden from the board but not permanently deleted."
+      - Delete confirmation prompt unchanged
+      - STATUS_LABELS['discarded'] updated to "Archived" in TaskDetail and the status dropdown in TaskForm wherever 'discarded' appears as a displayed label
+      - the internal status value stored in the DB remains 'discarded' — no migration required
+
+  - id: T6
+    type: feat
+    status: TODO
+    title: Board search and filter
+    description: With many tasks across columns, finding a specific task requires scrolling. Add a filter input to the board toolbar that narrows visible cards by title substring and contractor name simultaneously. No server round-trips — filtering is local over the already-loaded tasks array.
+    acceptance_criteria:
+      - a text input with placeholder "Search tasks…" appears in the board toolbar below the tabs row; visible only when view.kind === 'board' and a project is selected
+      - filter logic — a task passes if title contains the query (case-insensitive) OR contractor name contains the query (case-insensitive) using the contractorName lookup already present in Board
+      - empty columns render their "No tasks" empty state; columns with matching tasks show only matching cards
+      - a clear button (×) appears inside the input when the query is non-empty; clicking it resets the filter and returns focus to the input
+      - filter resets to empty string when selectedId changes
+      - the input uses the .input class; does not auto-focus on mount (requires T1 to be safe on iOS)
+
+  - id: T7
+    type: chore
+    status: TODO
+    title: Logo integration
+    description: A reworked logo.svg containing the brand name has been prepared by the owner outside the repo. Integrate it as the primary app logo and favicon.
+    acceptance_criteria:
+      - app/public/logo.svg replaced with the new file provided by the owner
+      - index.html <link rel="icon"> points to /logo.svg
+      - AppShell renders <img src="/logo.svg" alt="Patos" /> in the nav at the existing nav-height; any remaining text label removed
+      - logo renders correctly at nav bar dimensions in both light and dark themes
+      - no additional icon or font assets added
+
+  - id: T8
+    type: chore
+    status: TODO
+    title: Icon audit for micro-interactions
+    description: Review and update FontAwesome icon choices for micro-interactions across the app based on the owner's selection. Specific icon swaps are defined by the owner at implementation time.
+    acceptance_criteria:
+      - all identified icon swaps implemented using the existing @fortawesome/free-solid-svg-icons package; no new icon packages added unless the selected icons require it (confirm with owner before adding)
+      - icon sizes, opacity, and spacing follow the existing .btn-icon and .task-card-icon treatment — no new size classes introduced
+      - all interactive icons have meaningful aria-label attributes on their parent buttons
+
+  - id: T9
+    type: feat
+    status: TODO
+    title: DAG pan/zoom with lazy-loaded DagView
+    description: The DAG SVG is fixed-size from dagre's layout output. With a large graph it overflows or becomes too small to read with no way to navigate. Add pan/zoom via react-zoom-pan-pinch. This is also the right moment to lazy-load DagView — dagre and the zoom library are split into a separate chunk that is only fetched when the Dependencies tab is first opened.
+    acceptance_criteria:
+      - react-zoom-pan-pinch added as a dependency
+      - the SVG content inside DagView is wrapped in <TransformWrapper><TransformComponent>; pan via drag, zoom via pinch (mobile) and scroll wheel (desktop)
+      - initial scale fits the graph to the available container width; minimum scale prevents content from shrinking below the container; maximum scale capped at 3×
+      - double-tap on mobile resets to the initial fit-to-width scale
+      - the cycle warning header and standalone count footer remain outside <TransformWrapper> so they do not pan or zoom with the graph
+      - Board.tsx loads DagView via React.lazy(() => import('./DagView')) wrapped in <Suspense fallback={<p className="board-message dag-placeholder">Loading…</p>}>
+      - tapping a node navigates to task detail correctly — verify that click events on <foreignObject> buttons are not captured by the pan handler on both desktop and mobile
+
+  - id: T10
+    type: feat
+    status: TODO
+    title: Mobile layout and spacing pass
+    description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed.
+    acceptance_criteria:
+      - board toolbar, tabs row, and task cards have no horizontal overflow at mobile viewport widths (≤ 768px)
+      - TaskForm, TaskDetail, and Settings forms have comfortable tap targets (minimum 44px height for interactive elements) at mobile viewport widths
+      - board columns horizontal scroll does not trigger simultaneous body scroll (touch-action isolation applied)
+      - all text is readable without zoom at default mobile font size
+      - no fixed pixel values introduced for spacing — all sizing uses existing design tokens or rem units
+
+  - id: T11
+    type: feat
+    status: TODO
+    title: Prompt to update dates on status transition
+    description: When a task transitions to in_progress via the card < > arrows and actual_start is already set to a past date, the current behaviour silently leaves the stale date unchanged. Same issue applies to actual_end when transitioning to done. Add a lightweight inline prompt so the user can choose to update to today or keep the existing date. Prompt is suppressed when the date is null (auto-set path is unchanged) or already equals today.
+    acceptance_criteria:
+      - when transitioning to in_progress and actual_start is set and is not today's date, an inline prompt appears in the board toolbar area (same slot as the blocker-warning already uses) — "actual_start is [date]. Update to today? [Keep] [Update]"
+      - choosing Update calls updateTask with actual_start set to today's date in addition to the status change; choosing Keep proceeds with only the status update
+      - when transitioning to done and actual_end is set and is not today's date, the same prompt pattern appears — "actual_end is [date]. Update to today? [Keep] [Update]"
+      - if both conditions apply simultaneously (actual_start and actual_end both stale, e.g. skipping directly to done), both prompts are shown sequentially or combined into a single prompt — decide at implementation; document the choice in the PR
+      - prompt is not shown when the relevant date is null (existing auto-set behaviour is preserved unchanged) or when the date already equals today
+      - prompt is not shown for transitions triggered via the edit form — the user has explicit control over date fields there
+      - the pending prompt state is cleared on project switch and on navigation away from the board view

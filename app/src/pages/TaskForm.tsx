@@ -228,7 +228,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
 
         <label className="task-form-label">
           <span>Contractor</span>
-          <select className="input" value={contractorId} onChange={(e) => setContractorId(e.target.value)}>
+          <select className="input dropdown" value={contractorId} onChange={(e) => setContractorId(e.target.value)}>
             <option value="">Unassigned</option>
             {contractors.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -239,7 +239,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         {isEdit && (
           <label className="task-form-label">
             <span>Status</span>
-            <select className="input" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
+            <select className="input dropdown" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
               {STATUSES
                 .filter(({ value }) =>
                   value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
@@ -294,7 +294,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         </div>
 
         <label className="task-form-label">
-          <span>Expected cost ($)</span>
+          <span>Expected cost (€)</span>
           <input
             className="input"
             type="number"

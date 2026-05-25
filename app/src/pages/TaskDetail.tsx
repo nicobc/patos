@@ -48,7 +48,7 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
   }
 
   const fmtDate = (v: string | null) => v ? new Date(v).toLocaleDateString() : '—'
-  const fmtCost = (v: number | null) => v != null ? `$${v.toLocaleString()}` : '—'
+  const fmtCost = (v: number | null) => v != null ? `€${v.toLocaleString()}` : '—'
   const fmtDays = (v: number | null) => v != null ? `${v} days` : '—'
 
   return (

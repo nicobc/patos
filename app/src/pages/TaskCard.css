@@ -1,6 +1,7 @@
 .task-card {
   position: relative;
   width: 100%;
+  flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--border-faint);
   border-radius: var(--br-md);

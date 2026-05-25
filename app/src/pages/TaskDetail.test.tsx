@@ -50,7 +50,7 @@ describe('TaskDetail — display', () => {
   it('renders numeric fields', () => {
     render(<TaskDetail task={task} contractorName={null} onBack={vi.fn()} />)
     expect(screen.getByText('3 days')).toBeInTheDocument()
-    expect(screen.getByText(/^\$1.500$/)).toBeInTheDocument()
+    expect(screen.getByText(/^€1.500$/)).toBeInTheDocument()
   })
 
   it('shows — for null cost and dates', () => {

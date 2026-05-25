@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import type { Tables, TablesInsert, TablesUpdate } from '../types/database'
 
 export type Contractor = Tables<'contractors'>
@@ -36,4 +37,30 @@ export async function countTasksByContractor(id: string): Promise<number> {
     .eq('contractor_id', id)
   if (error) throw error
   return count ?? 0
+}
+
+export type ContractorChangeEvent =
+  | { eventType: 'INSERT'; record: Contractor }
+  | { eventType: 'UPDATE'; record: Contractor }
+  | { eventType: 'DELETE'; id: string }
+
+export function subscribeToContractorChanges(
+  callback: (event: ContractorChangeEvent) => void
+): () => void {
+  const channel = supabase
+    .channel(`contractors-${crypto.randomUUID()}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'contractors' },
+      (payload: RealtimePostgresChangesPayload<Contractor>) => {
+        if (payload.eventType === 'DELETE') {
+          const id = payload.old.id
+          if (id) callback({ eventType: 'DELETE', id })
+        } else {
+          callback({ eventType: payload.eventType, record: payload.new })
+        }
+      }
+    )
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
 }

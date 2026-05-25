@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
-import { listContractors, type Contractor } from '../services/contractorsService'
+import { listContractors, subscribeToContractorChanges, type Contractor } from '../services/contractorsService'
 import {
   listTasksByProject,
   listRawDepsByTasks,
@@ -100,7 +100,19 @@ export function Board() {
       }
     })
 
-    return unsubProjects
+    const unsubContractors = subscribeToContractorChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setContractors((prev) => prev.filter((c) => c.id !== event.id))
+      } else {
+        setContractors((prev) =>
+          event.eventType === 'INSERT'
+            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((c) => c.id === event.record.id ? event.record : c)
+        )
+      }
+    })
+
+    return () => { unsubProjects(); unsubContractors() }
   }, [])
 
   useEffect(() => {
@@ -250,7 +262,7 @@ export function Board() {
       <div className="board-toolbar">
         <div className="board-toolbar-controls">
           <select
-            className="input board-select"
+            className="input dropdown board-select"
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
             aria-label="Select project"

@@ -11,10 +11,9 @@ vi.mock('../services/projectsService', () => ({
   listProjects:              vi.fn(),
   subscribeToProjectChanges: vi.fn(),
 }))
-vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
 vi.mock('../services/contractorsService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/contractorsService')>()
-  return { ...actual, listContractors: vi.fn() }
+  return { ...actual, listContractors: vi.fn(), subscribeToContractorChanges: vi.fn() }
 })
 vi.mock('../pages/Settings', () => ({ Settings: ({ onBack }: { onBack: () => void }) =>
   <div><span>Settings page</span><button onClick={onBack}>← Board</button></div>
@@ -33,12 +32,13 @@ vi.mock('../services/tasksService', async (importOriginal) => {
 })
 
 import { listProjects, subscribeToProjectChanges } from '../services/projectsService'
-import { listContractors } from '../services/contractorsService'
+import { listContractors, subscribeToContractorChanges } from '../services/contractorsService'
 import { listTasksByProject, subscribeToTaskChanges, updateTask } from '../services/tasksService'
 
 const mockListProjects              = vi.mocked(listProjects)
 const mockSubscribeToProjectChanges = vi.mocked(subscribeToProjectChanges)
-const mockListContractors        = vi.mocked(listContractors)
+const mockListContractors           = vi.mocked(listContractors)
+const mockSubContractors            = vi.mocked(subscribeToContractorChanges)
 const mockListTasksByProject     = vi.mocked(listTasksByProject)
 const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
 const mockUpdateTask             = vi.mocked(updateTask)
@@ -66,6 +66,7 @@ beforeEach(() => {
   mockListProjects.mockResolvedValue(projects)
   mockSubscribeToProjectChanges.mockReturnValue(vi.fn())
   mockListContractors.mockResolvedValue(contractors)
+  mockSubContractors.mockReturnValue(vi.fn())
   mockListTasksByProject.mockResolvedValue([])
   mockSubscribeToTaskChanges.mockReturnValue(vi.fn())
   mockUpdateTask.mockResolvedValue(makeTask())

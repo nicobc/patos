@@ -2,7 +2,7 @@ id: EPIC-005
 title: DAG resolver
 scope: dag
 category: feature
-status: IN PROGRESS
+status: DONE
 description: Dependency graph for tasks represented as a directed adjacency map. Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Dependencies tab on the board with a DAG view using dagre for layout — tappable compact task cards with SVG edges, top-to-bottom vertical layout. Cycle error state shows detected cycles as navigable chains.
 notes:
   - dagre (@dagrejs/dagre) used for layout computation only — outputs x/y positions and edge waypoints; rendering is custom SVG + HTML foreignObject

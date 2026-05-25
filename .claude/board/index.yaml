@@ -18,4 +18,7 @@ ideation:
     title: Cost tracker
   - id: EPIC-007
     title: Drag and drop + Gantt
-maintenance: []
+maintenance:
+  - id: MAINT/T5
+    title: REPLICA IDENTITY FULL on all RLS-enabled tables
+    status: IN PROGRESS

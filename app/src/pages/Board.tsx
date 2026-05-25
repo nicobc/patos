@@ -18,6 +18,8 @@ import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import { TaskForm } from './TaskForm'
 import { Settings } from './Settings'
+import { DagView } from './DagView'
+import { type RawDep } from '../lib/dagResolver'
 import './Board.css'
 
 const COLUMNS = [
@@ -62,6 +64,7 @@ export function Board() {
   const [projectsError, setProjectsError]     = useState<string | null>(null)
   const [tasksResult, setTasksResult]         = useState<TasksResult | null>(null)
   const [blockerIds, setBlockerIds]           = useState<Map<string, Set<string>>>(new Map())
+  const [rawDeps, setRawDeps]                 = useState<RawDep[]>([])
   const [view, setView]                       = useState<View>({ kind: 'board' })
   const [transitionError, setTransitionError] = useState<string | null>(null)
   const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
@@ -135,7 +138,7 @@ export function Board() {
       .then((data) => {
         const visible = data.filter((t) => t.status !== 'discarded')
         setTasksResult({ status: 'ready', projectId: selectedId, items: visible })
-        if (visible.length === 0) { setBlockerIds(new Map()); return }
+        if (visible.length === 0) { setBlockerIds(new Map()); setRawDeps([]); return }
         listRawDepsByTasks(visible.map((t) => t.id))
           .then((deps) => {
             const map = new Map<string, Set<string>>()
@@ -144,6 +147,7 @@ export function Board() {
               map.get(dep.task_id)!.add(dep.depends_on_task_id)
             }
             setBlockerIds(map)
+            setRawDeps(deps.map(d => ({ task_id: d.task_id, depends_on_task_id: d.depends_on_task_id })))
           })
           .catch(() => {})
       })
@@ -156,7 +160,7 @@ export function Board() {
       })
     )
 
-    const unsubDeps = subscribeToDepsChanges(selectedId, (event: DepChangeEvent) =>
+    const unsubDeps = subscribeToDepsChanges(selectedId, (event: DepChangeEvent) => {
       setBlockerIds((prev) => {
         const next = new Map(prev)
         const blockers = new Set(next.get(event.taskId) ?? [])
@@ -165,7 +169,12 @@ export function Board() {
         next.set(event.taskId, blockers)
         return next
       })
-    )
+      setRawDeps((prev) =>
+        event.eventType === 'INSERT'
+          ? [...prev, { task_id: event.taskId, depends_on_task_id: event.blockerTaskId }]
+          : prev.filter(d => !(d.task_id === event.taskId && d.depends_on_task_id === event.blockerTaskId))
+      )
+    })
 
     return () => {
       unsubTasks()
@@ -336,9 +345,13 @@ export function Board() {
       </div>
 
       {view.kind === 'dag' && (
-        <p className="board-message dag-placeholder">
-          {tasksLoading ? 'Loading…' : 'No dependencies yet'}
-        </p>
+        tasksLoading
+          ? <p className="board-message dag-placeholder">Loading…</p>
+          : <DagView
+              tasks={tasks}
+              rawDeps={rawDeps}
+              onSelectTask={(t) => setView({ kind: 'detail', task: t, from: { kind: 'dag' } })}
+            />
       )}
 
       {view.kind !== 'dag' && <div className="board-columns" ref={columnsRef}>

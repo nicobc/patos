@@ -1,18 +1,11 @@
 # Supabase
 
-## Type generation
+## MUST DO — enforce on every code change without exception
 
-NEVER edit `src/types/database.ts` manually. It is fully generated — hand-edits will be overwritten.
+**NEVER EDIT `src/types/database.ts` MANUALLY.** It is fully generated — hand-edits will be overwritten on the next type generation run.
 
-To regenerate after a migration is applied to the linked dev project:
-```bash
-supabase gen types --linked > app/src/types/database.ts
-```
+**REGENERATE TYPES AFTER EVERY MIGRATION APPLIED TO DEV.** Run `supabase gen types --linked > app/src/types/database.ts`. The CLI must be linked to the dev project (`supabase link`). Docker/local Supabase is not required.
 
-The local CLI must be linked to the dev project (`supabase link`). Docker/local Supabase is not required.
+**NAME MIGRATION FILES WITH THE `YYYYMMDDHHmmss_description.sql` CONVENTION.** All migration files live in `supabase/migrations/`.
 
-## Migrations
-
-Migration files live in `supabase/migrations/`. Filenames follow the `YYYYMMDDHHmmss_description.sql` convention.
-
-Apply a migration to dev by running the migrate-db GHA workflow (see `.github/workflows/migrate-db.yml`), or with `supabase db push` if authenticated.
+**APPLY MIGRATIONS VIA THE MIGRATE-DB GHA WORKFLOW OR `supabase db push`.** Running migrations locally without pushing to the linked dev project leaves the remote schema out of sync.

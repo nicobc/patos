@@ -2,12 +2,76 @@ id: EPIC-005
 title: DAG resolver
 scope: dag
 category: feature
-status: IDEATION
-description: Dependency graph for tasks represented as a directed adjacency map (k:v). Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Blocking dependency surfaced on the Kanban card. Basic dependency visualization on the board.
+status: READY
+description: Dependency graph for tasks represented as a directed adjacency map. Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Dependencies tab on the board with a DAG view using dagre for layout — tappable compact task cards with SVG edges, top-to-bottom vertical layout. Cycle error state shows detected cycles as navigable chains.
 notes:
-  - pure TypeScript, no graph library needed — Kahn's algorithm is ~30 lines
-  - conflict = cycle detected or dependency not yet DONE blocks a task from starting
-  - visualization scope TBD at grooming — could be inline on cards (blocked badge) or a separate graph view; keep simple first
-  - Gantt-level timeline visualization is a separate concern deferred to EPIC-007
+  - dagre (@dagrejs/dagre) used for layout computation only — outputs x/y positions and edge waypoints; rendering is custom SVG + HTML foreignObject
+  - cycle detection returns all cycles as arrays of task IDs; resolver lives in src/lib/dagResolver.ts and is pure TS with no side effects
+  - blocked badge on Kanban cards (lock icon) already ships in EPIC-004/T10 and is not re-implemented here
+  - Gantt-level timeline visualization is a separate concern deferred to EPIC-007; the Dependencies tab is the stable entry point for that future sub-toggle
 
-tickets: []
+tickets:
+  - id: T1
+    type: feat
+    status: READY
+    title: Tappable dependency chips in TaskDetail
+    description: Replace the comma-separated blocker and blocks title lists in TaskDetail with tappable chips that navigate to the tapped task's detail view. Back from the nested detail returns to the view the user came from. Requires adding an optional `from` field to the detail View variant so any view can declare a return destination.
+    acceptance_criteria:
+      - View type gains `from?: View` on the `{ kind: 'detail' }` variant; Board.tsx uses `view.from` as the back destination when present, falling back to `{ kind: 'board', scrollToStatus: view.task.status }`
+      - TaskDetail "Blocked by" section renders each blocker as a tappable chip instead of plain text; tapping navigates to `{ kind: 'detail', task: blockerTask, from: currentDetailView }`
+      - TaskDetail "Blocks" section renders each blocking task as a tappable chip with the same navigation behaviour
+      - both sections fetch their task lists via the existing tasksService.listBlockers and tasksService.listBlocks — no new service calls
+      - sections are omitted when their list is empty (existing behaviour preserved)
+      - chips use a consistent visual style (pill shape, title + status badge) matching the compact card style introduced in T4
+
+  - id: T2
+    type: feat
+    status: READY
+    title: DAG resolver module
+    description: Pure TypeScript module at src/lib/dagResolver.ts implementing graph construction and topological sort with cycle detection. No UI, no side effects — input is raw dep rows, output is an ordered list or detected cycles.
+    acceptance_criteria:
+      - exports `buildAdjacency(taskIds: string[], rawDeps: RawDep[]) => Map<string, Set<string>>` where each key maps to the set of task IDs it must precede (blocker → dependents direction)
+      - exports `topoSort(adj: Map<string, Set<string>>) => string[] | { cycles: string[][] }` implementing Kahn's algorithm; returns ordered IDs on success, or one or more cycle arrays on failure
+      - cycle arrays contain the participating task IDs in traversal order
+      - disconnected subgraphs handled correctly — each connected component appears in the output in dependency order
+      - standalone nodes (no incoming or outgoing edges) included in the ordered output
+      - unit tests cover: linear chain, diamond (multi-parent), disconnected components, single cycle, multiple independent cycles, and empty graph
+
+  - id: T3
+    type: feat
+    status: READY
+    title: Dependencies tab scaffold
+    description: Add a [Board | Dependencies] segment control to the board toolbar and wire up the navigation scaffolding for the DAG view. No graph rendering yet — Dependencies view shows a placeholder stub. The + button is hidden when Dependencies is active.
+    acceptance_criteria:
+      - View union gains `{ kind: 'dag' }` in Board.tsx
+      - segment control renders below the project dropdown row; active tab is visually distinguished using existing design tokens
+      - selecting Dependencies sets view to `{ kind: 'dag' }`; selecting Board returns to `{ kind: 'board' }`
+      - the + (new task) button is hidden when `view.kind === 'dag'`; the gear (settings) button remains visible in both views
+      - Dependencies view renders a placeholder ("No dependencies yet" or a spinner while tasks are loading) — graph rendering deferred to T4
+
+  - id: T4
+    type: feat
+    status: READY
+    title: DAG view — happy path
+    description: Render the dependency graph in the Dependencies tab using dagre for layout and SVG + HTML foreignObject for nodes and edges. Top-to-bottom vertical flow. Each node is a compact tappable task card. Multiple connected components rendered as separate vertical subgraphs. Standalone tasks shown as a non-interactive count at the bottom.
+    acceptance_criteria:
+      - dagre (@dagrejs/dagre) added as a dependency; layout computed client-side from the adjacency map produced by T2's buildAdjacency
+      - graph rendered as a single `<svg>` with `<foreignObject>` nodes and `<path>` edges; layout flows top-to-bottom (dagre rankdir TB)
+      - compact task card inside each node shows task title and status badge; card is tappable and navigates to `{ kind: 'detail', task, from: { kind: 'dag' } }`
+      - SVG edges drawn as smooth bezier curves with an arrowhead at the dependent end; colour uses an existing design-system token
+      - multiple connected components rendered as separate subgraphs stacked vertically with a visual gap between them
+      - tasks with no dependency relationships excluded from the graph; a non-interactive copy line at the bottom reads "N task(s) have no dependencies" when N > 0; section omitted when all tasks have at least one relationship
+      - view scrolls vertically within the existing board scroll container — no pan or zoom
+
+  - id: T5
+    type: feat
+    status: READY
+    title: DAG view — cycle error
+    description: When the resolver detects one or more cycles, the Dependencies tab shows a cycle error state instead of the graph. Each cycle is displayed as a chain of tappable task name chips. Multiple independent cycles listed vertically. The error state resolves automatically once all cycles are fixed.
+    acceptance_criteria:
+      - when topoSort returns `{ cycles }`, the Dependencies view renders a cycle error state; the normal graph is not rendered
+      - error state includes a brief explanatory heading (e.g. "Circular dependency detected")
+      - each cycle rendered as a horizontal chain of tappable task name chips separated by "→" decorators
+      - tapping a chip navigates to `{ kind: 'detail', task, from: { kind: 'dag' } }` so the user can edit blockers to resolve the cycle
+      - multiple cycles each rendered as a separate chain, stacked vertically
+      - once all cycles are resolved the view automatically transitions to the normal graph, reactive to the live dep subscription already present in Board.tsx

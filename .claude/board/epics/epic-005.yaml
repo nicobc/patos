@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: Tappable dependency chips in TaskDetail
     description: Replace the comma-separated blocker and blocks title lists in TaskDetail with tappable chips that navigate to the tapped task's detail view. Back from the nested detail returns to the view the user came from. Requires adding an optional `from` field to the detail View variant so any view can declare a return destination.
     acceptance_criteria:

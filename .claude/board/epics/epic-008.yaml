@@ -2,7 +2,7 @@ id: EPIC-008
 title: CI & local dev environment
 scope: dev-infra
 category: infra
-status: IN PROGRESS
+status: DONE
 description: Local Supabase dev environment and a test-migrations CI workflow that validates migrations and keeps database.ts in sync. Eliminates dependency on the linked dev project for type generation in both agent and CI contexts.
 notes:
   - local Supabase requires Docker Desktop; supabase/config.toml already initialised with project_id = "patos"
@@ -41,7 +41,7 @@ tickets:
 
   - id: T3
     type: chore
-    status: READY
+    status: DONE
     title: Branch protection — require migration check
     description: Update GitHub branch protection on main so merges require both the app check and the new migration check to pass.
     acceptance_criteria:

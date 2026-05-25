@@ -1,0 +1,80 @@
+.dag-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem;
+  overflow-x: auto;
+}
+
+.dag-defs {
+  position: absolute;
+}
+
+.dag-graph {
+  display: block;
+  overflow: visible;
+  max-width: 100%;
+}
+
+.dag-edge {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.dag-arrowhead {
+  fill: var(--border-strong);
+}
+
+.dag-node {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--br-md);
+  color: var(--fg);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast);
+
+  &:hover { border-color: var(--border-strong); }
+}
+
+.dag-node-title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.dag-node-status {
+  font-size: var(--fs-xs);
+  opacity: var(--opacity-muted);
+  line-height: 1;
+}
+
+.dag-standalone-count {
+  font-size: var(--fs-sm);
+  opacity: var(--opacity-muted);
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.dag-placeholder {
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.dag-cycle-notice {
+  padding: 3rem 0;
+  text-align: center;
+}

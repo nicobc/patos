@@ -3,7 +3,13 @@
     "deny": [
       "Bash(cat app/.env*)",
       "Bash(cat:app/.env*)",
-      "Read(app/.env*)"
+      "Read(app/.env*)",
+      "Bash(cat supabase/.env*)",
+      "Bash(cat:supabase/.env*)",
+      "Read(supabase/.env*)",
+      "Bash(cat .env*)",
+      "Bash(cat:.env*)",
+      "Read(.env*)"
     ],
     "ask": [
       "Edit(.claude/**)"

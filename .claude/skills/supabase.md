@@ -9,3 +9,5 @@
 **NAME MIGRATION FILES WITH THE `YYYYMMDDHHmmss_description.sql` CONVENTION.** All migration files live in `supabase/migrations/`.
 
 **APPLY MIGRATIONS VIA THE MIGRATE-DB GHA WORKFLOW OR `supabase db push`.** Running migrations locally without pushing to the linked dev project leaves the remote schema out of sync.
+
+**EVERY NEW TABLE MUST HAVE RLS ENABLED AND POLICIES DEFINED.** No table should be publicly accessible unless explicitly approved. Always include `alter table <name> enable row level security;` and at minimum an `authenticated full access` policy in the same migration that creates the table. A table without RLS is a security hole — never defer this to a follow-up migration.

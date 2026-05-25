@@ -2,7 +2,7 @@ id: EPIC-005
 title: DAG resolver
 scope: dag
 category: feature
-status: IN PROGRESS
+status: DONE
 description: Dependency graph for tasks represented as a directed adjacency map. Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Dependencies tab on the board with a DAG view using dagre for layout — tappable compact task cards with SVG edges, top-to-bottom vertical layout. Cycle error state shows detected cycles as navigable chains.
 notes:
   - dagre (@dagrejs/dagre) used for layout computation only — outputs x/y positions and edge waypoints; rendering is custom SVG + HTML foreignObject
@@ -65,13 +65,16 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
-    title: DAG view — cycle error
-    description: When the resolver detects one or more cycles, the Dependencies tab shows a cycle error state instead of the graph. Each cycle is displayed as a chain of tappable task name chips. Multiple independent cycles listed vertically. The error state resolves automatically once all cycles are fixed.
+    status: TESTING
+    title: DAG view — cycle error state
+    description: When the resolver detects one or more cycles, the Dependencies tab renders the full dependency graph via dagre (same layout pipeline as the happy path) with cycle-participating nodes and edges highlighted in accent colour. An accent-coloured warning heading with icon appears above the graph. Dagre handles cycles internally via edge reversal so back-edges render as upward-flowing arrows, naturally signalling where the cycle closes. The error state resolves automatically once all cycles are fixed.
     acceptance_criteria:
-      - when topoSort returns `{ cycles }`, the Dependencies view renders a cycle error state; the normal graph is not rendered
-      - error state includes a brief explanatory heading (e.g. "Circular dependency detected")
-      - each cycle rendered as a horizontal chain of tappable task name chips separated by "→" decorators
-      - tapping a chip navigates to `{ kind: 'detail', task, from: { kind: 'dag' } }` so the user can edit blockers to resolve the cycle
-      - multiple cycles each rendered as a separate chain, stacked vertically
+      - when topoSort returns `{ cycles }`, the graph is still rendered using the same dagre layout pipeline; the useMemo no longer bails out early on cycle detection
+      - a set of cycle node IDs is derived from the returned cycle arrays and passed into the render path
+      - an accent-coloured warning heading ("Circular dependency detected") with a FontAwesome warning icon appears above the graph when cycleNodeIds is non-empty
+      - heading uses `--accent` colour and `--fs-base` font size
+      - nodes whose ID is in cycleNodeIds render with an accent-coloured border
+      - edges where both endpoints are in cycleNodeIds render with accent stroke colour
+      - tapping any node (cycle or otherwise) navigates to `{ kind: 'detail', task, from: { kind: 'dag' } }` — same behaviour as happy path
+      - standalone-count footer is shown as normal when N > 0
       - once all cycles are resolved the view automatically transitions to the normal graph, reactive to the live dep subscription already present in Board.tsx

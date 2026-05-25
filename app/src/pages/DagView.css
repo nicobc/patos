@@ -74,7 +74,26 @@
   text-align: center;
 }
 
-.dag-cycle-notice {
-  padding: 3rem 0;
-  text-align: center;
+.dag-cycle-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+}
+
+.dag-node--cycle {
+  border-color: var(--accent);
+
+  &:hover { border-color: var(--accent); }
+}
+
+.dag-edge--cycle {
+  stroke: var(--accent);
+}
+
+.dag-arrowhead--cycle {
+  fill: var(--accent);
 }

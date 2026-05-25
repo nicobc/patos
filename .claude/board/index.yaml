@@ -1,8 +1,8 @@
 in_progress:
-  - id: EPIC-005
-    title: DAG resolver
 ready:
 done:
+  - id: EPIC-005
+    title: DAG resolver
   - id: EPIC-008
     title: CI & local dev environment
   - id: EPIC-004

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { updateTask, deleteTask, listBlockers, listBlocks, type Task } from '../services/tasksService'
+import { useState } from 'react'
+import { updateTask, deleteTask, type Task } from '../services/tasksService'
 import './TaskDetail.css'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -14,23 +14,18 @@ const STATUS_LABELS: Record<string, string> = {
 interface Props {
   task: Task
   contractorName: string | null
+  blockers: Task[]
+  blocks: Task[]
   backLabel?: string
   onBack: () => void
   onEdit?: () => void
   onSelectTask: (task: Task) => void
 }
 
-export function TaskDetail({ task, contractorName, backLabel = '← Board', onBack, onEdit, onSelectTask }: Props) {
+export function TaskDetail({ task, contractorName, blockers, blocks, backLabel = '← Board', onBack, onEdit, onSelectTask }: Props) {
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [blockers, setBlockers] = useState<Task[]>([])
-  const [blocks, setBlocks]     = useState<Task[]>([])
-
-  useEffect(() => {
-    listBlockers(task.id).then(setBlockers).catch(() => {})
-    listBlocks(task.id).then(setBlocks).catch(() => {})
-  }, [task.id])
 
   async function commit() {
     if (!pending) return

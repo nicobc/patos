@@ -22,7 +22,7 @@ tickets:
 
   - id: T2
     type: fix
-    status: IN PROGRESS
+    status: TESTING
     title: Drive TaskDetail blockers from Board realtime state
     description: TaskDetail fetches listBlockers and listBlocks once on mount and never refreshes them. If a dependency is added or removed while TaskDetail is open the chips go stale. Fix by deriving the live blocker and block lists from Board's rawDeps state and passing them as props, removing the internal fetches entirely.
     acceptance_criteria:

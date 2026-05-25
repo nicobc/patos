@@ -48,7 +48,7 @@ export function subscribeToProjectChanges(
   callback: (event: ProjectChangeEvent) => void
 ): () => void {
   const channel = supabase
-    .channel('projects')
+    .channel(`projects-${crypto.randomUUID()}`)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'projects' },

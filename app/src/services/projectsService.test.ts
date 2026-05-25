@@ -176,7 +176,7 @@ describe('subscribeToProjectChanges', () => {
     const listener = vi.fn()
     const unsubscribe = subscribeToProjectChanges(listener)
 
-    expect(mockChannel).toHaveBeenCalledWith('projects')
+    expect(mockChannel).toHaveBeenCalledWith(expect.stringMatching(/^projects-/))
     expect(fakeChannel.on).toHaveBeenCalledWith(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'projects' },

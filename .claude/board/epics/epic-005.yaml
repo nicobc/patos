@@ -39,7 +39,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: READY
+    status: DONE
     title: Dependencies tab scaffold
     description: Add a [Board | Dependencies] segment control to the board toolbar and wire up the navigation scaffolding for the DAG view. No graph rendering yet — Dependencies view shows a placeholder stub. The + button is hidden when Dependencies is active.
     acceptance_criteria:

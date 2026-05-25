@@ -51,7 +51,7 @@ tickets:
 
   - id: T4
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: DAG view — happy path
     description: Render the dependency graph in the Dependencies tab using dagre for layout and SVG + HTML foreignObject for nodes and edges. Top-to-bottom vertical flow. Each node is a compact tappable task card. Multiple connected components rendered as separate vertical subgraphs. Standalone tasks shown as a non-interactive count at the bottom.
     acceptance_criteria:

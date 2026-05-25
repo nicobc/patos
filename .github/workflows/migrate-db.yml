@@ -1,4 +1,4 @@
-name: DB Migrate
+name: Migrate DB
 
 on:
   push:

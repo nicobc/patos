@@ -13,19 +13,21 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: IN PROGRESS
-    title: Local Supabase dev instance
-    description: Verify and document the local Supabase workflow so Docker-based development works end-to-end. Update the supabase skill to reflect the new typegen command.
+    status: DONE
+    title: Local Supabase dev instance and typegen script
+    description: Verify the local Supabase workflow end-to-end and introduce scripts/sync-local-types.sh as the canonical way to reset the local DB and regenerate types. Add scripts.md skill and update supabase.md to reference the script.
     acceptance_criteria:
       - supabase start brings up a clean local instance against supabase/migrations/
       - supabase db reset applies all migrations from scratch without errors
-      - supabase db reset --seed applies migrations then runs supabase/seed.sql
-      - supabase gen types --local > app/src/types/database.ts produces types that match the current schema
-      - supabase.md skill updated — typegen command is supabase gen types --local, --linked removed as an option
+      - seed applied automatically via config.toml (db.seed.enabled = true) — no explicit --seed flag needed
+      - scripts/sync-local-types.sh resets the local DB and regenerates app/src/types/database.ts via supabase gen types --local
+      - app/src/types/database.ts regenerated from local instance as new canonical form
+      - supabase.md skill updated — typegen via bash scripts/sync-local-types.sh, --linked removed
+      - scripts.md skill added — naming convention and bash standards for scripts/**
 
   - id: T2
     type: ci
-    status: READY
+    status: DONE
     title: test-migrations GHA workflow with typegen diff check
     description: New workflow that validates migrations and asserts database.ts is up to date. Mirrors the dorny + status pattern from test-app.yml.
     acceptance_criteria:
@@ -43,6 +45,6 @@ tickets:
     title: Branch protection — require migration check
     description: Update GitHub branch protection on main so merges require both the app check and the new migration check to pass.
     acceptance_criteria:
-      - branch protection on main requires PR Check / status (existing) and Migration Check / status (new)
+      - branch protection on main requires Test App / status (existing) and Test Migrations / status (new)
       - a PR that only touches app/** skips test-migrations but still passes the migration status job (via dorny skip path)
       - a PR that only touches supabase/migrations/** skips test-app but still passes the app status job

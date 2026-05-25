@@ -42,7 +42,8 @@ Before writing any status value to a board file, confirm the ticket's current st
 5. `sleep 5` then watch all PR checks: `/opt/homebrew/bin/gh pr checks <n> --repo nicobc/patos --watch`
    - CI is the authoritative source of truth — local tests passing is not sufficient.
    - CI failure → fix and return to step 2. Never merge a failing PR.
-6. CI passes. Commit the DONE board update with `Closes EPIC-XXX/TN` footer before merging.
+6. CI passes. Commit the DONE board update with `Closes EPIC-XXX/TN` footer before merging. Push it, then re-watch checks before attempting merge:
+   `sleep 5 && /opt/homebrew/bin/gh pr checks <n> --repo nicobc/patos --watch`
 7. Get explicit approval before merging. PR title must follow conventional commits — it becomes the squash commit message on main.
    `/opt/homebrew/bin/gh pr merge <n> --squash --delete-branch --repo nicobc/patos`
 8. Clean up local branch:

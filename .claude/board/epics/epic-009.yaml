@@ -35,7 +35,7 @@ tickets:
 
   - id: T3
     type: fix
-    status: READY
+    status: DONE
     title: Make actual_cost editable in TaskForm
     description: actual_cost exists in the schema and is displayed in TaskDetail but has no input in TaskForm, making it permanently uneditable from the UI. Add the field to the form.
     acceptance_criteria:

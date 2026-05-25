@@ -98,10 +98,16 @@ tickets:
 
   - id: T7
     type: feat
-    status: IDEATION
+    status: READY
     title: Board UI/UX polish
-    description: Final polish pass across the entire kanban surface.
-    acceptance_criteria: []
+    description: Final polish pass across the entire kanban surface — branding, layout, real-time completeness, and visual consistency.
+    acceptance_criteria:
+      - app/public/logo.svg is already in place; AppShell replaces the "The Patos Project" text with <img src="/logo.svg">; index.html <link rel="icon"> updated to /logo.svg — one asset, two uses
+      - board columns scroll vertically independently (overflow-y auto); cards have a fixed width and do not compress or stretch to fit the column
+      - contractorsService gains subscribeToContractorChanges(callback) returning an unsubscribe function, following the exact same pattern as subscribeToProjectChanges; Board and Settings each wire it up in their useEffect alongside existing subscriptions so contractor state stays live without a full refetch; unit test covers INSERT, UPDATE, DELETE events and the unsubscribe call
+      - a .btn base class added to index.css sets shared dimensions (height, padding, font-size, border-radius); btn-primary, btn-ghost, btn-outline, and btn-danger extend .btn and override only color and border; btn-icon remains its own class; all buttons in the same toolbar or action row are visually the same size as a result
+      - all dropdowns (board project selector, TaskForm status and contractor selects, any others) consistently apply the .dropdown utility class for visual treatment
+      - currency symbol changed from $ to € everywhere it appears in the UI
 
   - id: T8
     type: feat

@@ -1,7 +1,7 @@
 in_progress:
-ready:
   - id: EPIC-009
     title: Tech debt
+ready:
   - id: EPIC-010
     title: UI/UX improvements
 done:

@@ -71,6 +71,7 @@ export function Board() {
 
   const columnsRef   = useRef<HTMLDivElement>(null)
   const columnRefs   = useRef<Map<string, HTMLDivElement>>(new Map())
+  const taskIdsRef   = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (view.kind !== 'board' || !view.scrollToStatus) return
@@ -87,6 +88,10 @@ export function Board() {
   const tasks      = tasksResult?.status === 'ready' && tasksResult.projectId === selectedId
     ? tasksResult.items
     : []
+
+  useEffect(() => {
+    taskIdsRef.current = new Set(tasks.map((t) => t.id))
+  }, [tasks])
 
   function loadContractors() {
     listContractors().then(setContractors).catch(() => {})
@@ -161,6 +166,7 @@ export function Board() {
     )
 
     const unsubDeps = subscribeToDepsChanges(selectedId, (event: DepChangeEvent) => {
+      if (!taskIdsRef.current.has(event.taskId)) return
       setBlockerIds((prev) => {
         const next = new Map(prev)
         const blockers = new Set(next.get(event.taskId) ?? [])

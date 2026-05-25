@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../context/useAuth'
 import {
   createTask,
@@ -58,19 +58,31 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
   const [error, setError]               = useState<string | null>(null)
   const [titleError, setTitleError]     = useState(false)
 
+  const contractorRef = useRef<HTMLDivElement>(null)
+  const contractorTriggerRef = useRef<HTMLButtonElement>(null)
+  const [contractorOpen, setContractorOpen] = useState(false)
+
+  const statusRef = useRef<HTMLDivElement>(null)
+  const statusTriggerRef = useRef<HTMLButtonElement>(null)
+  const [statusOpen, setStatusOpen] = useState(false)
+
   const blockerPanelRef = useRef<HTMLDivElement>(null)
   const blockerTriggerRef = useRef<HTMLButtonElement>(null)
   const [blockerPanelOpen, setBlockerPanelOpen] = useState(false)
 
   useEffect(() => {
-    if (!blockerPanelOpen) return
+    if (!contractorOpen && !statusOpen && !blockerPanelOpen) return
     function handleOutside(e: MouseEvent) {
-      if (blockerPanelRef.current && !blockerPanelRef.current.contains(e.target as Node)) {
-        setBlockerPanelOpen(false)
-      }
+      const t = e.target as Node
+      if (contractorOpen && contractorRef.current && !contractorRef.current.contains(t)) setContractorOpen(false)
+      if (statusOpen && statusRef.current && !statusRef.current.contains(t)) setStatusOpen(false)
+      if (blockerPanelOpen && blockerPanelRef.current && !blockerPanelRef.current.contains(t)) setBlockerPanelOpen(false)
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setBlockerPanelOpen(false); blockerTriggerRef.current?.focus() }
+      if (e.key !== 'Escape') return
+      if (contractorOpen) { setContractorOpen(false); contractorTriggerRef.current?.focus() }
+      if (statusOpen) { setStatusOpen(false); statusTriggerRef.current?.focus() }
+      if (blockerPanelOpen) { setBlockerPanelOpen(false); blockerTriggerRef.current?.focus() }
     }
     document.addEventListener('mousedown', handleOutside)
     document.addEventListener('keydown', handleEscape)
@@ -78,7 +90,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
       document.removeEventListener('mousedown', handleOutside)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [blockerPanelOpen])
+  }, [contractorOpen, statusOpen, blockerPanelOpen])
 
   const taskId = task?.id
   useEffect(() => {
@@ -254,35 +266,58 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
           />
         </label>
 
-        <label className="task-form-label">
+        <div className="task-form-label">
           <span>Contractor</span>
-          <div className="select-wrap">
-            <select className="input select" value={contractorId} onChange={(e) => setContractorId(e.target.value)}>
-              <option value="">Unassigned</option>
-              {contractors.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+          <div className="task-form-multiselect" ref={contractorRef}>
+            <button
+              type="button"
+              ref={contractorTriggerRef}
+              className={`input select task-form-multiselect-trigger${contractorOpen ? ' open' : ''}`}
+              onClick={() => setContractorOpen((o) => !o)}
+            >
+              <span>{contractors.find((c) => c.id === contractorId)?.name ?? 'Unassigned'}</span>
+              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+            </button>
+            {contractorOpen && (
+              <div className="task-form-multiselect-panel">
+                {[{ id: '', name: 'Unassigned' }, ...contractors].map((c) => (
+                  <div key={c.id} className="task-form-multiselect-option" onClick={() => { setContractorId(c.id); setContractorOpen(false) }}>
+                    <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${contractorId === c.id ? ' checked' : ''}`} />
+                    <span>{c.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </label>
+        </div>
 
         {isEdit && (
-          <label className="task-form-label">
+          <div className="task-form-label">
             <span>Status</span>
-            <div className="select-wrap">
-              <select className="input select" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
-                {STATUSES
-                  .filter(({ value }) =>
-                    value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
-                  )
-                  .map(({ value, label }) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-              </select>
-              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+            <div className="task-form-multiselect" ref={statusRef}>
+              <button
+                type="button"
+                ref={statusTriggerRef}
+                className={`input select task-form-multiselect-trigger${statusOpen ? ' open' : ''}`}
+                onClick={() => setStatusOpen((o) => !o)}
+              >
+                <span>{STATUSES.find((s) => s.value === status)?.label ?? status}</span>
+                <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+              </button>
+              {statusOpen && (
+                <div className="task-form-multiselect-panel">
+                  {STATUSES
+                    .filter(({ value }) => value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold')
+                    .map(({ value, label }) => (
+                      <div key={value} className="task-form-multiselect-option" onClick={() => { handleStatusChange(value); setStatusOpen(false) }}>
+                        <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${status === value ? ' checked' : ''}`} />
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
-          </label>
+          </div>
         )}
 
         <div className="task-form-label">
@@ -291,7 +326,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
             <button
               type="button"
               ref={blockerTriggerRef}
-              className="input select task-form-multiselect-trigger"
+              className={`input select task-form-multiselect-trigger${blockerPanelOpen ? ' open' : ''}`}
               onClick={() => setBlockerPanelOpen((o) => !o)}
             >
               <span>
@@ -302,33 +337,25 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
               <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
             </button>
             {blockerPanelOpen && (
-              <div className="dropdown task-form-multiselect-panel">
+              <div className="task-form-multiselect-panel">
                 {activeTasks.length === 0 && completedTasks.length === 0 ? (
                   <p className="task-form-multiselect-empty">No other tasks in this project</p>
                 ) : (
                   <>
                     {activeTasks.map((t) => (
-                      <label key={t.id} className="task-form-multiselect-option">
-                        <input
-                          type="checkbox"
-                          checked={selectedBlockerIds.includes(t.id)}
-                          onChange={(e) => toggleBlocker(t.id, e.target.checked)}
-                        />
+                      <div key={t.id} className="task-form-multiselect-option" onClick={() => toggleBlocker(t.id, !selectedBlockerIds.includes(t.id))}>
+                        <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${selectedBlockerIds.includes(t.id) ? ' checked' : ''}`} />
                         <span>{t.title}</span>
-                      </label>
+                      </div>
                     ))}
                     {activeTasks.length > 0 && completedTasks.length > 0 && (
                       <hr className="task-form-multiselect-divider" />
                     )}
                     {completedTasks.map((t) => (
-                      <label key={t.id} className="task-form-multiselect-option task-form-multiselect-option--dim">
-                        <input
-                          type="checkbox"
-                          checked={selectedBlockerIds.includes(t.id)}
-                          onChange={(e) => toggleBlocker(t.id, e.target.checked)}
-                        />
+                      <div key={t.id} className="task-form-multiselect-option task-form-multiselect-option--dim" onClick={() => toggleBlocker(t.id, !selectedBlockerIds.includes(t.id))}>
+                        <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${selectedBlockerIds.includes(t.id) ? ' checked' : ''}`} />
                         <span>{t.title}</span>
-                      </label>
+                      </div>
                     ))}
                   </>
                 )}

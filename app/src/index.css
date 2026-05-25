@@ -233,6 +233,7 @@ main {
   opacity: var(--opacity-muted);
   pointer-events: none;
   flex-shrink: 0;
+  transition: transform var(--transition-fast);
 }
 
 .select-wrap {

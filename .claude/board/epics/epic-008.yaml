@@ -27,7 +27,7 @@ tickets:
 
   - id: T2
     type: ci
-    status: IN PROGRESS
+    status: DONE
     title: test-migrations GHA workflow with typegen diff check
     description: New workflow that validates migrations and asserts database.ts is up to date. Mirrors the dorny + status pattern from test-app.yml.
     acceptance_criteria:

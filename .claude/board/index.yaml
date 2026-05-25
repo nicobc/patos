@@ -1,7 +1,7 @@
-in_progress: []
-ready:
+in_progress:
   - id: EPIC-008
     title: CI & local dev environment
+ready:
 done:
   - id: EPIC-004
     title: Basic Kanban

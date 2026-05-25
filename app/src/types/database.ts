@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -105,35 +100,6 @@ export type Database = {
         }
         Relationships: []
       }
-      task_status_history: {
-        Row: {
-          changed_at: string
-          id: string
-          status: string
-          task_id: string
-        }
-        Insert: {
-          changed_at?: string
-          id?: string
-          status: string
-          task_id: string
-        }
-        Update: {
-          changed_at?: string
-          id?: string
-          status?: string
-          task_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_status_history_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       task_deps: {
         Row: {
           depends_on_task_id: string
@@ -187,6 +153,35 @@ export type Database = {
           },
           {
             foreignKeyName: "task_spaces_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_status_history: {
+        Row: {
+          changed_at: string
+          id: string
+          status: string
+          task_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          status: string
+          task_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          status?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_status_history_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
@@ -398,3 +393,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

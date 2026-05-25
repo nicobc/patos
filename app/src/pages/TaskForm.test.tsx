@@ -107,10 +107,11 @@ describe('TaskForm — create', () => {
     await waitFor(() => expect(screen.getByText('Failed to create task')).toBeInTheDocument())
   })
 
-  it('populates contractor options', () => {
+  it('populates contractor options', async () => {
     render(<TaskForm projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByRole('option', { name: 'Alice' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Bob' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /unassigned/i }))
+    expect(screen.getByText('Alice')).toBeInTheDocument()
+    expect(screen.getByText('Bob')).toBeInTheDocument()
   })
 
   it('back arrow (← Board) with no changes calls onBack directly', async () => {
@@ -184,9 +185,9 @@ describe('TaskForm — edit', () => {
     })))
   })
 
-  it('renders status select in edit mode', () => {
+  it('renders status popover with current value in edit mode', () => {
     render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByDisplayValue('Planned')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /planned/i })).toBeInTheDocument()
   })
 
   it('calls updateTask with updated title and invokes onSaved', async () => {

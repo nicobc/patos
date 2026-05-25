@@ -1,16 +1,28 @@
 .user-menu {
   position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
 }
 
 .user-menu-trigger {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  height: 100%;
+  padding: 0 1.25rem;
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
+  background: transparent;
+  border-bottom: 1px solid transparent;
   opacity: var(--opacity-secondary);
 
   &:hover { opacity: 1; }
+
+  &[aria-expanded='true'] {
+    opacity: 1;
+    border-bottom-color: var(--bg);
+  }
 }
 
 .user-menu-chevron {
@@ -21,16 +33,18 @@
 }
 
 .user-menu-dropdown {
-  position: fixed;
-  top: var(--nav-height);
+  position: absolute;
+  top: 100%;
   right: 0;
+  min-width: max-content;
+  z-index: 100;
   display: flex;
   align-items: center;
-  padding: 0 1.25rem;
+  padding: 0 0.75rem;
   height: var(--nav-height);
-  border: none;
-  border-left: 1px solid var(--border-faint);
-  border-bottom: 1px solid var(--border-faint);
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   border-radius: 0 0 0 var(--br-md);
 }
 

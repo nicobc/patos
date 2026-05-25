@@ -2,7 +2,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
-import type { TaskChangeEvent } from '../services/tasksService'
+import type { TaskChangeEvent, DepChangeEvent } from '../services/tasksService'
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
@@ -33,7 +33,7 @@ vi.mock('../services/tasksService', async (importOriginal) => {
 
 import { listProjects, subscribeToProjectChanges } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges, updateTask } from '../services/tasksService'
+import { listTasksByProject, subscribeToTaskChanges, subscribeToDepsChanges, updateTask } from '../services/tasksService'
 
 const mockListProjects              = vi.mocked(listProjects)
 const mockSubscribeToProjectChanges = vi.mocked(subscribeToProjectChanges)
@@ -41,6 +41,7 @@ const mockListContractors           = vi.mocked(listContractors)
 const mockSubContractors            = vi.mocked(subscribeToContractorChanges)
 const mockListTasksByProject     = vi.mocked(listTasksByProject)
 const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
+const mockSubscribeToDepsChanges = vi.mocked(subscribeToDepsChanges)
 const mockUpdateTask             = vi.mocked(updateTask)
 
 const projects = [
@@ -295,5 +296,25 @@ describe('Board — status transitions', () => {
       expect(screen.getByText(/failed to move task/i)).toBeInTheDocument()
     )
     expect(mockListTasksByProject).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Board — dep subscription isolation', () => {
+  it('ignores dep events for task IDs not belonging to the current project', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ id: 't1' })])
+
+    let depsCallback: ((e: DepChangeEvent) => void) | null = null
+    mockSubscribeToDepsChanges.mockImplementation((_id, cb) => {
+      depsCallback = cb
+      return vi.fn()
+    })
+
+    render(<Board />)
+    await waitFor(() => expect(depsCallback).not.toBeNull())
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    act(() => depsCallback!({ eventType: 'INSERT', taskId: 'foreign-task', blockerTaskId: 't1' }))
+
+    expect(screen.queryByLabelText('Blocked')).not.toBeInTheDocument()
   })
 })

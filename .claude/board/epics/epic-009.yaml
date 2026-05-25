@@ -11,7 +11,7 @@ notes:
 tickets:
   - id: T1
     type: fix
-    status: IN PROGRESS
+    status: TESTING
     title: Fix subscribeToDepsChanges project isolation
     description: subscribeToDepsChanges in tasksService.ts subscribes to ALL task_deps changes across all projects. RLS filters by user but if two browser tabs have different projects open, a dep change in project A fires on project B's channel and corrupts that tab's blocker state. Fix by filtering incoming events against the current project's task ID set before applying them to state.
     acceptance_criteria:

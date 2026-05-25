@@ -20,6 +20,8 @@ done:
 ideation:
   - id: EPIC-011
     title: Rooms
+  - id: EPIC-012
+    title: Editable DAG
   - id: EPIC-006
     title: Cost tracker
   - id: EPIC-007

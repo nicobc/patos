@@ -1,0 +1,61 @@
+id: EPIC-012
+title: Editable DAG
+scope: dag-edit
+category: workflow
+status: IDEATION
+description: Make the Dependencies tab the primary surface for building and editing the project dependency graph. The current UX requires navigating into each task's edit form to manage dependencies — cumbersome for initial project setup. This epic adds all tasks as visible nodes (not just those with existing deps), an edit mode toggle, drag-from-port dependency creation/deletion, and quick task creation from within the DAG. The intended workflow is create project → Dependencies tab → edit mode → build graph → fill task details → plan → track. Sequenced after EPIC-011 (Rooms) because the quick-create form includes a room field.
+notes:
+  - T1 (all tasks visible) must ship before T2 (edit mode) — edit mode over an incomplete graph is confusing
+  - T3 (drag-from-port) depends on T2 (edit mode toggle) being in place
+  - T4 (quick create) room field is blocked on EPIC-011; T4 can ship without the room field and a follow-up adds it after EPIC-011
+  - in edit mode, pan is disabled to avoid gesture conflict with drag-from-port; zoom (scroll/pinch) remains active
+  - drag-from-port is the chosen interaction model over tap-to-connect to avoid first-selection ambiguity on mobile
+
+tickets:
+  - id: T1
+    type: feat
+    status: IDEATION
+    title: Show all tasks in DAG regardless of dependency count
+    description: Currently tasks with no task_deps entries (neither blocker nor blocked) may not appear in the DAG. All tasks in the current project should be visible as nodes so the edit mode introduced in T2 operates over a complete picture of the project.
+    acceptance_criteria:
+      - all tasks for the current project are fetched and rendered as nodes in DagView, regardless of whether they have any task_deps
+      - isolated nodes (no incoming or outgoing edges) are arranged in a separate row or wrapped grid below the main dagre layout — decide at implementation
+      - cycle detection and edge rendering for connected nodes is unchanged
+      - node click navigation to task detail works for isolated nodes
+      - empty state updates to reflect that the graph appears when tasks exist, not only when deps exist
+
+  - id: T2
+    type: feat
+    status: IDEATION
+    title: Edit mode toggle for DAG
+    description: A toggle in the Dependencies tab toolbar switches between read mode (pan/zoom only, current behaviour) and edit mode (port handles visible, pan disabled, drag-from-port and quick-create active). Edit mode state is local and resets on tab switch or project change.
+    acceptance_criteria:
+      - a button in the DAG toolbar toggles edit mode; label reads "Edit graph" in read mode and "Done" in edit mode
+      - in edit mode each node displays a visible port handle (small circle on the node edge); handles are hidden in read mode
+      - in edit mode pan is disabled; zoom via scroll wheel and pinch remains active
+      - edit mode resets to read mode on project switch and on navigating away from the Dependencies tab
+      - the existing cycle warning and node click-to-detail behaviour are unchanged in read mode
+
+  - id: T3
+    type: feat
+    status: IDEATION
+    title: Drag-from-port dependency creation and deletion
+    description: In edit mode, dragging from one node's port handle to another node body creates a task_dep (drag source blocks drag target, arrow follows drag direction). Existing edges are tappable to delete. No new service functions needed — uses the existing createTaskDep / deleteTaskDep service calls.
+    acceptance_criteria:
+      - dragging from a port handle renders a ghost edge following the cursor/touch point until released
+      - releasing over a valid target node calls createTaskDep(sourceId, targetId) and the graph updates via the existing realtime subscription
+      - releasing over the source node, over empty canvas, or completing a cycle cancels the drag with no mutation; cycle attempts show a brief inline error using the existing cycle warning pattern
+      - existing dep edges are interactive in edit mode — tapping an edge reveals a delete affordance; confirming calls deleteTaskDep and the edge is removed
+      - no changes to the service layer or the blocking/blocker data model
+
+  - id: T4
+    type: feat
+    status: IDEATION
+    title: Quick task creation from DAG
+    description: In edit mode a "+" button in the toolbar opens a compact inline form to create a task without leaving the DAG. The new task appears as an isolated node immediately via the existing realtime subscription. The room field requires EPIC-011 and is omitted until that epic ships.
+    acceptance_criteria:
+      - a "+" button visible only in edit mode opens a compact create form overlaid on the DAG; fields are title (required) and room (optional, added after EPIC-011 ships)
+      - on submit, createTask is called with status ready and no dates or costs; the new node appears in the isolated-node section of the DAG
+      - the title field auto-focuses when the form opens
+      - Escape and a cancel button dismiss the form without creating a task
+      - the user remains in the DAG view — no navigation occurs on creation

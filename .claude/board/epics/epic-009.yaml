@@ -48,12 +48,14 @@ tickets:
 
   - id: T4
     type: fix
-    status: TESTING
+    status: DONE
     title: Reset blockerIds and rawDeps on project switch
-    description: When the selected project changes, blockerIds and rawDeps retain the previous project's data until the new project's deps load. Task cards briefly show stale blocked state. Fix by clearing both immediately on project ID change.
+    description: When the selected project changes, blockerIds and rawDeps retain the previous project's data until the new project's deps load. Task cards briefly show stale blocked state. Fix by scoping deps state to the active project ID so derived values return empty whenever the project changes.
     acceptance_criteria:
-      - the useEffect on selectedId in Board.tsx sets blockerIds to new Map() and rawDeps to [] as its first synchronous operations, before initiating any async fetches
+      - separate blockerIds and rawDeps state replaced by a single DepsResult state (projectId + blockerIds + rawDeps), mirroring the TasksResult pattern
+      - blockerIds and rawDeps are derived values that return empty when depsResult.projectId !== selectedId, clearing automatically on project switch without synchronous setState in the effect body
       - task cards show no blocked indicator during the loading window rather than stale indicators from the previous project
+      - subscribeToDepsChanges callback updates both blockerIds and rawDeps atomically in a single setDepsResult call
       - no other behaviour changes
 
   - id: T5

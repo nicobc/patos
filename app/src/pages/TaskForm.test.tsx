@@ -14,10 +14,9 @@ vi.mock('../context/useAuth', () => ({
   useAuth: () => ({ session: { user: { id: 'u1' } } }),
 }))
 
-import { createTask, updateTask, setBlockers } from '../services/tasksService'
+import { createTask, updateTask } from '../services/tasksService'
 const mockCreateTask = vi.mocked(createTask)
 const mockUpdateTask = vi.mocked(updateTask)
-const mockSetBlockers = vi.mocked(setBlockers)
 
 const contractors = [
   { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: '555-0001', created_at: '2026-01-01T00:00:00Z' },

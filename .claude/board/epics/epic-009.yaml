@@ -72,11 +72,14 @@ tickets:
 
   - id: T6
     type: chore
-    status: READY
-    title: Drop spaces and task_spaces tables
-    description: The spaces and task_spaces tables were created in the initial migration but have never been used by the app. Dropping them now produces a clean schema before the Rooms epic re-introduces room concepts with a deliberate design from scratch. EPIC-011 will not assume this table shape.
+    status: IN PROGRESS
+    title: Schema cleanup and set_blockers transaction function
+    description: Two migration-backed changes bundled together. First, drop the unused spaces and task_spaces tables to clean the schema before the Rooms epic. Second, replace the application-level T5 rollback in setBlockers with a Postgres function that wraps delete+insert in a single implicit transaction, making the operation truly atomic.
     acceptance_criteria:
       - migration drops task_spaces first (FK dependency order), then spaces
       - database.ts types regenerated; Tables<'spaces'> and Tables<'task_spaces'> no longer present
-      - grep confirms no app code references either table after the change
+      - grep confirms no app code references spaces or task_spaces after the change
+      - migration adds a set_blockers(p_task_id uuid, p_blocker_ids uuid[]) Postgres function that DELETEs all task_deps rows for p_task_id then INSERTs the new rows in a single transaction; function is SECURITY DEFINER with a REVOKE/GRANT matching the RLS pattern on task_deps
+      - setBlockers in tasksService.ts replaced with supabase.rpc('set_blockers', { p_task_id, p_blocker_ids }); the prefetch, application-level restore, and all related branching from T5 are removed
+      - tasksService unit tests for setBlockers updated to mock supabase.rpc; success and error paths covered; T5 restore tests removed
       - migration applied to both dev and prod via the standard migrate-db workflow

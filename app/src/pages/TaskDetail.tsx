@@ -14,11 +14,13 @@ const STATUS_LABELS: Record<string, string> = {
 interface Props {
   task: Task
   contractorName: string | null
+  backLabel?: string
   onBack: () => void
   onEdit?: () => void
+  onSelectTask: (task: Task) => void
 }
 
-export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
+export function TaskDetail({ task, contractorName, backLabel = '← Board', onBack, onEdit, onSelectTask }: Props) {
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +56,7 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
   return (
     <div className="task-detail">
       <div className="task-detail-toolbar">
-        <button className="btn-ghost task-detail-back" onClick={onBack}>← Board</button>
+        <button className="btn-ghost task-detail-back" onClick={onBack}>{backLabel}</button>
         <button className="btn-outline" onClick={onEdit}>Edit</button>
       </div>
 
@@ -92,14 +94,30 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
         {blockers.length > 0 && (
           <>
             <dt>Blocked by</dt>
-            <dd>{blockers.map((t) => t.title).join(', ')}</dd>
+            <dd>
+              <div className="dep-chip-list">
+                {blockers.map((t) => (
+                  <button key={t.id} className="dep-chip" onClick={() => onSelectTask(t)}>
+                    {t.title}
+                  </button>
+                ))}
+              </div>
+            </dd>
           </>
         )}
 
         {blocks.length > 0 && (
           <>
             <dt>Blocks</dt>
-            <dd>{blocks.map((t) => t.title).join(', ')}</dd>
+            <dd>
+              <div className="dep-chip-list">
+                {blocks.map((t) => (
+                  <button key={t.id} className="dep-chip" onClick={() => onSelectTask(t)}>
+                    {t.title}
+                  </button>
+                ))}
+              </div>
+            </dd>
           </>
         )}
 

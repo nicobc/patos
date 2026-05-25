@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: READY
+    status: IN PROGRESS
     title: Local Supabase dev instance
     description: Verify and document the local Supabase workflow so Docker-based development works end-to-end. Update the supabase skill to reflect the new typegen command.
     acceptance_criteria:

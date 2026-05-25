@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: fix
-    status: IN PROGRESS
+    status: DONE
     title: Fix iOS auto-zoom on input focus
     description: iOS Safari auto-zooms when a focused input has font-size < 16px. All .input elements use --fs-sm (0.875rem = 14px), triggering zoom on every tap on mobile. Fix with a targeted media query at the standard 768px mobile breakpoint — no changes to design tokens or desktop sizing. Do NOT modify the viewport meta tag with maximum-scale or user-scalable, which breaks intentional zoom and violates accessibility guidelines.
     acceptance_criteria:

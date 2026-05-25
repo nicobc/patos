@@ -139,6 +139,9 @@ export function Board() {
   useEffect(() => {
     if (!selectedId) return
 
+    setBlockerIds(new Map())
+    setRawDeps([])
+
     listTasksByProject(selectedId)
       .then((data) => {
         const visible = data.filter((t) => t.status !== 'discarded')

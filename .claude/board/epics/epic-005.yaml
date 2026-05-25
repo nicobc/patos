@@ -2,7 +2,7 @@ id: EPIC-005
 title: DAG resolver
 scope: dag
 category: feature
-status: READY
+status: IN PROGRESS
 description: Dependency graph for tasks represented as a directed adjacency map. Topological sort via Kahn's algorithm. Cycle detection with clear conflict flagging. Dependencies tab on the board with a DAG view using dagre for layout — tappable compact task cards with SVG edges, top-to-bottom vertical layout. Cycle error state shows detected cycles as navigable chains.
 notes:
   - dagre (@dagrejs/dagre) used for layout computation only — outputs x/y positions and edge waypoints; rendering is custom SVG + HTML foreignObject
@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Tappable dependency chips in TaskDetail
     description: Replace the comma-separated blocker and blocks title lists in TaskDetail with tappable chips that navigate to the tapped task's detail view. Back from the nested detail returns to the view the user came from. Requires adding an optional `from` field to the detail View variant so any view can declare a return destination.
     acceptance_criteria:

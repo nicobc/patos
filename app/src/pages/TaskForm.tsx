@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/useAuth'
 import {
   createTask,
@@ -47,7 +47,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
   const [actualStart, setActualStart]   = useState(task?.actual_start ?? '')
   const [actualEnd, setActualEnd]       = useState(task?.actual_end ?? '')
   const [selectedBlockerIds, setSelectedBlockerIds] = useState<string[]>([])
-  const initialBlockerIds = useRef<string[]>([])
+  const [initialBlockerIds, setInitialBlockerIds]   = useState<string[]>([])
 
   const [confirmBack, setConfirmBack]   = useState(false)
   const [pendingStatus, setPendingStatus] = useState<string | null>(null)
@@ -55,23 +55,24 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
   const [error, setError]               = useState<string | null>(null)
   const [titleError, setTitleError]     = useState(false)
 
+  const taskId = task?.id
   useEffect(() => {
-    if (!task) return
-    listBlockers(task.id)
+    if (!taskId) return
+    listBlockers(taskId)
       .then((blockers) => {
         const ids = blockers.map((b) => b.id)
         setSelectedBlockerIds(ids)
-        initialBlockerIds.current = ids
+        setInitialBlockerIds(ids)
       })
       .catch(() => {})
-  }, [task?.id])
+  }, [taskId])
 
   const otherTasks = projectTasks.filter((t) => t.id !== task?.id)
   const activeTasks    = otherTasks.filter((t) => ACTIVE_STATUSES.has(t.status))
   const completedTasks = otherTasks.filter((t) => !ACTIVE_STATUSES.has(t.status))
 
   const blockersDirty = isEdit
-    ? [...selectedBlockerIds].sort().join(',') !== [...initialBlockerIds.current].sort().join(',')
+    ? [...selectedBlockerIds].sort().join(',') !== [...initialBlockerIds].sort().join(',')
     : selectedBlockerIds.length > 0
 
   const isDirty = isEdit

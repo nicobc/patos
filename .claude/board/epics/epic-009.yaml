@@ -1,0 +1,80 @@
+id: EPIC-009
+title: Tech debt
+scope: tech-debt
+category: chore
+status: READY
+description: Targeted correctness and safety fixes identified during the post-MVP review. No new features — these are bugs and gaps that could corrupt board state, silently lose data, or mislead the user. Ships before EPIC-010 so UI/UX work builds on a sound foundation.
+notes:
+  - all tickets are independent and can be worked in any order
+  - T6 requires a Supabase migration; apply via the standard migrate-db workflow
+
+tickets:
+  - id: T1
+    type: fix
+    status: TODO
+    title: Fix subscribeToDepsChanges project isolation
+    description: subscribeToDepsChanges in tasksService.ts subscribes to ALL task_deps changes across all projects. RLS filters by user but if two browser tabs have different projects open, a dep change in project A fires on project B's channel and corrupts that tab's blocker state. Fix by filtering incoming events against the current project's task ID set before applying them to state.
+    acceptance_criteria:
+      - Board.tsx maintains a taskIdsRef (React.MutableRefObject<Set<string>>) kept in sync with the current tasks state via a useEffect
+      - the subscribeToDepsChanges callback in Board.tsx checks taskIdsRef.current.has(event.taskId) before applying the event to blockerIds or rawDeps; events whose taskId is not in the ref are silently ignored
+      - the service function signature is unchanged — filtering lives in the Board callback, not in the service
+      - existing unit test for subscribeToDepsChanges continues to pass; add a test case in Board.test verifying that a dep event for an unknown task ID is ignored and does not mutate state
+
+  - id: T2
+    type: fix
+    status: TODO
+    title: Drive TaskDetail blockers from Board realtime state
+    description: TaskDetail fetches listBlockers and listBlocks once on mount and never refreshes them. If a dependency is added or removed while TaskDetail is open the chips go stale. Fix by deriving the live blocker and block lists from Board's rawDeps state and passing them as props, removing the internal fetches entirely.
+    acceptance_criteria:
+      - Board.tsx derives blockerTasks Task[] and blocksTasks Task[] from rawDeps and tasks whenever view.kind === 'detail'
+      - these lists are passed to TaskDetail as props (blockers Task[], blocks Task[]) replacing the internal listBlockers and listBlocks calls
+      - TaskDetail no longer imports or calls listBlockers or listBlocks; the useEffect that triggered those fetches is removed
+      - the chips update reactively when rawDeps changes in Board without any manual refresh
+      - tappable chip behaviour and rendering are unchanged
+      - TaskDetail unit tests updated to pass blockers and blocks as props instead of mocking service calls
+
+  - id: T3
+    type: fix
+    status: TODO
+    title: Make actual_cost editable in TaskForm
+    description: actual_cost exists in the schema and is displayed in TaskDetail but has no input in TaskForm, making it permanently uneditable from the UI. Add the field to the form.
+    acceptance_criteria:
+      - TaskForm gains an actual_cost numeric input (type="number", min="0", step="0.01") positioned between expected_cost and expected_duration_days
+      - label reads "Actual cost (€)" matching the expected_cost label convention
+      - edit mode pre-fills from task.actual_cost; create mode starts empty
+      - value is included in the TaskUpdate and TaskInsert payload on save as actual_cost parsed to float or null when empty
+      - dirty-check includes actual_cost
+      - TaskDetail continues to display the value unchanged
+
+  - id: T4
+    type: fix
+    status: TODO
+    title: Reset blockerIds and rawDeps on project switch
+    description: When the selected project changes, blockerIds and rawDeps retain the previous project's data until the new project's deps load. Task cards briefly show stale blocked state. Fix by clearing both immediately on project ID change.
+    acceptance_criteria:
+      - the useEffect on selectedId in Board.tsx sets blockerIds to new Map() and rawDeps to [] as its first synchronous operations, before initiating any async fetches
+      - task cards show no blocked indicator during the loading window rather than stale indicators from the previous project
+      - no other behaviour changes
+
+  - id: T5
+    type: fix
+    status: TODO
+    title: Restore blockers on setBlockers failure
+    description: setBlockers does delete-then-insert with no rollback. If the insert step fails, all dependencies for the task are silently wiped. Fix by capturing the pre-operation state and attempting a restore on insert failure.
+    acceptance_criteria:
+      - before deleting, setBlockers fetches existing blocker IDs for the task via a task_deps select
+      - if the delete succeeds but the insert throws, a restore insert is attempted for the captured IDs; if the restore also fails the error is re-thrown (best-effort restore, not a transaction guarantee)
+      - if the delete step itself throws the function throws immediately without any insert or restore attempt
+      - on success the behaviour is unchanged
+      - unit tests cover: success path, insert-failure with successful restore, insert-failure with failed restore
+
+  - id: T6
+    type: chore
+    status: TODO
+    title: Drop spaces and task_spaces tables
+    description: The spaces and task_spaces tables were created in the initial migration but have never been used by the app. Dropping them now produces a clean schema before the Rooms epic re-introduces room concepts with a deliberate design from scratch. EPIC-011 will not assume this table shape.
+    acceptance_criteria:
+      - migration drops task_spaces first (FK dependency order), then spaces
+      - database.ts types regenerated; Tables<'spaces'> and Tables<'task_spaces'> no longer present
+      - grep confirms no app code references either table after the change
+      - migration applied to both dev and prod via the standard migrate-db workflow

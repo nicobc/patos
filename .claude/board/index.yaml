@@ -1,5 +1,7 @@
 in_progress: []
 ready:
+  - id: EPIC-005
+    title: DAG resolver
 done:
   - id: EPIC-008
     title: CI & local dev environment
@@ -12,8 +14,6 @@ done:
   - id: EPIC-001
     title: Site skeleton
 ideation:
-  - id: EPIC-005
-    title: DAG resolver
   - id: EPIC-006
     title: Cost tracker
   - id: EPIC-007

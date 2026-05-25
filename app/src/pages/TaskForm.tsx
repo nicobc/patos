@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../context/useAuth'
 import {
   createTask,
@@ -55,6 +57,28 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
   const [titleError, setTitleError]     = useState(false)
+
+  const blockerPanelRef = useRef<HTMLDivElement>(null)
+  const blockerTriggerRef = useRef<HTMLButtonElement>(null)
+  const [blockerPanelOpen, setBlockerPanelOpen] = useState(false)
+
+  useEffect(() => {
+    if (!blockerPanelOpen) return
+    function handleOutside(e: MouseEvent) {
+      if (blockerPanelRef.current && !blockerPanelRef.current.contains(e.target as Node)) {
+        setBlockerPanelOpen(false)
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setBlockerPanelOpen(false); blockerTriggerRef.current?.focus() }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [blockerPanelOpen])
 
   const taskId = task?.id
   useEffect(() => {
@@ -232,69 +256,85 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
 
         <label className="task-form-label">
           <span>Contractor</span>
-          <select className="input dropdown" value={contractorId} onChange={(e) => setContractorId(e.target.value)}>
-            <option value="">Unassigned</option>
-            {contractors.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          <div className="select-wrap">
+            <select className="input select" value={contractorId} onChange={(e) => setContractorId(e.target.value)}>
+              <option value="">Unassigned</option>
+              {contractors.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+          </div>
         </label>
 
         {isEdit && (
           <label className="task-form-label">
             <span>Status</span>
-            <select className="input dropdown" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
-              {STATUSES
-                .filter(({ value }) =>
-                  value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
-                )
-                .map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
+            <div className="select-wrap">
+              <select className="input select" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
+                {STATUSES
+                  .filter(({ value }) =>
+                    value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
+                  )
+                  .map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+              </select>
+              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+            </div>
           </label>
         )}
 
         <div className="task-form-label">
           <span>Blocked by</span>
-          <details className="task-form-multiselect">
-            <summary className="input task-form-multiselect-summary">
-              {selectedBlockerIds.length === 0
-                ? 'No blockers'
-                : `${selectedBlockerIds.length} blocker${selectedBlockerIds.length > 1 ? 's' : ''}`}
-            </summary>
-            <div className="dropdown task-form-multiselect-panel">
-              {activeTasks.length === 0 && completedTasks.length === 0 ? (
-                <p className="task-form-multiselect-empty">No other tasks in this project</p>
-              ) : (
-                <>
-                  {activeTasks.map((t) => (
-                    <label key={t.id} className="task-form-multiselect-option">
-                      <input
-                        type="checkbox"
-                        checked={selectedBlockerIds.includes(t.id)}
-                        onChange={(e) => toggleBlocker(t.id, e.target.checked)}
-                      />
-                      <span>{t.title}</span>
-                    </label>
-                  ))}
-                  {activeTasks.length > 0 && completedTasks.length > 0 && (
-                    <hr className="task-form-multiselect-divider" />
-                  )}
-                  {completedTasks.map((t) => (
-                    <label key={t.id} className="task-form-multiselect-option task-form-multiselect-option--dim">
-                      <input
-                        type="checkbox"
-                        checked={selectedBlockerIds.includes(t.id)}
-                        onChange={(e) => toggleBlocker(t.id, e.target.checked)}
-                      />
-                      <span>{t.title}</span>
-                    </label>
-                  ))}
-                </>
-              )}
-            </div>
-          </details>
+          <div className="task-form-multiselect" ref={blockerPanelRef}>
+            <button
+              type="button"
+              ref={blockerTriggerRef}
+              className="input select task-form-multiselect-trigger"
+              onClick={() => setBlockerPanelOpen((o) => !o)}
+            >
+              <span>
+                {selectedBlockerIds.length === 0
+                  ? 'No blockers'
+                  : `${selectedBlockerIds.length} blocker${selectedBlockerIds.length > 1 ? 's' : ''}`}
+              </span>
+              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+            </button>
+            {blockerPanelOpen && (
+              <div className="dropdown task-form-multiselect-panel">
+                {activeTasks.length === 0 && completedTasks.length === 0 ? (
+                  <p className="task-form-multiselect-empty">No other tasks in this project</p>
+                ) : (
+                  <>
+                    {activeTasks.map((t) => (
+                      <label key={t.id} className="task-form-multiselect-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedBlockerIds.includes(t.id)}
+                          onChange={(e) => toggleBlocker(t.id, e.target.checked)}
+                        />
+                        <span>{t.title}</span>
+                      </label>
+                    ))}
+                    {activeTasks.length > 0 && completedTasks.length > 0 && (
+                      <hr className="task-form-multiselect-divider" />
+                    )}
+                    {completedTasks.map((t) => (
+                      <label key={t.id} className="task-form-multiselect-option task-form-multiselect-option--dim">
+                        <input
+                          type="checkbox"
+                          checked={selectedBlockerIds.includes(t.id)}
+                          onChange={(e) => toggleBlocker(t.id, e.target.checked)}
+                        />
+                        <span>{t.title}</span>
+                      </label>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <label className="task-form-label">

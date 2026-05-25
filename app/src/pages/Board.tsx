@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges, type Contractor } from '../services/contractorsService'
 import {
@@ -301,16 +301,19 @@ export function Board() {
     <div className="board">
       <div className="board-toolbar">
         <div className="board-toolbar-controls">
-          <select
-            className="input dropdown board-select"
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-            aria-label="Select project"
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <div className="select-wrap board-select">
+            <select
+              className="input select"
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+              aria-label="Select project"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+          </div>
           <div className="board-toolbar-actions">
             {view.kind === 'board' && (
               <button

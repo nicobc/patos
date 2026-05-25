@@ -24,7 +24,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Replace <details> multi-select with a real popover
     description: The "Blocked by" multi-select in TaskForm uses a <details> HTML disclosure element. It does not close on outside click, has no animation, and is semantically wrong for a multi-select. Replace with a custom popover — a trigger button that shows a panel, closes on outside click and Escape, and is keyboard accessible.
     acceptance_criteria:

@@ -220,6 +220,34 @@ main {
   @media (width <= 768px) { font-size: 1rem; }
 }
 
+/* ── select ──────────────────────────────────────────────────────────────────── */
+
+.select {
+  background: var(--bg);
+  border-color: var(--border-faint);
+  border-radius: var(--br-md);
+}
+
+.select-chevron {
+  font-size: 0.65em;
+  opacity: var(--opacity-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.select-wrap {
+  position: relative;
+
+  & select { appearance: none; padding-right: 2.25rem; }
+
+  & .select-chevron {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
 /* ── dropdown panel ─────────────────────────────────────────────────────────── */
 
 .dropdown {

@@ -82,12 +82,12 @@
   position: relative;
 }
 
-.task-form-multiselect-summary {
+.task-form-multiselect-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   cursor: pointer;
-  list-style: none;
-  user-select: none;
-
-  &::-webkit-details-marker { display: none; }
 }
 
 .task-form-multiselect-panel {

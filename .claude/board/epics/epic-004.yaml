@@ -136,7 +136,7 @@ tickets:
 
   - id: T10
     type: feat
-    status: READY
+    status: DONE
     title: Task dependencies
     description: Allow tasks to declare which other tasks they are blocked by. The edit form gains a "Blocked by" multi-select (writable) scoped to the current project's tasks. TaskDetail gains a read-only "Blocks" field showing tasks that depend on this one. Backed by the existing task_deps table.
     acceptance_criteria:

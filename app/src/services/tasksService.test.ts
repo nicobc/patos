@@ -7,7 +7,12 @@ import {
   updateTask,
   deleteTask,
   subscribeToTaskChanges,
+  subscribeToDepsChanges,
   buildStatusTransition,
+  listBlockers,
+  listBlocks,
+  setBlockers,
+  listRawDepsByTasks,
 } from './tasksService'
 import type { Task } from './tasksService'
 
@@ -218,6 +223,191 @@ describe('subscribeToTaskChanges', () => {
 
     capturedCallback!({ eventType: 'DELETE', new: {}, old: { id: 'abc' } } as RealtimePostgresChangesPayload<Task>)
     expect(listener).toHaveBeenCalledWith({ eventType: 'DELETE', id: 'abc' })
+
+    unsubscribe()
+    expect(mockRemoveChannel).toHaveBeenCalledWith(fakeChannel)
+  })
+})
+
+const blockerTask: Task = { ...task, id: 'blocker-id', title: 'Blocker task' }
+
+describe('listBlockers', () => {
+  it('returns blocker tasks', async () => {
+    mockFrom
+      .mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ data: [{ depends_on_task_id: 'blocker-id' }], error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: [blockerTask], error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+
+    expect(await listBlockers('abc')).toEqual([blockerTask])
+  })
+
+  it('returns empty array when task has no deps', async () => {
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    expect(await listBlockers('abc')).toEqual([])
+  })
+
+  it('throws on task_deps query error', async () => {
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: new Error('fail') }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(listBlockers('abc')).rejects.toThrow('fail')
+  })
+})
+
+describe('listBlocks', () => {
+  it('returns tasks that depend on this task', async () => {
+    mockFrom
+      .mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ data: [{ task_id: 'dep-task-id' }], error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: [{ ...task, id: 'dep-task-id' }], error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+
+    expect(await listBlocks('blocker-id')).toEqual([{ ...task, id: 'dep-task-id' }])
+  })
+
+  it('returns empty array when no tasks depend on this task', async () => {
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    expect(await listBlocks('blocker-id')).toEqual([])
+  })
+
+  it('throws on task_deps query error', async () => {
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: new Error('fail') }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(listBlocks('abc')).rejects.toThrow('fail')
+  })
+})
+
+describe('setBlockers', () => {
+  it('deletes existing deps and inserts new ones', async () => {
+    const mockInsert = vi.fn().mockResolvedValue({ error: null })
+    mockFrom
+      .mockReturnValueOnce({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        insert: mockInsert,
+      } as unknown as ReturnType<typeof supabase.from>)
+
+    await setBlockers('abc', ['b1', 'b2'])
+    expect(mockInsert).toHaveBeenCalledWith([
+      { task_id: 'abc', depends_on_task_id: 'b1' },
+      { task_id: 'abc', depends_on_task_id: 'b2' },
+    ])
+  })
+
+  it('only deletes when blockerIds is empty', async () => {
+    mockFrom.mockReturnValueOnce({
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(setBlockers('abc', [])).resolves.toBeUndefined()
+    expect(mockFrom).toHaveBeenCalledTimes(1)
+  })
+
+  it('throws on delete error', async () => {
+    mockFrom.mockReturnValueOnce({
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: new Error('fail') }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('fail')
+  })
+})
+
+describe('listRawDepsByTasks', () => {
+  it('returns raw dep rows for given task IDs', async () => {
+    const deps = [{ task_id: 'abc', depends_on_task_id: 'blocker-id' }]
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: deps, error: null }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    expect(await listRawDepsByTasks(['abc'])).toEqual(deps)
+  })
+
+  it('returns empty array when taskIds is empty', async () => {
+    expect(await listRawDepsByTasks([])).toEqual([])
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
+
+  it('throws on error', async () => {
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: null, error: new Error('fail') }),
+      }),
+    } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(listRawDepsByTasks(['abc'])).rejects.toThrow('fail')
+  })
+})
+
+describe('subscribeToDepsChanges', () => {
+  it('sets up INSERT and DELETE listeners and returns an unsubscribe fn', () => {
+    let insertCb: ((p: unknown) => void) | null = null
+    let deleteCb: ((p: unknown) => void) | null = null
+    const fakeChannel: { on: Mock; subscribe: Mock } = {
+      on: vi.fn()
+        .mockImplementationOnce((_e: string, _f: unknown, cb: (p: unknown) => void) => {
+          insertCb = cb
+          return fakeChannel
+        })
+        .mockImplementationOnce((_e: string, _f: unknown, cb: (p: unknown) => void) => {
+          deleteCb = cb
+          return fakeChannel
+        }),
+      subscribe: vi.fn().mockImplementation(() => fakeChannel),
+    }
+    mockChannel.mockReturnValue(fakeChannel as unknown as ReturnType<typeof supabase.channel>)
+    mockRemoveChannel.mockResolvedValue('ok')
+
+    const listener = vi.fn()
+    const unsubscribe = subscribeToDepsChanges('proj-1', listener)
+
+    expect(mockChannel).toHaveBeenCalledWith('task-deps-proj-1')
+    expect(fakeChannel.on).toHaveBeenCalledWith('postgres_changes', { event: 'INSERT', schema: 'public', table: 'task_deps' }, expect.any(Function))
+    expect(fakeChannel.on).toHaveBeenCalledWith('postgres_changes', { event: 'DELETE', schema: 'public', table: 'task_deps' }, expect.any(Function))
+
+    insertCb!({ eventType: 'INSERT', new: { task_id: 'abc', depends_on_task_id: 'b1' }, old: {} })
+    expect(listener).toHaveBeenCalledWith({ eventType: 'INSERT', taskId: 'abc', blockerTaskId: 'b1' })
+
+    deleteCb!({ eventType: 'DELETE', new: {}, old: { task_id: 'abc', depends_on_task_id: 'b1' } })
+    expect(listener).toHaveBeenCalledWith({ eventType: 'DELETE', taskId: 'abc', blockerTaskId: 'b1' })
 
     unsubscribe()
     expect(mockRemoveChannel).toHaveBeenCalledWith(fakeChannel)

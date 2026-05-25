@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import { updateTask, deleteTask, type Task } from '../services/tasksService'
+import { useEffect, useState } from 'react'
+import { updateTask, deleteTask, listBlockers, listBlocks, type Task } from '../services/tasksService'
 import './TaskDetail.css'
 
 const STATUS_LABELS: Record<string, string> = {
   ideation:    'Ideation',
   planned:     'Planned',
-  ready:       'Ready',
   in_progress: 'In Progress',
   on_hold:     'On Hold',
   done:        'Done',
@@ -23,6 +22,13 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [blockers, setBlockers] = useState<Task[]>([])
+  const [blocks, setBlocks]     = useState<Task[]>([])
+
+  useEffect(() => {
+    listBlockers(task.id).then(setBlockers).catch(() => {})
+    listBlocks(task.id).then(setBlocks).catch(() => {})
+  }, [task.id])
 
   async function commit() {
     if (!pending) return
@@ -82,6 +88,20 @@ export function TaskDetail({ task, contractorName, onBack, onEdit }: Props) {
 
         <dt>End</dt>
         <dd>{fmtDate(task.actual_end)}</dd>
+
+        {blockers.length > 0 && (
+          <>
+            <dt>Blocked by</dt>
+            <dd>{blockers.map((t) => t.title).join(', ')}</dd>
+          </>
+        )}
+
+        {blocks.length > 0 && (
+          <>
+            <dt>Blocks</dt>
+            <dd>{blocks.map((t) => t.title).join(', ')}</dd>
+          </>
+        )}
 
         <dt>Created</dt>
         <dd>{fmtDate(task.created_at)}</dd>

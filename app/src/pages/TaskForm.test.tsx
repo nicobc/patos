@@ -6,6 +6,8 @@ import { TaskForm } from './TaskForm'
 vi.mock('../services/tasksService', () => ({
   createTask: vi.fn(),
   updateTask: vi.fn(),
+  listBlockers: vi.fn().mockResolvedValue([]),
+  setBlockers: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../context/useAuth', () => ({
@@ -33,7 +35,7 @@ const task = {
   expected_duration_days: 3,
   actual_start: '2026-03-01',
   actual_end: null,
-  status: 'ready',
+  status: 'planned',
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -144,7 +146,7 @@ describe('TaskForm — edit', () => {
 
   it('renders status select in edit mode', () => {
     render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByDisplayValue('Ready')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Planned')).toBeInTheDocument()
   })
 
   it('calls updateTask with updated title and invokes onSaved', async () => {

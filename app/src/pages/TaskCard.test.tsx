@@ -16,6 +16,7 @@ const defaultProps = {
   contractorName: null,
   prevStatus: null,
   nextStatus: 'planned',
+  isBlocked: false,
   onSelect: vi.fn(),
   onStatusChange: vi.fn(),
 }
@@ -54,8 +55,18 @@ describe('TaskCard', () => {
   })
 
   it('enables prev button when prevStatus is provided', () => {
-    render(<TaskCard {...defaultProps} prevStatus="ideation" nextStatus="ready" />)
+    render(<TaskCard {...defaultProps} prevStatus="ideation" nextStatus="in_progress" />)
     expect(screen.getByRole('button', { name: /previous status/i })).not.toBeDisabled()
+  })
+
+  it('shows lock icon when isBlocked is true', () => {
+    render(<TaskCard {...defaultProps} isBlocked={true} />)
+    expect(screen.getByLabelText('Blocked')).toBeInTheDocument()
+  })
+
+  it('does not show lock icon when isBlocked is false', () => {
+    render(<TaskCard {...defaultProps} isBlocked={false} />)
+    expect(screen.queryByLabelText('Blocked')).not.toBeInTheDocument()
   })
 
   it('calls onStatusChange with prevStatus when prev is clicked', async () => {
@@ -92,7 +103,7 @@ describe('TaskCard — hold toggle', () => {
   })
 
   it('does not show hold button for other statuses', () => {
-    for (const status of ['ideation', 'planned', 'ready', 'done', 'discarded']) {
+    for (const status of ['ideation', 'planned', 'done', 'discarded']) {
       const { unmount } = render(<TaskCard {...defaultProps} task={{ ...task, status }} />)
       expect(screen.queryByRole('button', { name: /put task on hold|resume task/i })).not.toBeInTheDocument()
       unmount()
@@ -116,7 +127,7 @@ describe('TaskCard — hold toggle', () => {
   })
 
   it('disables prev and next buttons when task is on_hold', () => {
-    render(<TaskCard {...defaultProps} task={{ ...task, status: 'on_hold' }} prevStatus="ready" nextStatus="done" />)
+    render(<TaskCard {...defaultProps} task={{ ...task, status: 'on_hold' }} prevStatus="planned" nextStatus="done" />)
     expect(screen.getByRole('button', { name: /previous status/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /next status/i })).toBeDisabled()
   })

@@ -86,6 +86,25 @@
   padding: 2rem 0;
 }
 
+.board-blocker-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--info-surface);
+  border: 1px solid color-mix(in srgb, var(--info) 25%, transparent);
+  border-radius: var(--br-md);
+}
+
+.board-blocker-warning-text {
+  font-size: var(--fs-sm);
+}
+
+.board-blocker-warning-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 @media (width >= 768px) {
   .board-columns {
     scroll-snap-type: none;

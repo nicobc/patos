@@ -65,7 +65,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: DAG view — cycle error
     description: When the resolver detects one or more cycles, the Dependencies tab shows a cycle error state instead of the graph. Each cycle is displayed as a chain of tappable task name chips. Multiple independent cycles listed vertically. The error state resolves automatically once all cycles are fixed.
     acceptance_criteria:

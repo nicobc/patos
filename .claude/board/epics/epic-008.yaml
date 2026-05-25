@@ -2,7 +2,7 @@ id: EPIC-008
 title: CI & local dev environment
 scope: dev-infra
 category: infra
-status: READY
+status: IN PROGRESS
 description: Local Supabase dev environment and a test-migrations CI workflow that validates migrations and keeps database.ts in sync. Eliminates dependency on the linked dev project for type generation in both agent and CI contexts.
 notes:
   - local Supabase requires Docker Desktop; supabase/config.toml already initialised with project_id = "patos"
@@ -25,7 +25,7 @@ tickets:
 
   - id: T2
     type: ci
-    status: READY
+    status: IN PROGRESS
     title: test-migrations GHA workflow with typegen diff check
     description: New workflow that validates migrations and asserts database.ts is up to date. Mirrors the dorny + status pattern from test-app.yml.
     acceptance_criteria:

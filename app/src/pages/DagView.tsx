@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import dagre from '@dagrejs/dagre'
 import { buildAdjacency, topoSort, type RawDep } from '../lib/dagResolver'
 import type { Task } from '../services/tasksService'
@@ -8,6 +10,7 @@ const NODE_W = 200
 const NODE_H = 56
 const COMP_GAP = 32
 const ARROW_ID = 'dag-arrowhead'
+const ARROW_CYCLE_ID = 'dag-arrowhead-cycle'
 
 const STATUS_LABELS: Record<string, string> = {
   ideation:    'Ideation',
@@ -83,7 +86,7 @@ function edgePath(pts: { x: number; y: number }[]): string {
 export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks])
 
-  const { graphs, standaloneCount, hasCycles } = useMemo(() => {
+  const { graphs, standaloneCount, cycleNodeIds } = useMemo(() => {
     const depTaskIds = new Set<string>()
     for (const { task_id, depends_on_task_id } of rawDeps) {
       depTaskIds.add(task_id)
@@ -92,23 +95,17 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
     const connectedIds = tasks.map(t => t.id).filter(id => depTaskIds.has(id))
     const standaloneCount = tasks.length - connectedIds.length
 
-    if (connectedIds.length === 0) return { graphs: [], standaloneCount, hasCycles: false }
+    if (connectedIds.length === 0) return { graphs: [], standaloneCount, cycleNodeIds: new Set<string>() }
 
     const adj = buildAdjacency(connectedIds, rawDeps)
     const sorted = topoSort(adj)
-    if (!Array.isArray(sorted)) return { graphs: [], standaloneCount, hasCycles: true }
+    const cycleNodeIds = Array.isArray(sorted)
+      ? new Set<string>()
+      : new Set<string>(sorted.cycles.flat())
 
     const graphs = findConnectedComponents(connectedIds, adj).map(ids => layoutComponent(ids, adj))
-    return { graphs, standaloneCount, hasCycles: false }
+    return { graphs, standaloneCount, cycleNodeIds }
   }, [tasks, rawDeps])
-
-  if (hasCycles) {
-    return (
-      <div className="dag-view">
-        <p className="dag-cycle-notice board-message">Circular dependency detected — fix dependencies to view the graph</p>
-      </div>
-    )
-  }
 
   if (graphs.length === 0) {
     return (
@@ -123,10 +120,20 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
 
   return (
     <div className="dag-view">
+      {cycleNodeIds.size > 0 && (
+        <p className="dag-cycle-warning">
+          <FontAwesomeIcon icon={faTriangleExclamation} />
+          {' '}Circular dependency detected
+        </p>
+      )}
+
       <svg width="0" height="0" aria-hidden="true" className="dag-defs">
         <defs>
           <marker id={ARROW_ID} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" className="dag-arrowhead" />
+          </marker>
+          <marker id={ARROW_CYCLE_ID} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" className="dag-arrowhead dag-arrowhead--cycle" />
           </marker>
         </defs>
       </svg>
@@ -142,21 +149,27 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
             viewBox={`0 0 ${width} ${height}`}
             style={idx < graphs.length - 1 ? { marginBottom: COMP_GAP } : undefined}
           >
-            {g.edges().map(e => (
-              <path
-                key={`${e.v}→${e.w}`}
-                d={edgePath(g.edge(e).points ?? [])}
-                className="dag-edge"
-                markerEnd={`url(#${ARROW_ID})`}
-              />
-            ))}
+            {g.edges().map(e => {
+              const isCycleEdge = cycleNodeIds.has(e.v) && cycleNodeIds.has(e.w)
+              return (
+                <path
+                  key={`${e.v}→${e.w}`}
+                  d={edgePath(g.edge(e).points ?? [])}
+                  className={`dag-edge${isCycleEdge ? ' dag-edge--cycle' : ''}`}
+                  markerEnd={`url(#${isCycleEdge ? ARROW_CYCLE_ID : ARROW_ID})`}
+                />
+              )
+            })}
             {g.nodes().map(id => {
               const { x, y } = g.node(id)
               const task = taskMap.get(id)
               if (!task) return null
               return (
                 <foreignObject key={id} x={x - NODE_W / 2} y={y - NODE_H / 2} width={NODE_W} height={NODE_H}>
-                  <button className="dag-node" onClick={() => onSelectTask(task)}>
+                  <button
+                    className={`dag-node${cycleNodeIds.has(id) ? ' dag-node--cycle' : ''}`}
+                    onClick={() => onSelectTask(task)}
+                  >
                     <span className="dag-node-title">{task.title}</span>
                     <span className="dag-node-status">{STATUS_LABELS[task.status] ?? task.status}</span>
                   </button>

@@ -48,7 +48,7 @@ tickets:
 
   - id: T4
     type: fix
-    status: READY
+    status: IN PROGRESS
     title: Reset blockerIds and rawDeps on project switch
     description: When the selected project changes, blockerIds and rawDeps retain the previous project's data until the new project's deps load. Task cards briefly show stale blocked state. Fix by clearing both immediately on project ID change.
     acceptance_criteria:

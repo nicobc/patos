@@ -216,6 +216,8 @@ main {
 
   &:focus          { outline: none; border-color: var(--border-emphasis); }
   &::placeholder   { opacity: var(--opacity-subtle); }
+
+  @media (width <= 768px) { font-size: 1rem; }
 }
 
 /* ── dropdown panel ─────────────────────────────────────────────────────────── */

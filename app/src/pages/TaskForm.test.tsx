@@ -31,7 +31,7 @@ const task = {
   owner_id: 'u1',
   contractor_id: 'c1',
   expected_cost: 1500,
-  actual_cost: null,
+  actual_cost: 800,
   expected_duration_days: 3,
   actual_start: '2026-03-01',
   actual_end: null,
@@ -74,8 +74,29 @@ describe('TaskForm — create', () => {
       project_id: 'p1',
       owner_id: 'u1',
       status: 'ideation',
+      actual_cost: null,
     })))
     expect(onSaved).toHaveBeenCalledWith(saved)
+  })
+
+  it('includes actual_cost in createTask payload when entered', async () => {
+    mockCreateTask.mockResolvedValue(saved)
+    render(<TaskForm projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
+
+    await userEvent.type(screen.getByRole('textbox', { name: /title/i }), 'New task title')
+    await userEvent.type(screen.getByLabelText(/actual cost/i), '350.50')
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+
+    await waitFor(() => expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({
+      actual_cost: 350.50,
+    })))
+  })
+
+  it('marks form dirty when actual_cost is changed', async () => {
+    render(<TaskForm projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
+    await userEvent.type(screen.getByLabelText(/actual cost/i), '100')
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(screen.getByText('Discard unsaved changes?')).toBeInTheDocument()
   })
 
   it('shows error when createTask fails', async () => {
@@ -142,6 +163,25 @@ describe('TaskForm — edit', () => {
     expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument()
     expect(screen.getByDisplayValue('Paint walls')).toBeInTheDocument()
     expect(screen.getByDisplayValue('All interior walls')).toBeInTheDocument()
+  })
+
+  it('pre-fills actual_cost from task', () => {
+    render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText(/actual cost/i)).toHaveValue(800)
+  })
+
+  it('includes actual_cost in updateTask payload', async () => {
+    mockUpdateTask.mockResolvedValue(saved)
+    render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
+
+    const actualCostInput = screen.getByLabelText(/actual cost/i)
+    await userEvent.clear(actualCostInput)
+    await userEvent.type(actualCostInput, '999')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => expect(mockUpdateTask).toHaveBeenCalledWith('t1', expect.objectContaining({
+      actual_cost: 999,
+    })))
   })
 
   it('renders status select in edit mode', () => {

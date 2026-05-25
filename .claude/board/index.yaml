@@ -1,10 +1,10 @@
-in_progress:
-  - id: EPIC-004
-    title: Basic Kanban
+in_progress: []
 ready:
   - id: EPIC-008
     title: CI & local dev environment
 done:
+  - id: EPIC-004
+    title: Basic Kanban
   - id: EPIC-003
     title: Data model
   - id: EPIC-002

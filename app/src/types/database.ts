@@ -79,27 +79,6 @@ export type Database = {
         }
         Relationships: []
       }
-      spaces: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          zone: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          zone?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          zone?: string | null
-        }
-        Relationships: []
-      }
       task_deps: {
         Row: {
           depends_on_task_id: string
@@ -123,36 +102,6 @@ export type Database = {
           },
           {
             foreignKeyName: "task_deps_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      task_spaces: {
-        Row: {
-          space_id: string
-          task_id: string
-        }
-        Insert: {
-          space_id: string
-          task_id: string
-        }
-        Update: {
-          space_id?: string
-          task_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_spaces_space_id_fkey"
-            columns: ["space_id"]
-            isOneToOne: false
-            referencedRelation: "spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_spaces_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
@@ -257,7 +206,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_blockers: {
+        Args: { p_blocker_ids: string[]; p_task_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

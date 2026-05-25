@@ -5,15 +5,6 @@ insert into projects (id, name, description) values
   ('00000000-0000-0000-0000-000000000001', 'Short-Term Fixes', 'Quick wins and repairs before the full renovation begins'),
   ('00000000-0000-0000-0000-000000000002', 'Full Renovation',  'Complete overhaul of all rooms in the flat');
 
--- spaces  (zone: day = living/social areas, night = sleeping/bathing areas)
-insert into spaces (id, name, zone) values
-  ('00000000-0000-0000-0001-000000000001', 'Bathroom',    'night'),
-  ('00000000-0000-0000-0001-000000000002', 'Kitchen',     'day'),
-  ('00000000-0000-0000-0001-000000000003', 'Bedroom 1',   'night'),
-  ('00000000-0000-0000-0001-000000000004', 'Bedroom 2',   'night'),
-  ('00000000-0000-0000-0001-000000000005', 'Living Room', 'day'),
-  ('00000000-0000-0000-0001-000000000006', 'Hallway',     'day');
-
 -- contractors
 insert into contractors (id, name, email, phone) values
   ('00000000-0000-0000-0002-000000000001', 'Alex Rivera',  'alex@example-contractors.dev',   '555-0101'),
@@ -104,24 +95,6 @@ insert into tasks (id, title, description, project_id, contractor_id,
    'Sand, stain, and lacquer original timber boards',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000003',
    3200.00, 3150.00, 3, '2026-04-01', '2026-04-03', 'done');
-
--- task_spaces
-insert into task_spaces (task_id, space_id) values
-  ('00000000-0000-0000-0003-000000000001', '00000000-0000-0000-0001-000000000001'), -- tap       → Bathroom
-  ('00000000-0000-0000-0003-000000000002', '00000000-0000-0000-0001-000000000006'), -- paint     → Hallway
-  ('00000000-0000-0000-0003-000000000003', '00000000-0000-0000-0001-000000000002'), -- handles   → Kitchen
-  ('00000000-0000-0000-0003-000000000004', '00000000-0000-0000-0001-000000000003'), -- blinds    → Bedroom 1
-  ('00000000-0000-0000-0003-000000000005', '00000000-0000-0000-0001-000000000005'), -- cracks    → Living Room
-  ('00000000-0000-0000-0003-000000000006', '00000000-0000-0000-0001-000000000001'), -- gut bath  → Bathroom
-  ('00000000-0000-0000-0003-000000000007', '00000000-0000-0000-0001-000000000002'), -- remodel   → Kitchen
-  ('00000000-0000-0000-0003-000000000008', '00000000-0000-0000-0001-000000000002'), -- island    → Kitchen
-  ('00000000-0000-0000-0003-000000000009', '00000000-0000-0000-0001-000000000004'), -- rewire    → Bedroom 2
-  ('00000000-0000-0000-0003-000000000010', '00000000-0000-0000-0001-000000000006'), -- flooring  → Hallway
-  ('00000000-0000-0000-0003-000000000011', '00000000-0000-0000-0001-000000000002'), -- paint day → Kitchen
-  ('00000000-0000-0000-0003-000000000011', '00000000-0000-0000-0001-000000000005'), -- paint day → Living Room
-  ('00000000-0000-0000-0003-000000000011', '00000000-0000-0000-0001-000000000006'), -- paint day → Hallway
-  ('00000000-0000-0000-0003-000000000012', '00000000-0000-0000-0001-000000000001'), -- extractor → Bathroom
-  ('00000000-0000-0000-0003-000000000013', '00000000-0000-0000-0001-000000000003'); -- resurface → Bedroom 1
 
 -- task_deps  (task_id must wait for depends_on_task_id)
 insert into task_deps (task_id, depends_on_task_id) values

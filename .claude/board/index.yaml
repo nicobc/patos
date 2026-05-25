@@ -1,10 +1,10 @@
-in_progress:
-  - id: EPIC-009
-    title: Tech debt
+in_progress: []
 ready:
   - id: EPIC-010
     title: UI/UX improvements
 done:
+  - id: EPIC-009
+    title: Tech debt
   - id: EPIC-005
     title: DAG resolver
   - id: EPIC-008

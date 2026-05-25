@@ -19,12 +19,14 @@ import type { Task } from './tasksService'
 vi.mock('../lib/supabase', () => ({
   supabase: {
     from: vi.fn(),
+    rpc: vi.fn(),
     channel: vi.fn(),
     removeChannel: vi.fn(),
   },
 }))
 
 const mockFrom = vi.mocked(supabase.from)
+const mockRpc = vi.mocked(supabase.rpc)
 const mockChannel = vi.mocked(supabase.channel)
 const mockRemoveChannel = vi.mocked(supabase.removeChannel)
 
@@ -307,98 +309,16 @@ describe('listBlocks', () => {
   })
 })
 
-const fetchMock = (ids: string[]) => ({
-  select: vi.fn().mockReturnValue({
-    eq: vi.fn().mockResolvedValue({
-      data: ids.map((id) => ({ depends_on_task_id: id })),
-      error: null,
-    }),
-  }),
-} as unknown as ReturnType<typeof supabase.from>)
-
 describe('setBlockers', () => {
-  it('deletes existing deps and inserts new ones', async () => {
-    const mockInsert = vi.fn().mockResolvedValue({ error: null })
-    mockFrom
-      .mockReturnValueOnce(fetchMock([]))
-      .mockReturnValueOnce({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null }),
-        }),
-      } as unknown as ReturnType<typeof supabase.from>)
-      .mockReturnValueOnce({
-        insert: mockInsert,
-      } as unknown as ReturnType<typeof supabase.from>)
-
+  it('calls rpc with correct parameters', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: null } as never)
     await setBlockers('abc', ['b1', 'b2'])
-    expect(mockInsert).toHaveBeenCalledWith([
-      { task_id: 'abc', depends_on_task_id: 'b1' },
-      { task_id: 'abc', depends_on_task_id: 'b2' },
-    ])
+    expect(mockRpc).toHaveBeenCalledWith('set_blockers', { p_task_id: 'abc', p_blocker_ids: ['b1', 'b2'] })
   })
 
-  it('only deletes when blockerIds is empty', async () => {
-    mockFrom
-      .mockReturnValueOnce(fetchMock([]))
-      .mockReturnValueOnce({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null }),
-        }),
-      } as unknown as ReturnType<typeof supabase.from>)
-
-    await expect(setBlockers('abc', [])).resolves.toBeUndefined()
-    expect(mockFrom).toHaveBeenCalledTimes(2)
-  })
-
-  it('throws on delete error without attempting insert', async () => {
-    mockFrom
-      .mockReturnValueOnce(fetchMock([]))
-      .mockReturnValueOnce({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: new Error('del-fail') }),
-        }),
-      } as unknown as ReturnType<typeof supabase.from>)
-
-    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('del-fail')
-    expect(mockFrom).toHaveBeenCalledTimes(2)
-  })
-
-  it('restores previous blockers and throws insert error when insert fails', async () => {
-    const mockRestore = vi.fn().mockResolvedValue({ error: null })
-    mockFrom
-      .mockReturnValueOnce(fetchMock(['old-b1']))
-      .mockReturnValueOnce({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null }),
-        }),
-      } as unknown as ReturnType<typeof supabase.from>)
-      .mockReturnValueOnce({
-        insert: vi.fn().mockResolvedValue({ error: new Error('ins-fail') }),
-      } as unknown as ReturnType<typeof supabase.from>)
-      .mockReturnValueOnce({
-        insert: mockRestore,
-      } as unknown as ReturnType<typeof supabase.from>)
-
-    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('ins-fail')
-    expect(mockRestore).toHaveBeenCalledWith([{ task_id: 'abc', depends_on_task_id: 'old-b1' }])
-  })
-
-  it('throws restore error when both insert and restore fail', async () => {
-    mockFrom
-      .mockReturnValueOnce(fetchMock(['old-b1']))
-      .mockReturnValueOnce({
-        delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null }),
-        }),
-      } as unknown as ReturnType<typeof supabase.from>)
-      .mockReturnValueOnce({
-        insert: vi.fn().mockResolvedValue({ error: new Error('ins-fail') }),
-      } as unknown as ReturnType<typeof supabase.from>)
-      .mockReturnValueOnce({
-        insert: vi.fn().mockResolvedValue({ error: new Error('restore-fail') }),
-      } as unknown as ReturnType<typeof supabase.from>)
-
-    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('restore-fail')
+  it('throws on rpc error', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: new Error('fail') } as never)
+    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('fail')
   })
 })
 

@@ -77,3 +77,55 @@
   display: flex;
   gap: 0.75rem;
 }
+
+.task-form-multiselect {
+  position: relative;
+}
+
+.task-form-multiselect-summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+
+  &::-webkit-details-marker { display: none; }
+}
+
+.task-form-multiselect-panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0.375rem 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.task-form-multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  &:hover { background: var(--surface-faint); }
+
+  input[type='checkbox'] { flex-shrink: 0; cursor: pointer; }
+}
+
+.task-form-multiselect-option--dim {
+  opacity: var(--opacity-muted);
+}
+
+.task-form-multiselect-divider {
+  margin: 0.25rem 0;
+  border: none;
+  border-top: 1px solid var(--border-faint);
+}
+
+.task-form-multiselect-empty {
+  padding: 0.5rem 0.75rem;
+  font-size: var(--fs-sm);
+  opacity: var(--opacity-muted);
+}

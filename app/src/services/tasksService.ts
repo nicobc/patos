@@ -2,6 +2,8 @@ import { supabase } from '../lib/supabase'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import type { Tables, TablesInsert, TablesUpdate } from '../types/database'
 
+export type TaskDep = Tables<'task_deps'>
+
 export type Task = Tables<'tasks'>
 export type TaskInsert = TablesInsert<'tasks'>
 export type TaskUpdate = TablesUpdate<'tasks'>
@@ -54,6 +56,63 @@ export async function deleteTask(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function listBlockers(taskId: string): Promise<Task[]> {
+  const { data: deps, error: depsError } = await supabase
+    .from('task_deps')
+    .select('depends_on_task_id')
+    .eq('task_id', taskId)
+  if (depsError) throw depsError
+  if (deps.length === 0) return []
+  const { data: tasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('*')
+    .in('id', deps.map((d) => d.depends_on_task_id))
+  if (tasksError) throw tasksError
+  return tasks
+}
+
+export async function listBlocks(taskId: string): Promise<Task[]> {
+  const { data: deps, error: depsError } = await supabase
+    .from('task_deps')
+    .select('task_id')
+    .eq('depends_on_task_id', taskId)
+  if (depsError) throw depsError
+  if (deps.length === 0) return []
+  const { data: tasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('*')
+    .in('id', deps.map((d) => d.task_id))
+  if (tasksError) throw tasksError
+  return tasks
+}
+
+export async function setBlockers(taskId: string, blockerIds: string[]): Promise<void> {
+  const { error: deleteError } = await supabase
+    .from('task_deps')
+    .delete()
+    .eq('task_id', taskId)
+  if (deleteError) throw deleteError
+  if (blockerIds.length === 0) return
+  const { error: insertError } = await supabase
+    .from('task_deps')
+    .insert(blockerIds.map((id) => ({ task_id: taskId, depends_on_task_id: id })))
+  if (insertError) throw insertError
+}
+
+export async function listRawDepsByTasks(taskIds: string[]): Promise<TaskDep[]> {
+  if (taskIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('task_deps')
+    .select('task_id, depends_on_task_id')
+    .in('task_id', taskIds)
+  if (error) throw error
+  return data
+}
+
+export type DepChangeEvent =
+  | { eventType: 'INSERT'; taskId: string; blockerTaskId: string }
+  | { eventType: 'DELETE'; taskId: string; blockerTaskId: string }
+
 export function subscribeToTaskChanges(
   projectId: string,
   callback: (event: TaskChangeEvent) => void
@@ -74,5 +133,34 @@ export function subscribeToTaskChanges(
     )
     .subscribe()
 
+  return () => { supabase.removeChannel(channel) }
+}
+
+export function subscribeToDepsChanges(
+  projectId: string,
+  callback: (event: DepChangeEvent) => void
+): () => void {
+  type DepRow = { task_id: string; depends_on_task_id: string }
+  const channel = supabase
+    .channel(`task-deps-${projectId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'task_deps' },
+      (payload: RealtimePostgresChangesPayload<DepRow>) => {
+        const rec = payload.new as DepRow
+        callback({ eventType: 'INSERT', taskId: rec.task_id, blockerTaskId: rec.depends_on_task_id })
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'task_deps' },
+      (payload: RealtimePostgresChangesPayload<DepRow>) => {
+        const rec = payload.old as Partial<DepRow>
+        if (rec.task_id && rec.depends_on_task_id) {
+          callback({ eventType: 'DELETE', taskId: rec.task_id, blockerTaskId: rec.depends_on_task_id })
+        }
+      }
+    )
+    .subscribe()
   return () => { supabase.removeChannel(channel) }
 }

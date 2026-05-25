@@ -3,7 +3,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, type Project } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
-import { listTasksByProject, subscribeToTaskChanges, updateTask, buildStatusTransition, type Task, type TaskChangeEvent } from '../services/tasksService'
+import {
+  listTasksByProject,
+  listRawDepsByTasks,
+  subscribeToTaskChanges,
+  subscribeToDepsChanges,
+  updateTask,
+  buildStatusTransition,
+  type Task,
+  type TaskChangeEvent,
+  type DepChangeEvent,
+} from '../services/tasksService'
 import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import { TaskForm } from './TaskForm'
@@ -13,7 +23,6 @@ import './Board.css'
 const COLUMNS = [
   { status: 'ideation',    label: 'Ideation'    },
   { status: 'planned',     label: 'Planned'     },
-  { status: 'ready',       label: 'Ready'       },
   { status: 'in_progress', label: 'In Progress' },
   { status: 'done',        label: 'Done'        },
 ] as const
@@ -29,6 +38,8 @@ type View =
 type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
   | { status: 'error'; message: string }
+
+type PendingTransition = { task: Task; newStatus: string; blockerTitles: string[] }
 
 function applyTaskChange(items: Task[], event: TaskChangeEvent): Task[] {
   if (event.eventType === 'INSERT') {
@@ -48,14 +59,16 @@ export function Board() {
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
   const [projectsError, setProjectsError]     = useState<string | null>(null)
-  const [tasksResult, setTasksResult]     = useState<TasksResult | null>(null)
-  const [view, setView]                   = useState<View>({ kind: 'board' })
+  const [tasksResult, setTasksResult]         = useState<TasksResult | null>(null)
+  const [blockerIds, setBlockerIds]           = useState<Map<string, Set<string>>>(new Map())
+  const [view, setView]                       = useState<View>({ kind: 'board' })
   const [transitionError, setTransitionError] = useState<string | null>(null)
+  const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
 
   const tasksLoading = tasksResult === null ||
     (tasksResult.status === 'ready' && tasksResult.projectId !== selectedId)
-  const tasksError   = tasksResult?.status === 'error' ? tasksResult.message : null
-  const tasks        = tasksResult?.status === 'ready' && tasksResult.projectId === selectedId
+  const tasksError = tasksResult?.status === 'error' ? tasksResult.message : null
+  const tasks      = tasksResult?.status === 'ready' && tasksResult.projectId === selectedId
     ? tasksResult.items
     : []
 
@@ -79,22 +92,57 @@ export function Board() {
     if (!selectedId) return
 
     listTasksByProject(selectedId)
-      .then((data) => setTasksResult({
-        status: 'ready',
-        projectId: selectedId,
-        items: data.filter((t) => t.status !== 'discarded'),
-      }))
+      .then((data) => {
+        const visible = data.filter((t) => t.status !== 'discarded')
+        setTasksResult({ status: 'ready', projectId: selectedId, items: visible })
+        if (visible.length === 0) { setBlockerIds(new Map()); return }
+        listRawDepsByTasks(visible.map((t) => t.id))
+          .then((deps) => {
+            const map = new Map<string, Set<string>>()
+            for (const dep of deps) {
+              if (!map.has(dep.task_id)) map.set(dep.task_id, new Set())
+              map.get(dep.task_id)!.add(dep.depends_on_task_id)
+            }
+            setBlockerIds(map)
+          })
+          .catch(() => {})
+      })
       .catch(() => setTasksResult({ status: 'error', message: 'Failed to load tasks' }))
 
-    return subscribeToTaskChanges(selectedId, (event) =>
+    const unsubTasks = subscribeToTaskChanges(selectedId, (event) =>
       setTasksResult((prev) => {
         if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev
         return { ...prev, items: applyTaskChange(prev.items, event) }
       })
     )
+
+    const unsubDeps = subscribeToDepsChanges(selectedId, (event: DepChangeEvent) =>
+      setBlockerIds((prev) => {
+        const next = new Map(prev)
+        const blockers = new Set(next.get(event.taskId) ?? [])
+        if (event.eventType === 'INSERT') blockers.add(event.blockerTaskId)
+        else blockers.delete(event.blockerTaskId)
+        next.set(event.taskId, blockers)
+        return next
+      })
+    )
+
+    return () => {
+      unsubTasks()
+      unsubDeps()
+    }
   }, [selectedId])
 
-  function handleStatusChange(task: Task, newStatus: string) {
+  function isBlocked(task: Task): boolean {
+    const deps = blockerIds.get(task.id)
+    if (!deps || deps.size === 0) return false
+    return [...deps].some((bid) => {
+      const blocker = tasks.find((t) => t.id === bid)
+      return !blocker || blocker.status !== 'done'
+    })
+  }
+
+  function executeStatusChange(task: Task, newStatus: string) {
     setTransitionError(null)
     const update = buildStatusTransition(task, newStatus)
     setTasksResult((prev) => {
@@ -115,6 +163,21 @@ export function Board() {
           : 'Failed to move task — refreshed from server'
       setTransitionError(msg)
     })
+  }
+
+  function handleStatusChange(task: Task, newStatus: string) {
+    if (newStatus === 'in_progress' && isBlocked(task)) {
+      const deps = blockerIds.get(task.id) ?? new Set<string>()
+      const titles = [...deps]
+        .map((bid) => tasks.find((t) => t.id === bid))
+        .filter((t): t is Task => !!t && t.status !== 'done')
+        .map((t) => t.title)
+      if (titles.length > 0) {
+        setPendingTransition({ task, newStatus, blockerTitles: titles })
+        return
+      }
+    }
+    executeStatusChange(task, newStatus)
   }
 
   if (projectsLoading) return <p className="board-message">Loading…</p>
@@ -152,6 +215,7 @@ export function Board() {
           task={formTask}
           projectId={selectedId}
           contractors={contractors}
+          projectTasks={tasks}
           onBack={() => setView(formTask ? { kind: 'detail', task: formTask } : { kind: 'board' })}
           onSaved={(saved) => setView(formTask ? { kind: 'detail', task: saved } : { kind: 'board' })}
         />
@@ -193,6 +257,20 @@ export function Board() {
         </div>
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
         {transitionError && <p className="board-message board-message--error">{transitionError}</p>}
+        {pendingTransition && (
+          <div className="board-blocker-warning">
+            <p className="board-blocker-warning-text">
+              Blocked by: {pendingTransition.blockerTitles.join(', ')}. Start anyway?
+            </p>
+            <div className="board-blocker-warning-actions">
+              <button className="btn-outline" onClick={() => setPendingTransition(null)}>Cancel</button>
+              <button className="btn-primary" onClick={() => {
+                executeStatusChange(pendingTransition.task, pendingTransition.newStatus)
+                setPendingTransition(null)
+              }}>Proceed</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="board-columns">
@@ -219,6 +297,7 @@ export function Board() {
                         contractorName={contractorName(task.contractor_id)}
                         prevStatus={isOnHold || idx <= 0 ? null : STATUSES[idx - 1]}
                         nextStatus={isOnHold || idx < 0 || idx >= STATUSES.length - 1 ? null : STATUSES[idx + 1]}
+                        isBlocked={isBlocked(task)}
                         onSelect={(t) => setView({ kind: 'detail', task: t })}
                         onStatusChange={handleStatusChange}
                       />

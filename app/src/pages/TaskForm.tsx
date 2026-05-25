@@ -1,22 +1,32 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/useAuth'
-import { createTask, updateTask, type Task, type TaskInsert, type TaskUpdate } from '../services/tasksService'
+import {
+  createTask,
+  updateTask,
+  listBlockers,
+  setBlockers,
+  type Task,
+  type TaskInsert,
+  type TaskUpdate,
+} from '../services/tasksService'
 import type { Contractor } from '../services/contractorsService'
 import './TaskForm.css'
 
 const STATUSES = [
   { value: 'ideation',    label: 'Ideation'    },
   { value: 'planned',     label: 'Planned'     },
-  { value: 'ready',       label: 'Ready'       },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'on_hold',     label: 'On Hold'     },
   { value: 'done',        label: 'Done'        },
 ] as const
 
+const ACTIVE_STATUSES = new Set(['ideation', 'planned', 'in_progress', 'on_hold'])
+
 interface Props {
   task?: Task
   projectId: string
   contractors: Contractor[]
+  projectTasks?: Task[]
   onBack: () => void
   onSaved: (task: Task) => void
 }
@@ -24,7 +34,7 @@ interface Props {
 function startRequired(status: string) { return status === 'in_progress' || status === 'on_hold' || status === 'done' }
 function endRequired(status: string)   { return status === 'done' }
 
-export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Props) {
+export function TaskForm({ task, projectId, contractors, projectTasks = [], onBack, onSaved }: Props) {
   const { session } = useAuth()
   const isEdit = task != null
 
@@ -36,11 +46,33 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
   const [expectedDuration, setExpectedDuration] = useState(task?.expected_duration_days?.toString() ?? '')
   const [actualStart, setActualStart]   = useState(task?.actual_start ?? '')
   const [actualEnd, setActualEnd]       = useState(task?.actual_end ?? '')
+  const [selectedBlockerIds, setSelectedBlockerIds] = useState<string[]>([])
+  const initialBlockerIds = useRef<string[]>([])
 
-  const [confirmBack, setConfirmBack] = useState(false)
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState<string | null>(null)
-  const [titleError, setTitleError]   = useState(false)
+  const [confirmBack, setConfirmBack]   = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState<string | null>(null)
+  const [titleError, setTitleError]     = useState(false)
+
+  useEffect(() => {
+    if (!task) return
+    listBlockers(task.id)
+      .then((blockers) => {
+        const ids = blockers.map((b) => b.id)
+        setSelectedBlockerIds(ids)
+        initialBlockerIds.current = ids
+      })
+      .catch(() => {})
+  }, [task?.id])
+
+  const otherTasks = projectTasks.filter((t) => t.id !== task?.id)
+  const activeTasks    = otherTasks.filter((t) => ACTIVE_STATUSES.has(t.status))
+  const completedTasks = otherTasks.filter((t) => !ACTIVE_STATUSES.has(t.status))
+
+  const blockersDirty = isEdit
+    ? [...selectedBlockerIds].sort().join(',') !== [...initialBlockerIds.current].sort().join(',')
+    : selectedBlockerIds.length > 0
 
   const isDirty = isEdit
     ? title !== task.title ||
@@ -50,12 +82,34 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
       expectedCost !== (task.expected_cost?.toString() ?? '') ||
       expectedDuration !== (task.expected_duration_days?.toString() ?? '') ||
       actualStart !== (task.actual_start ?? '') ||
-      actualEnd !== (task.actual_end ?? '')
+      actualEnd !== (task.actual_end ?? '') ||
+      blockersDirty
     : title !== '' || description !== '' || contractorId !== '' ||
-      expectedCost !== '' || expectedDuration !== '' || actualStart !== '' || actualEnd !== ''
+      expectedCost !== '' || expectedDuration !== '' || actualStart !== '' || actualEnd !== '' ||
+      blockersDirty
 
   function handleBack() {
     if (isDirty) { setConfirmBack(true) } else { onBack() }
+  }
+
+  function handleStatusChange(newStatus: string) {
+    if (newStatus === 'in_progress') {
+      const unresolved = selectedBlockerIds.filter((id) => {
+        const blocker = projectTasks.find((t) => t.id === id)
+        return !blocker || blocker.status !== 'done'
+      })
+      if (unresolved.length > 0) {
+        setPendingStatus(newStatus)
+        return
+      }
+    }
+    setStatus(newStatus)
+  }
+
+  function toggleBlocker(id: string, checked: boolean) {
+    setSelectedBlockerIds((prev) =>
+      checked ? [...prev, id] : prev.filter((bid) => bid !== id)
+    )
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,7 +134,9 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
           actual_start: actualStart || null,
           actual_end: actualEnd || null,
         }
-        onSaved(await updateTask(task.id, update))
+        const saved = await updateTask(task.id, update)
+        await setBlockers(task.id, selectedBlockerIds)
+        onSaved(saved)
       } else {
         const insert: TaskInsert = {
           title: title.trim(),
@@ -94,7 +150,11 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
           actual_start: actualStart || null,
           actual_end: actualEnd || null,
         }
-        onSaved(await createTask(insert))
+        const created = await createTask(insert)
+        if (selectedBlockerIds.length > 0) {
+          await setBlockers(created.id, selectedBlockerIds)
+        }
+        onSaved(created)
       }
     } catch {
       setError(isEdit ? 'Failed to save task' : 'Failed to create task')
@@ -109,6 +169,26 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
         <div className="task-form-confirm-row">
           <button className="btn-outline" onClick={() => setConfirmBack(false)}>Keep editing</button>
           <button className="btn-primary" onClick={onBack}>Discard</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (pendingStatus) {
+    const names = selectedBlockerIds
+      .map((id) => projectTasks.find((t) => t.id === id))
+      .filter((t): t is Task => !!t && t.status !== 'done')
+      .map((t) => t.title)
+    return (
+      <div className="task-form">
+        <p className="task-form-confirm-prompt">
+          This task is blocked by: {names.join(', ')}. Start anyway?
+        </p>
+        <div className="task-form-confirm-row">
+          <button className="btn-outline" onClick={() => setPendingStatus(null)}>Cancel</button>
+          <button className="btn-primary" onClick={() => { setStatus(pendingStatus); setPendingStatus(null) }}>
+            Proceed anyway
+          </button>
         </div>
       </div>
     )
@@ -158,7 +238,7 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
         {isEdit && (
           <label className="task-form-label">
             <span>Status</span>
-            <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <select className="input" value={status} onChange={(e) => handleStatusChange(e.target.value)}>
               {STATUSES
                 .filter(({ value }) =>
                   value !== 'on_hold' || task?.status === 'in_progress' || task?.status === 'on_hold'
@@ -169,6 +249,48 @@ export function TaskForm({ task, projectId, contractors, onBack, onSaved }: Prop
             </select>
           </label>
         )}
+
+        <div className="task-form-label">
+          <span>Blocked by</span>
+          <details className="task-form-multiselect">
+            <summary className="input task-form-multiselect-summary">
+              {selectedBlockerIds.length === 0
+                ? 'No blockers'
+                : `${selectedBlockerIds.length} blocker${selectedBlockerIds.length > 1 ? 's' : ''}`}
+            </summary>
+            <div className="dropdown task-form-multiselect-panel">
+              {activeTasks.length === 0 && completedTasks.length === 0 ? (
+                <p className="task-form-multiselect-empty">No other tasks in this project</p>
+              ) : (
+                <>
+                  {activeTasks.map((t) => (
+                    <label key={t.id} className="task-form-multiselect-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedBlockerIds.includes(t.id)}
+                        onChange={(e) => toggleBlocker(t.id, e.target.checked)}
+                      />
+                      <span>{t.title}</span>
+                    </label>
+                  ))}
+                  {activeTasks.length > 0 && completedTasks.length > 0 && (
+                    <hr className="task-form-multiselect-divider" />
+                  )}
+                  {completedTasks.map((t) => (
+                    <label key={t.id} className="task-form-multiselect-option task-form-multiselect-option--dim">
+                      <input
+                        type="checkbox"
+                        checked={selectedBlockerIds.includes(t.id)}
+                        onChange={(e) => toggleBlocker(t.id, e.target.checked)}
+                      />
+                      <span>{t.title}</span>
+                    </label>
+                  ))}
+                </>
+              )}
+            </div>
+          </details>
+        </div>
 
         <label className="task-form-label">
           <span>Expected cost ($)</span>

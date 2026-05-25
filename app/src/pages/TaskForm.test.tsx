@@ -6,15 +6,18 @@ import { TaskForm } from './TaskForm'
 vi.mock('../services/tasksService', () => ({
   createTask: vi.fn(),
   updateTask: vi.fn(),
+  listBlockers: vi.fn().mockResolvedValue([]),
+  setBlockers: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../context/useAuth', () => ({
   useAuth: () => ({ session: { user: { id: 'u1' } } }),
 }))
 
-import { createTask, updateTask } from '../services/tasksService'
+import { createTask, updateTask, setBlockers } from '../services/tasksService'
 const mockCreateTask = vi.mocked(createTask)
 const mockUpdateTask = vi.mocked(updateTask)
+const mockSetBlockers = vi.mocked(setBlockers)
 
 const contractors = [
   { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: '555-0001', created_at: '2026-01-01T00:00:00Z' },
@@ -33,7 +36,7 @@ const task = {
   expected_duration_days: 3,
   actual_start: '2026-03-01',
   actual_end: null,
-  status: 'ready',
+  status: 'planned',
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -144,7 +147,7 @@ describe('TaskForm — edit', () => {
 
   it('renders status select in edit mode', () => {
     render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByDisplayValue('Ready')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Planned')).toBeInTheDocument()
   })
 
   it('calls updateTask with updated title and invokes onSaved', async () => {

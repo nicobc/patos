@@ -6,6 +6,8 @@ import { TaskDetail } from './TaskDetail'
 vi.mock('../services/tasksService', () => ({
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
+  listBlockers: vi.fn().mockResolvedValue([]),
+  listBlocks: vi.fn().mockResolvedValue([]),
 }))
 
 import { updateTask, deleteTask } from '../services/tasksService'
@@ -24,7 +26,7 @@ const task = {
   expected_duration_days: 3,
   actual_start: '2026-03-01',
   actual_end: null,
-  status: 'ready',
+  status: 'planned',
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -40,7 +42,7 @@ describe('TaskDetail — display', () => {
 
   it('renders status, description, and contractor', () => {
     render(<TaskDetail task={task} contractorName="Alice" onBack={vi.fn()} />)
-    expect(screen.getByText('Ready')).toBeInTheDocument()
+    expect(screen.getByText('Planned')).toBeInTheDocument()
     expect(screen.getByText('All interior walls')).toBeInTheDocument()
     expect(screen.getByText('Alice')).toBeInTheDocument()
   })

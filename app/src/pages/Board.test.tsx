@@ -21,7 +21,9 @@ vi.mock('../services/tasksService', async (importOriginal) => {
   return {
     ...actual,
     listTasksByProject: vi.fn(),
+    listRawDepsByTasks: vi.fn().mockResolvedValue([]),
     subscribeToTaskChanges: vi.fn(),
+    subscribeToDepsChanges: vi.fn().mockReturnValue(vi.fn()),
     updateTask: vi.fn(),
     deleteTask: vi.fn(),
   }
@@ -93,7 +95,7 @@ describe('Board — project selector', () => {
     await waitFor(() =>
       expect(screen.getByRole('combobox', { name: /select project/i })).toBeInTheDocument()
     )
-    for (const label of ['Ideation', 'Planned', 'Ready', 'In Progress', 'Done']) {
+    for (const label of ['Ideation', 'Planned', 'In Progress', 'Done']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
   })
@@ -126,7 +128,7 @@ describe('Board — task cards', () => {
     mockListTasksByProject.mockResolvedValue([makeTask()])
     render(<Board />)
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
-    expect(screen.getAllByText('No tasks')).toHaveLength(4)
+    expect(screen.getAllByText('No tasks')).toHaveLength(3)
   })
 
   it('shows contractor name when present', async () => {
@@ -140,7 +142,7 @@ describe('Board — task cards', () => {
       makeTask({ status: 'discarded', title: 'Hidden task' }),
     ])
     render(<Board />)
-    await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(5))
+    await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(4))
     expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
   })
 
@@ -148,7 +150,7 @@ describe('Board — task cards', () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'on_hold' })])
     render(<Board />)
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
-    expect(screen.getAllByText('No tasks')).toHaveLength(4)
+    expect(screen.getAllByText('No tasks')).toHaveLength(3)
     expect(screen.getByRole('button', { name: /resume task/i })).toBeInTheDocument()
   })
 
@@ -231,7 +233,7 @@ describe('Board — status transitions', () => {
 
   it('sets actual_start when transitioning to in_progress', async () => {
     vi.setSystemTime(new Date('2026-05-24'))
-    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ready', actual_start: null })])
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: null })])
     mockUpdateTask.mockResolvedValue(makeTask({ status: 'in_progress', actual_start: '2026-05-24' }))
     render(<Board />)
 

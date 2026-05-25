@@ -63,3 +63,13 @@ tickets:
       - dispatch from main deploys to CF Pages branch 'dev' with DEV secrets
       - dispatch from a feature branch deploys to that branch name (unchanged)
       - tag push deploys to CF Pages branch 'main' with PRD secrets (unchanged)
+
+  - id: T5
+    type: fix
+    scope: realtime
+    status: DONE
+    title: REPLICA IDENTITY FULL on all RLS-enabled tables
+    description: Supabase realtime silently drops DELETE events on RLS-enabled tables without REPLICA IDENTITY FULL. With the default setting, payload.old only contains PK columns; the realtime server cannot evaluate row-level policies and drops the event. Confirmed impact on task_deps (dep removals not reflected in DAG/blocked-badge without reload) and tasks (project_id filter on DELETE events can't be evaluated). Fix applies REPLICA IDENTITY FULL to all six RLS-enabled tables so all current and future subscriptions work correctly.
+    acceptance_criteria:
+      - migration sets REPLICA IDENTITY FULL on projects, spaces, contractors, tasks, task_spaces, task_deps
+      - editing a task's blockers via TaskForm immediately updates the DAG view and Kanban blocked badge without a page reload

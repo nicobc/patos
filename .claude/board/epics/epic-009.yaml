@@ -60,7 +60,7 @@ tickets:
 
   - id: T5
     type: fix
-    status: READY
+    status: IN PROGRESS
     title: Restore blockers on setBlockers failure
     description: setBlockers does delete-then-insert with no rollback. If the insert step fails, all dependencies for the task are silently wiped. Fix by capturing the pre-operation state and attempting a restore on insert failure.
     acceptance_criteria:

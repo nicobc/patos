@@ -67,7 +67,7 @@ tickets:
   - id: T5
     type: fix
     scope: realtime
-    status: IN PROGRESS
+    status: DONE
     title: REPLICA IDENTITY FULL on all RLS-enabled tables
     description: Supabase realtime silently drops DELETE events on RLS-enabled tables without REPLICA IDENTITY FULL. With the default setting, payload.old only contains PK columns; the realtime server cannot evaluate row-level policies and drops the event. Confirmed impact on task_deps (dep removals not reflected in DAG/blocked-badge without reload) and tasks (project_id filter on DELETE events can't be evaluated). Fix applies REPLICA IDENTITY FULL to all six RLS-enabled tables so all current and future subscriptions work correctly.
     acceptance_criteria:

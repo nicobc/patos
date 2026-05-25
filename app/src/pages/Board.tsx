@@ -34,6 +34,7 @@ type View =
   | { kind: 'detail'; task: Task; from?: View }
   | { kind: 'form'; task?: Task }
   | { kind: 'settings' }
+  | { kind: 'dag' }
 
 type TasksResult =
   | { status: 'ready'; projectId: string; items: Task[] }
@@ -286,14 +287,16 @@ export function Board() {
             ))}
           </select>
           <div className="board-toolbar-actions">
-            <button
-              className="btn-outline"
-              onClick={() => setView({ kind: 'form' })}
-              disabled={!selectedId}
-              aria-label="New task"
-            >
-              <FontAwesomeIcon icon={faPlus} />
-            </button>
+            {view.kind === 'board' && (
+              <button
+                className="btn-outline"
+                onClick={() => setView({ kind: 'form' })}
+                disabled={!selectedId}
+                aria-label="New task"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+            )}
             <button
               className="btn-icon"
               onClick={() => setView({ kind: 'settings' })}
@@ -302,6 +305,17 @@ export function Board() {
               <FontAwesomeIcon icon={faGear} />
             </button>
           </div>
+        </div>
+        <div className="board-tabs">
+          <button
+            className={`board-tab${view.kind === 'board' ? ' board-tab--active' : ''}`}
+            onClick={() => { setTransitionError(null); setPendingTransition(null); setView({ kind: 'board' }) }}
+          >Board</button>
+          <button
+            className={`board-tab${view.kind === 'dag' ? ' board-tab--active' : ''}`}
+            onClick={() => { setTransitionError(null); setPendingTransition(null); setView({ kind: 'dag' }) }}
+            disabled={!selectedId}
+          >Dependencies</button>
         </div>
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
         {transitionError && <p className="board-message board-message--error">{transitionError}</p>}
@@ -321,7 +335,13 @@ export function Board() {
         )}
       </div>
 
-      <div className="board-columns" ref={columnsRef}>
+      {view.kind === 'dag' && (
+        <p className="board-message dag-placeholder">
+          {tasksLoading ? 'Loading…' : 'No dependencies yet'}
+        </p>
+      )}
+
+      {view.kind !== 'dag' && <div className="board-columns" ref={columnsRef}>
         {COLUMNS.map(({ status, label }) => {
           const colTasks = tasks.filter((t) =>
             t.status === status || (status === 'in_progress' && t.status === 'on_hold')
@@ -360,7 +380,7 @@ export function Board() {
             </div>
           )
         })}
-      </div>
+      </div>}
     </div>
   )
 }

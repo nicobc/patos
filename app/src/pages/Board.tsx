@@ -189,7 +189,14 @@ export function Board() {
   if (view.kind === 'settings') {
     return (
       <div className="board">
-        <Settings onBack={() => { setView({ kind: 'board' }); loadContractors() }} />
+        <Settings onBack={() => {
+          setView({ kind: 'board' })
+          loadContractors()
+          listProjects().then((data) => {
+            setProjects(data)
+            setSelectedId((prev) => data.some((p) => p.id === prev) ? prev : '')
+          }).catch(() => {})
+        }} />
       </div>
     )
   }

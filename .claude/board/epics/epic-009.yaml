@@ -72,7 +72,7 @@ tickets:
 
   - id: T6
     type: chore
-    status: IN PROGRESS
+    status: TESTING
     title: Schema cleanup and set_blockers transaction function
     description: Two migration-backed changes bundled together. First, drop the unused spaces and task_spaces tables to clean the schema before the Rooms epic. Second, replace the application-level T5 rollback in setBlockers with a Postgres function that wraps delete+insert in a single implicit transaction, making the operation truly atomic.
     acceptance_criteria:

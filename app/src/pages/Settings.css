@@ -125,6 +125,20 @@
   flex-shrink: 0;
 }
 
+.settings-item-hard-confirm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-item-hard-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .settings-form {
   display: flex;
   flex-direction: column;

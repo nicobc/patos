@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
-import { listProjects, type Project } from '../services/projectsService'
+import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
 import { listContractors, type Contractor } from '../services/contractorsService'
 import {
   listTasksByProject,
@@ -86,6 +86,21 @@ export function Board() {
       .finally(() => setProjectsLoading(false))
 
     loadContractors()
+
+    const unsubProjects = subscribeToProjectChanges((event: ProjectChangeEvent) => {
+      if (event.eventType === 'DELETE') {
+        setProjects((prev) => prev.filter((p) => p.id !== event.id))
+        setSelectedId((prev) => prev === event.id ? '' : prev)
+      } else {
+        setProjects((prev) =>
+          event.eventType === 'INSERT'
+            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((p) => p.id === event.record.id ? event.record : p)
+        )
+      }
+    })
+
+    return unsubProjects
   }, [])
 
   useEffect(() => {
@@ -189,7 +204,14 @@ export function Board() {
   if (view.kind === 'settings') {
     return (
       <div className="board">
-        <Settings onBack={() => { setView({ kind: 'board' }); loadContractors() }} />
+        <Settings onBack={() => {
+          setView({ kind: 'board' })
+          loadContractors()
+          listProjects().then((data) => {
+            setProjects(data)
+            setSelectedId((prev) => data.some((p) => p.id === prev) ? prev : '')
+          }).catch(() => {})
+        }} />
       </div>
     )
   }

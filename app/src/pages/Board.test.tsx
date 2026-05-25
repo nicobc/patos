@@ -7,7 +7,10 @@ import type { TaskChangeEvent } from '../services/tasksService'
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
 }))
-vi.mock('../services/projectsService', () => ({ listProjects: vi.fn() }))
+vi.mock('../services/projectsService', () => ({
+  listProjects:              vi.fn(),
+  subscribeToProjectChanges: vi.fn(),
+}))
 vi.mock('../services/contractorsService', () => ({ listContractors: vi.fn() }))
 vi.mock('../services/contractorsService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/contractorsService')>()
@@ -29,11 +32,12 @@ vi.mock('../services/tasksService', async (importOriginal) => {
   }
 })
 
-import { listProjects } from '../services/projectsService'
+import { listProjects, subscribeToProjectChanges } from '../services/projectsService'
 import { listContractors } from '../services/contractorsService'
 import { listTasksByProject, subscribeToTaskChanges, updateTask } from '../services/tasksService'
 
-const mockListProjects           = vi.mocked(listProjects)
+const mockListProjects              = vi.mocked(listProjects)
+const mockSubscribeToProjectChanges = vi.mocked(subscribeToProjectChanges)
 const mockListContractors        = vi.mocked(listContractors)
 const mockListTasksByProject     = vi.mocked(listTasksByProject)
 const mockSubscribeToTaskChanges = vi.mocked(subscribeToTaskChanges)
@@ -60,6 +64,7 @@ const makeTask = (overrides = {}) => ({
 beforeEach(() => {
   vi.clearAllMocks()
   mockListProjects.mockResolvedValue(projects)
+  mockSubscribeToProjectChanges.mockReturnValue(vi.fn())
   mockListContractors.mockResolvedValue(contractors)
   mockListTasksByProject.mockResolvedValue([])
   mockSubscribeToTaskChanges.mockReturnValue(vi.fn())

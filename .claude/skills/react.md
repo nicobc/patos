@@ -1,23 +1,17 @@
 # React
 
-MUST follow idiomatic conventions for the tools and libraries in use.
+## MUST DO — enforce on every code change without exception
 
-## Mobile first
+**USE INLINE PAGES, NOT MODALS, FOR MULTI-FIELD FORMS AND NAVIGATIONAL FLOWS.** Modals are acceptable only for simple single-action confirmations (e.g. "Delete this item?"). Never open a form in a modal.
 
-The app is mobile-first. Never use modals for multi-field forms or navigational flows — render an inline page instead (same pattern as the task detail view in the board). Modals are acceptable only for simple single-action confirmations (e.g. "Delete this task?").
+**NEVER ADD A CONFIRMATION STEP FOR A SINGLE-OPTION ACTION.** If there is only one thing the user can do, trigger it on mount — an extra button is pure friction.
 
-## Single-action flows
+**ISOLATE ALL SUPABASE CALLS IN `src/services/`.** Components and hooks import from service modules only — never from `lib/supabase.ts` directly. Service functions return typed data derived from the generated `src/types/database.ts` types.
 
-Don't add a confirmation screen or button for an action that has no alternative. If there is only one thing the user can do, do it directly — an extra click is pure friction. Trigger the action on mount instead of rendering a button.
+**DESIGN EVERY TABLE-BACKED SERVICE FOR REAL-TIME MULTI-USER USE.** Every table that drives UI state needs a `subscribeTo*Changes` counterpart — including join/relation tables whose mutations affect visible state (e.g. `task_deps`). Never assume a single active session.
 
-## I/O isolation
+**UPDATE STATE SURGICALLY FROM SUBSCRIPTION CALLBACKS.** Filter server-side where possible, client-side otherwise. Callbacks must carry enough context (affected id + event type) to update local state without a full refetch.
 
-Supabase calls live exclusively in `src/services/` modules (e.g. `projectsService.ts`, `tasksService.ts`). Components and hooks import from services only — never from `lib/supabase.ts` directly. Service functions return typed data using the generated `src/types/database.ts` types. Unit tests mock the service module, not the Supabase client.
+**MOCK THE SERVICE MODULE IN UNIT TESTS, NOT THE SUPABASE CLIENT.** Tests import and mock the service layer directly — never mock `lib/supabase.ts` in component or hook tests.
 
-## Real-time multi-user design
-
-Design services for concurrent users from the start. Every table that drives UI state needs a `subscribeTo*Changes` counterpart — not just the primary entity table but also join/relation tables (e.g. `task_deps`) whose mutations affect visible state. Subscriptions filter server-side where possible and client-side otherwise; callbacks carry enough context (affected id + event type) to update local state surgically without a full refetch. Never assume a single active session.
-
-## CSS
-
-Component-specific styles live in a colocated `.css` file next to the component (e.g. `SignIn.css` next to `SignIn.tsx`) and are imported directly in that file. `index.css` is reserved for design-system primitives only: tokens, resets, base elements, and utility classes that are genuinely reusable across the entire app. If a style only applies to one component, it does not belong in `index.css`.
+**KEEP COMPONENT CSS COLOCATED.** Component-specific styles live in a `.css` file next to the component and are imported there. `index.css` is for design-system primitives only — tokens, resets, base elements, and utilities reusable across the entire app. If a style only applies to one component, it does not belong in `index.css`.

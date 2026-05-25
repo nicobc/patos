@@ -11,61 +11,146 @@ import {
   type ContractorInsert,
   type ContractorUpdate,
 } from '../services/contractorsService'
+import {
+  listProjects,
+  subscribeToProjectChanges,
+  createProject,
+  updateProject,
+  deleteProject,
+  countTasksByProject,
+  type Project,
+  type ProjectInsert,
+  type ProjectUpdate,
+} from '../services/projectsService'
 import './Settings.css'
 
-type ListView =
+type SettingsView =
   | { kind: 'list' }
-  | { kind: 'form'; contractor?: Contractor }
+  | { kind: 'contractor-form'; contractor?: Contractor }
+  | { kind: 'project-form'; project?: Project }
 
-type DeleteState =
+type ContractorDeleteState =
   | { id: string; kind: 'checking' }
   | { id: string; kind: 'confirm' }
   | { id: string; kind: 'blocked'; count: number }
 
+type ProjectDeleteState =
+  | { id: string; kind: 'checking' }
+  | { id: string; kind: 'confirm' }
+  | { id: string; kind: 'hard-confirm'; input: string; taskCount: number }
+
 export function Settings({ onBack }: { onBack: () => void }) {
-  const [view, setView]               = useState<ListView>({ kind: 'list' })
-  const [contractors, setContractors] = useState<Contractor[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState<string | null>(null)
-  const [deleteState, setDeleteState] = useState<DeleteState | null>(null)
-  const [deleting, setDeleting]       = useState(false)
+  const [view, setView] = useState<SettingsView>({ kind: 'list' })
+
+  const [projects, setProjects]             = useState<Project[]>([])
+  const [projectsLoading, setProjectsLoading] = useState(true)
+  const [projectsError, setProjectsError]   = useState<string | null>(null)
+  const [projectDeleteState, setProjectDeleteState] = useState<ProjectDeleteState | null>(null)
+  const [projectDeleting, setProjectDeleting] = useState(false)
+
+  const [contractors, setContractors]       = useState<Contractor[]>([])
+  const [contractorsLoading, setContractorsLoading] = useState(true)
+  const [contractorsError, setContractorsError] = useState<string | null>(null)
+  const [contractorDeleteState, setContractorDeleteState] = useState<ContractorDeleteState | null>(null)
+  const [contractorDeleting, setContractorDeleting] = useState(false)
 
   useEffect(() => {
+    listProjects()
+      .then(setProjects)
+      .catch(() => setProjectsError('Failed to load projects'))
+      .finally(() => setProjectsLoading(false))
+
     listContractors()
       .then(setContractors)
-      .catch(() => setError('Failed to load contractors'))
-      .finally(() => setLoading(false))
+      .catch(() => setContractorsError('Failed to load contractors'))
+      .finally(() => setContractorsLoading(false))
+
+    const unsubProjects = subscribeToProjectChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setProjects((prev) => prev.filter((p) => p.id !== event.id))
+        setProjectDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        setProjects((prev) =>
+          event.eventType === 'INSERT'
+            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((p) => p.id === event.record.id ? event.record : p)
+        )
+      }
+    })
+
+    return unsubProjects
   }, [])
 
-  async function handleDeleteClick(contractor: Contractor) {
-    setDeleteState({ id: contractor.id, kind: 'checking' })
+  // --- Project handlers ---
+
+  async function handleProjectDeleteClick(project: Project) {
+    setProjectDeleteState({ id: project.id, kind: 'checking' })
+    try {
+      const count = await countTasksByProject(project.id)
+      setProjectDeleteState(
+        count > 0
+          ? { id: project.id, kind: 'hard-confirm', input: '', taskCount: count }
+          : { id: project.id, kind: 'confirm' }
+      )
+    } catch {
+      setProjectsError('Failed to check project tasks')
+      setProjectDeleteState(null)
+    }
+  }
+
+  async function handleProjectConfirmDelete(id: string) {
+    setProjectDeleting(true)
+    try {
+      await deleteProject(id)
+      setProjects((prev) => prev.filter((p) => p.id !== id))
+      setProjectDeleteState(null)
+    } catch {
+      setProjectsError('Failed to delete project')
+    } finally {
+      setProjectDeleting(false)
+    }
+  }
+
+  function handleProjectSaved(project: Project, isEdit: boolean) {
+    setProjects((prev) =>
+      isEdit
+        ? prev.map((p) => (p.id === project.id ? project : p))
+        : [...prev, project].sort((a, b) => a.name.localeCompare(b.name))
+    )
+    setView({ kind: 'list' })
+  }
+
+  // --- Contractor handlers ---
+
+  async function handleContractorDeleteClick(contractor: Contractor) {
+    setContractorDeleteState({ id: contractor.id, kind: 'checking' })
     try {
       const count = await countTasksByContractor(contractor.id)
-      setDeleteState(
+      setContractorDeleteState(
         count > 0
           ? { id: contractor.id, kind: 'blocked', count }
           : { id: contractor.id, kind: 'confirm' }
       )
     } catch {
-      setError('Failed to check contractor usage')
-      setDeleteState(null)
+      setContractorsError('Failed to check contractor usage')
+      setContractorDeleteState(null)
     }
   }
 
-  async function handleConfirmDelete(id: string) {
-    setDeleting(true)
+  async function handleContractorConfirmDelete(id: string) {
+    setContractorDeleting(true)
     try {
       await deleteContractor(id)
       setContractors((prev) => prev.filter((c) => c.id !== id))
-      setDeleteState(null)
+      setContractorDeleteState(null)
     } catch {
-      setError('Failed to delete contractor')
+      setContractorsError('Failed to delete contractor')
     } finally {
-      setDeleting(false)
+      setContractorDeleting(false)
     }
   }
 
-  function handleSaved(contractor: Contractor, isEdit: boolean) {
+  function handleContractorSaved(contractor: Contractor, isEdit: boolean) {
     setContractors((prev) =>
       isEdit
         ? prev.map((c) => (c.id === contractor.id ? contractor : c))
@@ -74,12 +159,24 @@ export function Settings({ onBack }: { onBack: () => void }) {
     setView({ kind: 'list' })
   }
 
-  if (view.kind === 'form') {
+  // --- Form routing ---
+
+  if (view.kind === 'project-form') {
+    return (
+      <ProjectForm
+        project={view.project}
+        onBack={() => setView({ kind: 'list' })}
+        onSaved={(p) => handleProjectSaved(p, view.project != null)}
+      />
+    )
+  }
+
+  if (view.kind === 'contractor-form') {
     return (
       <ContractorForm
         contractor={view.contractor}
         onBack={() => setView({ kind: 'list' })}
-        onSaved={(c) => handleSaved(c, view.contractor != null)}
+        onSaved={(c) => handleContractorSaved(c, view.contractor != null)}
       />
     )
   }
@@ -92,23 +189,118 @@ export function Settings({ onBack }: { onBack: () => void }) {
 
       <h2 className="settings-heading">Settings</h2>
 
+      {/* Projects section */}
       <section className="settings-section">
         <div className="settings-section-header">
-          <h3 className="settings-section-title">Contractors</h3>
-          <button className="btn-outline" onClick={() => { setDeleteState(null); setView({ kind: 'form' }) }}>
+          <h3 className="settings-section-title">Projects</h3>
+          <button
+            aria-label="Add project"
+            className="btn-outline"
+            onClick={() => { setProjectDeleteState(null); setView({ kind: 'project-form' }) }}
+          >
             + Add
           </button>
         </div>
 
-        {error && <p className="settings-message settings-message--error">{error}</p>}
-        {loading && <p className="settings-message">Loading…</p>}
-        {!loading && contractors.length === 0 && !error && (
+        {projectsError && <p className="settings-message settings-message--error">{projectsError}</p>}
+        {projectsLoading && <p className="settings-message">Loading…</p>}
+        {!projectsLoading && projects.length === 0 && !projectsError && (
+          <p className="settings-message">No projects yet.</p>
+        )}
+
+        <ul className="settings-list">
+          {projects.map((p) => {
+            const ds = projectDeleteState?.id === p.id ? projectDeleteState : null
+            return (
+              <li key={p.id} className="settings-list-item">
+                {ds?.kind === 'confirm' ? (
+                  <div className="settings-item-state">
+                    <span className="settings-item-confirm-msg">Delete {p.name}?</span>
+                    <div className="settings-item-confirm-actions">
+                      <button className="btn-ghost" onClick={() => setProjectDeleteState(null)}>Cancel</button>
+                      <button className="btn-danger" onClick={() => handleProjectConfirmDelete(p.id)} disabled={projectDeleting}>
+                        {projectDeleting ? '…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                ) : ds?.kind === 'hard-confirm' ? (
+                  <div className="settings-item-hard-confirm">
+                    <span className="settings-item-block-msg">
+                      This will permanently delete {ds.taskCount} task{ds.taskCount > 1 ? 's' : ''}. Type &ldquo;delete&rdquo; to confirm.
+                    </span>
+                    <div className="settings-item-hard-confirm-row">
+                      <input
+                        className="input"
+                        type="text"
+                        placeholder="delete"
+                        value={ds.input}
+                        onChange={(e) => setProjectDeleteState({ ...ds, input: e.target.value })}
+                      />
+                      <button className="btn-ghost" onClick={() => setProjectDeleteState(null)}>Cancel</button>
+                      <button
+                        className="btn-danger"
+                        onClick={() => handleProjectConfirmDelete(p.id)}
+                        disabled={ds.input !== 'delete' || projectDeleting}
+                      >
+                        {projectDeleting ? '…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="settings-item-info">
+                      <span className="settings-item-name">{p.name}</span>
+                      {p.description && (
+                        <span className="settings-item-details">{p.description}</span>
+                      )}
+                    </div>
+                    <div className="settings-item-actions">
+                      <button
+                        className="btn-icon"
+                        onClick={() => { setProjectDeleteState(null); setView({ kind: 'project-form', project: p }) }}
+                        aria-label={`Edit ${p.name}`}
+                      >
+                        <FontAwesomeIcon icon={faPen} />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => handleProjectDeleteClick(p)}
+                        disabled={ds?.kind === 'checking'}
+                        aria-label={`Delete ${p.name}`}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+
+      {/* Contractors section */}
+      <section className="settings-section">
+        <div className="settings-section-header">
+          <h3 className="settings-section-title">Contractors</h3>
+          <button
+            aria-label="Add contractor"
+            className="btn-outline"
+            onClick={() => { setContractorDeleteState(null); setView({ kind: 'contractor-form' }) }}
+          >
+            + Add
+          </button>
+        </div>
+
+        {contractorsError && <p className="settings-message settings-message--error">{contractorsError}</p>}
+        {contractorsLoading && <p className="settings-message">Loading…</p>}
+        {!contractorsLoading && contractors.length === 0 && !contractorsError && (
           <p className="settings-message">No contractors yet.</p>
         )}
 
         <ul className="settings-list">
           {contractors.map((c) => {
-            const ds = deleteState?.id === c.id ? deleteState : null
+            const ds = contractorDeleteState?.id === c.id ? contractorDeleteState : null
             return (
               <li key={c.id} className="settings-list-item">
                 {ds?.kind === 'blocked' ? (
@@ -116,15 +308,15 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     <span className="settings-item-block-msg">
                       {ds.count} task{ds.count > 1 ? 's are' : ' is'} assigned to this contractor — reassign them before deleting
                     </span>
-                    <button className="btn-ghost" onClick={() => setDeleteState(null)}>Dismiss</button>
+                    <button className="btn-ghost" onClick={() => setContractorDeleteState(null)}>Dismiss</button>
                   </div>
                 ) : ds?.kind === 'confirm' ? (
                   <div className="settings-item-state">
                     <span className="settings-item-confirm-msg">Delete {c.name}?</span>
                     <div className="settings-item-confirm-actions">
-                      <button className="btn-ghost" onClick={() => setDeleteState(null)}>Cancel</button>
-                      <button className="btn-danger" onClick={() => handleConfirmDelete(c.id)} disabled={deleting}>
-                        {deleting ? '…' : 'Delete'}
+                      <button className="btn-ghost" onClick={() => setContractorDeleteState(null)}>Cancel</button>
+                      <button className="btn-danger" onClick={() => handleContractorConfirmDelete(c.id)} disabled={contractorDeleting}>
+                        {contractorDeleting ? '…' : 'Delete'}
                       </button>
                     </div>
                   </div>
@@ -139,14 +331,14 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     <div className="settings-item-actions">
                       <button
                         className="btn-icon"
-                        onClick={() => { setDeleteState(null); setView({ kind: 'form', contractor: c }) }}
+                        onClick={() => { setContractorDeleteState(null); setView({ kind: 'contractor-form', contractor: c }) }}
                         aria-label={`Edit ${c.name}`}
                       >
                         <FontAwesomeIcon icon={faPen} />
                       </button>
                       <button
                         className="btn-icon"
-                        onClick={() => handleDeleteClick(c)}
+                        onClick={() => handleContractorDeleteClick(c)}
                         disabled={ds?.kind === 'checking'}
                         aria-label={`Delete ${c.name}`}
                       >
@@ -160,6 +352,84 @@ export function Settings({ onBack }: { onBack: () => void }) {
           })}
         </ul>
       </section>
+    </div>
+  )
+}
+
+interface ProjectFormProps {
+  project?: Project
+  onBack: () => void
+  onSaved: (project: Project) => void
+}
+
+function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
+  const isEdit = project != null
+  const [name, setName]               = useState(project?.name ?? '')
+  const [description, setDescription] = useState(project?.description ?? '')
+  const [nameError, setNameError]     = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setNameError(false)
+    setError(null)
+    if (!name.trim()) { setNameError(true); return }
+    setLoading(true)
+    try {
+      const data: ProjectInsert | ProjectUpdate = {
+        name: name.trim(),
+        description: description.trim() || null,
+      }
+      const saved = isEdit
+        ? await updateProject(project.id, data as ProjectUpdate)
+        : await createProject(data as ProjectInsert)
+      onSaved(saved)
+    } catch {
+      setError(isEdit ? 'Failed to save project' : 'Failed to create project')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="settings">
+      <div className="settings-toolbar">
+        <button className="btn-ghost settings-back" onClick={onBack}>← Settings</button>
+      </div>
+
+      <h2 className="settings-heading">{isEdit ? 'Edit project' : 'New project'}</h2>
+
+      <form className="settings-form" onSubmit={handleSubmit} noValidate>
+        <label className="settings-form-label">
+          <span>Name <span className="settings-form-required">*</span></span>
+          <input
+            className={`input${nameError ? ' settings-form-input--error' : ''}`}
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setNameError(false) }}
+          />
+          {nameError && <span className="settings-form-field-error">Required</span>}
+        </label>
+
+        <label className="settings-form-label">
+          <span>Description</span>
+          <input
+            className="input"
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </label>
+
+        {error && <p className="settings-form-error">{error}</p>}
+
+        <div className="settings-form-actions">
+          <button type="button" className="btn-outline" onClick={onBack} disabled={loading}>Cancel</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? '…' : isEdit ? 'Save' : 'Create'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

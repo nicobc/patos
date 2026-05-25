@@ -1,5 +1,4 @@
 -- Initial schema: projects, spaces, contractors, tasks, task_spaces, task_deps
--- test: trigger migration check CI
 
 create table projects (
   id          uuid primary key default gen_random_uuid(),

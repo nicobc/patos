@@ -45,6 +45,6 @@ tickets:
     title: Branch protection — require migration check
     description: Update GitHub branch protection on main so merges require both the app check and the new migration check to pass.
     acceptance_criteria:
-      - branch protection on main requires PR Check / status (existing) and Migration Check / status (new)
+      - branch protection on main requires Test App / status (existing) and Test Migrations / status (new)
       - a PR that only touches app/** skips test-migrations but still passes the migration status job (via dorny skip path)
       - a PR that only touches supabase/migrations/** skips test-app but still passes the app status job

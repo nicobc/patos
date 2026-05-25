@@ -1,4 +1,4 @@
-name: Migration Check
+name: Test Migrations
 
 on:
   pull_request:
@@ -31,7 +31,6 @@ jobs:
         with:
           version: latest
       - run: supabase start
-      - run: supabase db reset
       - run: |
           supabase gen types --local > /tmp/database.ts
           if ! diff /tmp/database.ts app/src/types/database.ts; then

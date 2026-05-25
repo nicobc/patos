@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
@@ -30,7 +30,7 @@ const COLUMNS = [
 const STATUSES = COLUMNS.map((c) => c.status)
 
 type View =
-  | { kind: 'board' }
+  | { kind: 'board'; scrollToStatus?: string }
   | { kind: 'detail'; task: Task }
   | { kind: 'form'; task?: Task }
   | { kind: 'settings' }
@@ -64,6 +64,18 @@ export function Board() {
   const [view, setView]                       = useState<View>({ kind: 'board' })
   const [transitionError, setTransitionError] = useState<string | null>(null)
   const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
+
+  const columnsRef   = useRef<HTMLDivElement>(null)
+  const columnRefs   = useRef<Map<string, HTMLDivElement>>(new Map())
+
+  useEffect(() => {
+    if (view.kind !== 'board' || !view.scrollToStatus) return
+    const colStatus = view.scrollToStatus === 'on_hold' ? 'in_progress' : view.scrollToStatus
+    const colEl     = columnRefs.current.get(colStatus)
+    const container = columnsRef.current
+    if (!colEl || !container) return
+    container.scrollLeft = colEl.offsetLeft - container.offsetLeft
+  }, [view])
 
   const tasksLoading = tasksResult === null ||
     (tasksResult.status === 'ready' && tasksResult.projectId !== selectedId)
@@ -234,7 +246,7 @@ export function Board() {
         <TaskDetail
           task={view.task}
           contractorName={contractorName(view.task.contractor_id)}
-          onBack={() => setView({ kind: 'board' })}
+          onBack={() => setView({ kind: 'board', scrollToStatus: view.task.status })}
           onEdit={() => setView({ kind: 'form', task: view.task })}
         />
       </div>
@@ -307,13 +319,17 @@ export function Board() {
         )}
       </div>
 
-      <div className="board-columns">
+      <div className="board-columns" ref={columnsRef}>
         {COLUMNS.map(({ status, label }) => {
           const colTasks = tasks.filter((t) =>
             t.status === status || (status === 'in_progress' && t.status === 'on_hold')
           )
           return (
-            <div key={status} className="board-column">
+            <div
+              key={status}
+              className="board-column"
+              ref={(el) => { if (el) columnRefs.current.set(status, el); else columnRefs.current.delete(status) }}
+            >
               <span className="eyebrow">{label}</span>
               <div className="board-column-body">
                 {tasksLoading ? (

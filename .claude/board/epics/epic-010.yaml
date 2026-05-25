@@ -2,7 +2,7 @@ id: EPIC-010
 title: UI/UX improvements
 scope: ui-ux
 category: polish
-status: READY
+status: IN PROGRESS
 description: First-pass polish after the MVP. Covers mobile correctness, interaction quality, toast feedback, the broken details multi-select, search, undo for accidental status changes, brand application, and DAG navigability. No new data model changes — purely presentation and interaction improvements.
 notes:
   - T3 (toast) must ship before or together with T4 (undo) since undo is delivered via a toast action
@@ -13,7 +13,7 @@ notes:
 tickets:
   - id: T1
     type: fix
-    status: READY
+    status: DONE
     title: Fix iOS auto-zoom on input focus
     description: iOS Safari auto-zooms when a focused input has font-size < 16px. All .input elements use --fs-sm (0.875rem = 14px), triggering zoom on every tap on mobile. Fix with a targeted media query at the standard 768px mobile breakpoint — no changes to design tokens or desktop sizing. Do NOT modify the viewport meta tag with maximum-scale or user-scalable, which breaks intentional zoom and violates accessibility guidelines.
     acceptance_criteria:

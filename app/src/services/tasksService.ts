@@ -87,16 +87,33 @@ export async function listBlocks(taskId: string): Promise<Task[]> {
 }
 
 export async function setBlockers(taskId: string, blockerIds: string[]): Promise<void> {
+  const { data: existing, error: fetchError } = await supabase
+    .from('task_deps')
+    .select('depends_on_task_id')
+    .eq('task_id', taskId)
+  if (fetchError) throw fetchError
+  const previousIds = existing.map((d) => d.depends_on_task_id)
+
   const { error: deleteError } = await supabase
     .from('task_deps')
     .delete()
     .eq('task_id', taskId)
   if (deleteError) throw deleteError
+
   if (blockerIds.length === 0) return
+
   const { error: insertError } = await supabase
     .from('task_deps')
     .insert(blockerIds.map((id) => ({ task_id: taskId, depends_on_task_id: id })))
-  if (insertError) throw insertError
+  if (!insertError) return
+
+  if (previousIds.length > 0) {
+    const { error: restoreError } = await supabase
+      .from('task_deps')
+      .insert(previousIds.map((id) => ({ task_id: taskId, depends_on_task_id: id })))
+    if (restoreError) throw restoreError
+  }
+  throw insertError
 }
 
 export async function listRawDepsByTasks(taskIds: string[]): Promise<TaskDep[]> {

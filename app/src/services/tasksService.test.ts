@@ -307,10 +307,20 @@ describe('listBlocks', () => {
   })
 })
 
+const fetchMock = (ids: string[]) => ({
+  select: vi.fn().mockReturnValue({
+    eq: vi.fn().mockResolvedValue({
+      data: ids.map((id) => ({ depends_on_task_id: id })),
+      error: null,
+    }),
+  }),
+} as unknown as ReturnType<typeof supabase.from>)
+
 describe('setBlockers', () => {
   it('deletes existing deps and inserts new ones', async () => {
     const mockInsert = vi.fn().mockResolvedValue({ error: null })
     mockFrom
+      .mockReturnValueOnce(fetchMock([]))
       .mockReturnValueOnce({
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockResolvedValue({ error: null }),
@@ -328,24 +338,67 @@ describe('setBlockers', () => {
   })
 
   it('only deletes when blockerIds is empty', async () => {
-    mockFrom.mockReturnValueOnce({
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    } as unknown as ReturnType<typeof supabase.from>)
+    mockFrom
+      .mockReturnValueOnce(fetchMock([]))
+      .mockReturnValueOnce({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
 
     await expect(setBlockers('abc', [])).resolves.toBeUndefined()
-    expect(mockFrom).toHaveBeenCalledTimes(1)
+    expect(mockFrom).toHaveBeenCalledTimes(2)
   })
 
-  it('throws on delete error', async () => {
-    mockFrom.mockReturnValueOnce({
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: new Error('fail') }),
-      }),
-    } as unknown as ReturnType<typeof supabase.from>)
+  it('throws on delete error without attempting insert', async () => {
+    mockFrom
+      .mockReturnValueOnce(fetchMock([]))
+      .mockReturnValueOnce({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: new Error('del-fail') }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
 
-    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('fail')
+    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('del-fail')
+    expect(mockFrom).toHaveBeenCalledTimes(2)
+  })
+
+  it('restores previous blockers and throws insert error when insert fails', async () => {
+    const mockRestore = vi.fn().mockResolvedValue({ error: null })
+    mockFrom
+      .mockReturnValueOnce(fetchMock(['old-b1']))
+      .mockReturnValueOnce({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        insert: vi.fn().mockResolvedValue({ error: new Error('ins-fail') }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        insert: mockRestore,
+      } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('ins-fail')
+    expect(mockRestore).toHaveBeenCalledWith([{ task_id: 'abc', depends_on_task_id: 'old-b1' }])
+  })
+
+  it('throws restore error when both insert and restore fail', async () => {
+    mockFrom
+      .mockReturnValueOnce(fetchMock(['old-b1']))
+      .mockReturnValueOnce({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        insert: vi.fn().mockResolvedValue({ error: new Error('ins-fail') }),
+      } as unknown as ReturnType<typeof supabase.from>)
+      .mockReturnValueOnce({
+        insert: vi.fn().mockResolvedValue({ error: new Error('restore-fail') }),
+      } as unknown as ReturnType<typeof supabase.from>)
+
+    await expect(setBlockers('abc', ['b1'])).rejects.toThrow('restore-fail')
   })
 })
 

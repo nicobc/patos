@@ -35,7 +35,7 @@ jobs:
       - run: |
           supabase gen types --local > /tmp/database.ts
           if ! diff /tmp/database.ts app/src/types/database.ts; then
-            echo "::error::database.ts is stale — run 'supabase gen types --local > app/src/types/database.ts' and commit the result"
+            echo "::error::database.ts is stale — run 'bash scripts/sync-local-types.sh' and commit the result"
             exit 1
           fi
 

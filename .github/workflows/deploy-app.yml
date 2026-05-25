@@ -66,6 +66,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Create GitHub release
         if: github.event_name == 'push'
-        run: gh release create ${{ github.ref_name }} --generate-notes --title "${{ github.ref_name }}"
+        run: gh release create ${{ github.ref_name }} --repo ${{ github.repository }} --generate-notes --title "${{ github.ref_name }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

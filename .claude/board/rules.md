@@ -58,6 +58,11 @@ Agent-facing commits (anything under `.claude/` except board YAML files, plus `C
 
 Board status updates can be standalone commits within the branch. The commit that transitions a ticket to DONE carries a `Closes EPIC-XXX/TN` footer (or `Closes MAINT/TN`) for traceability. Place it after `Co-Authored-By` if present.
 
+## release order
+The `ready` and `ideation` lists in `index.yaml` are maintained in planned release order — top entry ships next. Reordering these lists requires explicit owner approval, the same rule as reordering READY tickets within an epic.
+
+A release requires a CalVer tag if the epic contains any `feat` or `fix` tickets. Pure `ci`/`chore`/`docs` epics do not.
+
 ## grooming convention
 Grooming commits include the epic file and any corresponding index.yaml changes.
 

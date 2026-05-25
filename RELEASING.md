@@ -22,7 +22,7 @@ Each branch gets its own Cloudflare Pages preview deployment.
 
 Releases are planned in `.claude/board/roadmap.yaml`. Each release bundles one or more complete epics and any relevant maintenance tickets. Never ship a partial epic.
 
-A release requires a CalVer tag when the bundle includes non-test files under `app/src/`. CI config, spec files, `.claude/`, and documentation changes do not. The `deploy` flag on each roadmap entry records this decision explicitly — check it rather than reasoning from the diff.
+A release requires a CalVer tag if the epic contains any `feat` or `fix` tickets. Pure `ci`/`chore`/`docs` epics do not.
 
 ## Process
 

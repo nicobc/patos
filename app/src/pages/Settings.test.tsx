@@ -4,11 +4,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Settings } from './Settings'
 
 vi.mock('../services/projectsService', () => ({
-  listProjects:        vi.fn(),
-  createProject:       vi.fn(),
-  updateProject:       vi.fn(),
-  deleteProject:       vi.fn(),
-  countTasksByProject: vi.fn(),
+  listProjects:              vi.fn(),
+  createProject:             vi.fn(),
+  updateProject:             vi.fn(),
+  deleteProject:             vi.fn(),
+  countTasksByProject:       vi.fn(),
+  subscribeToProjectChanges: vi.fn(),
 }))
 
 vi.mock('../services/contractorsService', () => ({
@@ -25,6 +26,7 @@ import {
   updateProject,
   deleteProject,
   countTasksByProject,
+  subscribeToProjectChanges,
 } from '../services/projectsService'
 
 import {
@@ -40,6 +42,7 @@ const mockCreateProject       = vi.mocked(createProject)
 const mockUpdateProject       = vi.mocked(updateProject)
 const mockDeleteProject       = vi.mocked(deleteProject)
 const mockCountByProject      = vi.mocked(countTasksByProject)
+const mockSubProjects         = vi.mocked(subscribeToProjectChanges)
 
 const mockListContractors     = vi.mocked(listContractors)
 const mockCreateContractor    = vi.mocked(createContractor)
@@ -56,6 +59,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockListProjects.mockResolvedValue([proj1, proj2])
   mockCountByProject.mockResolvedValue(0)
+  mockSubProjects.mockReturnValue(vi.fn())
   mockListContractors.mockResolvedValue([alice, bob])
   mockCountByContractor.mockResolvedValue(0)
 })

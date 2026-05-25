@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import type { Tables, TablesInsert, TablesUpdate } from '../types/database'
 
 export type Project = Tables<'projects'>
@@ -36,4 +37,30 @@ export async function countTasksByProject(id: string): Promise<number> {
     .eq('project_id', id)
   if (error) throw error
   return count ?? 0
+}
+
+export type ProjectChangeEvent =
+  | { eventType: 'INSERT'; record: Project }
+  | { eventType: 'UPDATE'; record: Project }
+  | { eventType: 'DELETE'; id: string }
+
+export function subscribeToProjectChanges(
+  callback: (event: ProjectChangeEvent) => void
+): () => void {
+  const channel = supabase
+    .channel('projects')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'projects' },
+      (payload: RealtimePostgresChangesPayload<Project>) => {
+        if (payload.eventType === 'DELETE') {
+          const id = payload.old.id
+          if (id) callback({ eventType: 'DELETE', id })
+        } else {
+          callback({ eventType: payload.eventType, record: payload.new })
+        }
+      }
+    )
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
 }

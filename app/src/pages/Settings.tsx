@@ -13,6 +13,7 @@ import {
 } from '../services/contractorsService'
 import {
   listProjects,
+  subscribeToProjectChanges,
   createProject,
   updateProject,
   deleteProject,
@@ -63,6 +64,21 @@ export function Settings({ onBack }: { onBack: () => void }) {
       .then(setContractors)
       .catch(() => setContractorsError('Failed to load contractors'))
       .finally(() => setContractorsLoading(false))
+
+    const unsubProjects = subscribeToProjectChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setProjects((prev) => prev.filter((p) => p.id !== event.id))
+        setProjectDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        setProjects((prev) =>
+          event.eventType === 'INSERT'
+            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((p) => p.id === event.record.id ? event.record : p)
+        )
+      }
+    })
+
+    return unsubProjects
   }, [])
 
   // --- Project handlers ---

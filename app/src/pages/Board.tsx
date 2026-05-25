@@ -31,7 +31,7 @@ const STATUSES = COLUMNS.map((c) => c.status)
 
 type View =
   | { kind: 'board'; scrollToStatus?: string }
-  | { kind: 'detail'; task: Task }
+  | { kind: 'detail'; task: Task; from?: View }
   | { kind: 'form'; task?: Task }
   | { kind: 'settings' }
 
@@ -246,8 +246,10 @@ export function Board() {
         <TaskDetail
           task={view.task}
           contractorName={contractorName(view.task.contractor_id)}
-          onBack={() => setView({ kind: 'board', scrollToStatus: view.task.status })}
+          backLabel={view.from ? '← Back' : '← Board'}
+          onBack={() => setView(view.from ?? { kind: 'board', scrollToStatus: view.task.status })}
           onEdit={() => setView({ kind: 'form', task: view.task })}
+          onSelectTask={(t) => setView({ kind: 'detail', task: t, from: view })}
         />
       </div>
     )

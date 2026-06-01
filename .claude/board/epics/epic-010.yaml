@@ -58,7 +58,7 @@ tickets:
 
   - id: T4
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: Undo status transitions and offer stale-date update via card arrow toast
     description: The < > status arrows on board cards are instant with no recovery path, and they silently leave stale dates when actual_start or actual_end are already set to a past value. Unify both concerns into a single post-action toast on every card arrow press — the toast covers undo (full rollback) and, when a stale date is detected, an inline "Update" shortcut to set it to today. A blocking pre-flight prompt is intentionally avoided to keep the board interaction fast and non-blocking. Applies only to the card arrows, not to other status change surfaces.
     acceptance_criteria:

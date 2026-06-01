@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { updateTask, deleteTask, type Task } from '../services/tasksService'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import './TaskDetail.css'
 
 const STATUS_LABELS: Record<string, string> = {

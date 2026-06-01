@@ -8,6 +8,10 @@ vi.mock('../services/tasksService', () => ({
   deleteTask: vi.fn(),
 }))
 
+vi.mock('../context/useToast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}))
+
 import { updateTask, deleteTask } from '../services/tasksService'
 const mockUpdateTask = vi.mocked(updateTask)
 const mockDeleteTask = vi.mocked(deleteTask)

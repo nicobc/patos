@@ -14,6 +14,10 @@ vi.mock('../context/useAuth', () => ({
   useAuth: () => ({ session: { user: { id: 'u1' } } }),
 }))
 
+vi.mock('../context/useToast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}))
+
 import { createTask, updateTask } from '../services/tasksService'
 const mockCreateTask = vi.mocked(createTask)
 const mockUpdateTask = vi.mocked(updateTask)

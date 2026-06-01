@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../context/useAuth'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import {
   createTask,
   updateTask,

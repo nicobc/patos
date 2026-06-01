@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -75,7 +75,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
       } else {
         setProjects((prev) =>
           event.eventType === 'INSERT'
-            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            ? prev.some((p) => p.id === event.record.id)
+              ? prev
+              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
             : prev.map((p) => p.id === event.record.id ? event.record : p)
         )
       }
@@ -88,7 +90,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
       } else {
         setContractors((prev) =>
           event.eventType === 'INSERT'
-            ? [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            ? prev.some((c) => c.id === event.record.id)
+              ? prev
+              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
             : prev.map((c) => c.id === event.record.id ? event.record : c)
         )
       }
@@ -128,7 +132,12 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }
 
-  function handleProjectSaved(_project: Project, isEdit: boolean) {
+  function handleProjectSaved(project: Project, isEdit: boolean) {
+    setProjects((prev) =>
+      isEdit
+        ? prev.map((p) => (p.id === project.id ? project : p))
+        : [...prev, project].sort((a, b) => a.name.localeCompare(b.name))
+    )
     showToast(isEdit ? 'Project saved' : 'Project created')
     setView({ kind: 'list' })
   }
@@ -164,7 +173,12 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }
 
-  function handleContractorSaved(_contractor: Contractor, isEdit: boolean) {
+  function handleContractorSaved(contractor: Contractor, isEdit: boolean) {
+    setContractors((prev) =>
+      isEdit
+        ? prev.map((c) => (c.id === contractor.id ? contractor : c))
+        : [...prev, contractor].sort((a, b) => a.name.localeCompare(b.name))
+    )
     showToast(isEdit ? 'Contractor saved' : 'Contractor created')
     setView({ kind: 'list' })
   }

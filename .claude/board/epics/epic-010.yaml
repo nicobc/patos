@@ -92,7 +92,7 @@ tickets:
 
   - id: T6
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Board search and filter
     description: With many tasks across columns, finding a specific task requires scrolling. Add a filter input to the board toolbar that narrows visible cards by title substring and contractor name simultaneously. No server round-trips — filtering is local over the already-loaded tasks array.
     acceptance_criteria:

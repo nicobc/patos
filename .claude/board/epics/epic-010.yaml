@@ -43,7 +43,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: IN PROGRESS
+    status: TESTING
     title: Toast notifications after mutations
     description: All successful mutations return silently to the previous view with no feedback. Add a lightweight toast system so users know their action succeeded. Toasts are success-only — error states remain inline and are not duplicated here. ToastProvider wraps Board in App.tsx so useToast() is available to all subtree components including Settings, TaskForm, and TaskDetail. Also fixes a pre-existing double-entry bug in Settings where manual state updates and Supabase realtime subscriptions both fired on INSERT — manual updates removed from save handlers, subscriptions are now the sole state updater.
     acceptance_criteria:

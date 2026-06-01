@@ -24,17 +24,22 @@ tickets:
 
   - id: T2
     type: feat
-    status: READY
-    title: Replace <details> multi-select with a real popover
-    description: The "Blocked by" multi-select in TaskForm uses a <details> HTML disclosure element. It does not close on outside click, has no animation, and is semantically wrong for a multi-select. Replace with a custom popover — a trigger button that shows a panel, closes on outside click and Escape, and is keyboard accessible.
+    status: DONE
+    title: Consistent custom popovers for Contractor, Status, Blocked by; design-system select primitives
+    description: Contractor, Status, and Blocked by all had inconsistent form-control styling. Blocked by used a semantically wrong <details> element; Contractor and Status used native <select> elements with .dropdown applied incorrectly. This ticket replaces all three with a unified custom popover system and introduces .select / .select-wrap / .select-chevron design-system primitives. .dropdown is retained as a panel-only class. The UserMenu dropdown is also updated to the same panel border treatment and flush positioning.
+    notes:
+      - UserMenu trigger has no left border — the panel is wider than the trigger name so a left border on the trigger cannot align with the panel's left border
+      - Board project picker retains its native <select> wrapped in .select-wrap (standalone toolbar control, not a form popover)
     acceptance_criteria:
-      - task-form-multiselect replaced with a div containing a trigger button and a conditionally rendered panel driven by local useState
-      - a useEffect with a mousedown listener on document closes the panel when the click target is outside the component's root ref; cleanup removes the listener on unmount
-      - pressing Escape while the panel is open closes it and returns focus to the trigger button
-      - the trigger button displays the current selection summary ("No blockers" / "N blocker(s)") using the .input style class so it visually matches other form controls
-      - the panel uses the .dropdown class for background, border, and border-radius treatment; renders below the trigger; scrolls internally if options overflow the viewport
-      - active and completed task grouping, checkbox behaviour, and dirty tracking are unchanged
-      - the <details> and <summary> elements are fully removed from the codebase
+      - .select (surface treatment), .select-chevron (icon sizing + transition), and .select-wrap (native select wrapper with appearance:none and positioned chevron) added to index.css; no component styles added to index.css
+      - Contractor and Status replaced with custom popovers; native <select> elements and .select-wrap wrappers removed from TaskForm
+      - <details> and <summary> fully removed from the codebase
+      - a single useEffect handles outside-mousedown and Escape for all three popovers simultaneously; Escape returns focus to the respective trigger button
+      - all trigger buttons use .input and .select classes; FA faChevronDown chevron with 180° open/close CSS transition via --transition-fast
+      - Contractor and Status: single-select — clicking an option sets the value and closes the panel; FA faCheck visible on the selected option, invisible (opacity 0) on others to keep text alignment stable
+      - Blocked by: multi-select — clicking toggles selection; FA faCheck visible on selected options; active/completed grouping, dirty tracking, and blocker-warning flow unchanged
+      - panels open flush below their trigger: no gap, trigger bottom radius 0 and bottom border transparent when open, panel border-top none and top radius 0
+      - UserMenu dropdown: position absolute relative to .user-menu container (was fixed); border uses var(--border); flush connection via transparent trigger bottom border when open; min-width max-content prevents wrapping
 
   - id: T3
     type: feat

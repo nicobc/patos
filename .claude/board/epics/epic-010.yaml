@@ -75,7 +75,7 @@ tickets:
 
   - id: T5
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Discarded task visibility and recovery
     description: Discarded tasks vanish from the board with no visibility and no recovery path. This ticket gives them a home — an opt-in board column surfaced via a toolbar toggle — and adds a Restore action in TaskDetail that returns a discarded task to ideation for re-grooming. The Discard/Delete semantic distinction is preserved and unchanged; this ticket is purely additive. Discard means cancelled/abandoned (soft, recoverable via this ticket); Delete means permanently gone (hard, irreversible).
     acceptance_criteria:

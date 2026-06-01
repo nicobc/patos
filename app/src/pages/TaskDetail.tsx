@@ -48,6 +48,19 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
     }
   }
 
+  async function restore() {
+    setLoading(true)
+    setError(null)
+    try {
+      await updateTask(task.id, { status: 'ideation' })
+      showToast('Task restored')
+      onBack()
+    } catch {
+      setError('Failed to restore task')
+      setLoading(false)
+    }
+  }
+
   const fmtDate = (v: string | null) => v ? new Date(v).toLocaleDateString() : '—'
   const fmtCost = (v: number | null) => v != null ? `€${v.toLocaleString()}` : '—'
   const fmtDays = (v: number | null) => v != null ? `${v} days` : '—'
@@ -151,7 +164,13 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
           </>
         ) : (
           <div className="task-detail-action-row">
-            <button className="btn-ghost" onClick={() => setPending('discard')}>Discard</button>
+            {task.status === 'discarded' ? (
+              <button className="btn-ghost" onClick={restore} disabled={loading}>
+                {loading ? '…' : 'Restore'}
+              </button>
+            ) : (
+              <button className="btn-ghost" onClick={() => setPending('discard')}>Discard</button>
+            )}
             <button className="btn-ghost task-detail-btn--danger" onClick={() => setPending('delete')}>Delete</button>
           </div>
         )}

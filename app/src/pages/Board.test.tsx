@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
 import type { TaskChangeEvent, DepChangeEvent } from '../services/tasksService'
 
+vi.mock('../context/useToast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}))
+
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() },
 }))

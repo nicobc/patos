@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { updateTask, deleteTask, type Task } from '../services/tasksService'
+import { useToast } from '../context/useToast'
 import './TaskDetail.css'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function TaskDetail({ task, contractorName, blockers, blocks, backLabel = '← Board', onBack, onEdit, onSelectTask }: Props) {
+  const { showToast } = useToast()
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,8 +36,10 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
     try {
       if (pending === 'discard') {
         await updateTask(task.id, { status: 'discarded' })
+        showToast('Task archived')
       } else {
         await deleteTask(task.id)
+        showToast('Task deleted')
       }
       onBack()
     } catch {

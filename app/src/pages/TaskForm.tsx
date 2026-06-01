@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../context/useAuth'
+import { useToast } from '../context/useToast'
 import {
   createTask,
   updateTask,
@@ -38,6 +39,7 @@ function endRequired(status: string)   { return status === 'done' }
 
 export function TaskForm({ task, projectId, contractors, projectTasks = [], onBack, onSaved }: Props) {
   const { session } = useAuth()
+  const { showToast } = useToast()
   const isEdit = task != null
 
   const [title, setTitle]               = useState(task?.title ?? '')
@@ -176,6 +178,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         }
         const saved = await updateTask(task.id, update)
         await setBlockers(task.id, selectedBlockerIds)
+        showToast('Task saved')
         onSaved(saved)
       } else {
         const insert: TaskInsert = {
@@ -195,6 +198,7 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         if (selectedBlockerIds.length > 0) {
           await setBlockers(created.id, selectedBlockerIds)
         }
+        showToast('Task created')
         onSaved(created)
       }
     } catch {

@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Settings } from './Settings'
 
+vi.mock('../context/useToast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}))
+
 vi.mock('../services/projectsService', () => ({
   listProjects:              vi.fn(),
   createProject:             vi.fn(),

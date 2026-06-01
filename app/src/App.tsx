@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppShell } from './components/AppShell'
 import { SignIn } from './pages/SignIn'
@@ -13,7 +14,7 @@ function App() {
           <Route path="/sign-in" element={<SignIn />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
-              <Route path="/" element={<Board />} />
+              <Route path="/" element={<ToastProvider><Board /></ToastProvider>} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

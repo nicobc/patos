@@ -43,15 +43,16 @@ tickets:
 
   - id: T3
     type: feat
-    status: READY
+    status: DONE
     title: Toast notifications after mutations
-    description: All successful mutations return silently to the previous view with no feedback. Add a lightweight toast system so users know their action succeeded. Toasts are success-only — error states remain inline and are not duplicated here.
+    description: All successful mutations return silently to the previous view with no feedback. Add a lightweight toast system so users know their action succeeded. Toasts are success-only — error states remain inline and are not duplicated here. ToastProvider wraps Board in App.tsx so useToast() is available to all subtree components including Settings, TaskForm, and TaskDetail. Also fixes a pre-existing double-entry bug in Settings where manual state updates and Supabase realtime subscriptions both fired on INSERT — manual updates removed from save handlers, subscriptions are now the sole state updater.
     acceptance_criteria:
       - a useToast() hook exposes showToast(message string, options? { action?: { label string; onAction () => void } }) and is accessible anywhere within the Board subtree
-      - toasts render as fixed-position pills at bottom-center of the screen at a z-index above all other content
-      - each toast auto-dismisses after 5 seconds; a new toast replaces the current one immediately
+      - toasts render as fixed-position pills at top-center of the screen, just below the app header (top calc(--nav-height + 12px)), at a z-index above all other content; top placement chosen over bottom because mutations navigate away and the user's gaze lands at the top of the incoming view
+      - each toast auto-dismisses after 2.5 seconds; a new toast replaces the current one immediately
       - at most one toast is visible at a time
-      - toasts animate in (slide up + fade) and out (fade) using CSS transitions with --transition and --transition-fast tokens
+      - toasts animate in (slide down + fade) and out (fade) using CSS transitions with --transition and --transition-fast tokens
+      - toast pill is success-styled: --surface background, faCheck icon in --success color, border using color-mix(--success at --opacity-subtle); width fit-content so the pill is compact and text-proportional
       - success messages triggered on each mutation — "Task created", "Task saved", "Task archived", "Task deleted", "Contractor created", "Contractor saved", "Contractor deleted", "Project created", "Project saved", "Project deleted"
       - the optional action renders as a button inside the toast pill (used by T4 for undo)
 

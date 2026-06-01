@@ -129,6 +129,32 @@
   opacity: var(--opacity-muted);
 }
 
+.board-search {
+  position: relative;
+
+  .input {
+    width: 100%;
+    padding-right: 2rem;
+  }
+}
+
+.board-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg);
+  opacity: var(--opacity-muted);
+  padding: 0.125rem;
+  font-size: var(--fs-xs);
+  line-height: 1;
+
+  &:hover { opacity: var(--opacity-strong); }
+}
+
 .board-blocker-warning {
   display: flex;
   flex-direction: column;

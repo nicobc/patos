@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faGear, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges, type Contractor } from '../services/contractorsService'
 import {
@@ -21,6 +21,11 @@ import { Settings } from './Settings'
 import { DagView } from './DagView'
 import { type RawDep } from '../lib/dagResolver'
 import './Board.css'
+
+const STATUS_LABELS: Record<string, string> = {
+  ideation: 'Ideation', planned: 'Planned',
+  in_progress: 'In Progress', done: 'Done', on_hold: 'On Hold',
+}
 
 const COLUMNS = [
   { status: 'ideation',    label: 'Ideation'    },
@@ -44,7 +49,13 @@ type TasksResult =
 
 type DepsResult = { projectId: string; blockerIds: Map<string, Set<string>>; rawDeps: RawDep[] }
 
-type PendingTransition = { task: Task; newStatus: string; blockerTitles: string[] }
+type PendingTransition   = { task: Task; newStatus: string; blockerTitles: string[] }
+type TransitionFeedback = {
+  taskId: string
+  statusLabel: string
+  preState: { status: string; actual_start: string | null; actual_end: string | null }
+  dateField?: 'actual_start' | 'actual_end'
+}
 
 function applyTaskChange(items: Task[], event: TaskChangeEvent): Task[] {
   if (event.eventType === 'INSERT') {
@@ -67,12 +78,14 @@ export function Board() {
   const [tasksResult, setTasksResult]         = useState<TasksResult | null>(null)
   const [depsResult, setDepsResult]           = useState<DepsResult | null>(null)
   const [view, setView]                       = useState<View>({ kind: 'board' })
-  const [transitionError, setTransitionError] = useState<string | null>(null)
-  const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
+  const [transitionError, setTransitionError]       = useState<string | null>(null)
+  const [pendingTransition, setPendingTransition]   = useState<PendingTransition | null>(null)
+  const [transitionFeedback, setTransitionFeedback] = useState<TransitionFeedback | null>(null)
 
-  const columnsRef   = useRef<HTMLDivElement>(null)
-  const columnRefs   = useRef<Map<string, HTMLDivElement>>(new Map())
-  const taskIdsRef   = useRef<Set<string>>(new Set())
+  const columnsRef        = useRef<HTMLDivElement>(null)
+  const columnRefs        = useRef<Map<string, HTMLDivElement>>(new Map())
+  const taskIdsRef        = useRef<Set<string>>(new Set())
+  const feedbackTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const blockerIds = depsResult?.projectId === selectedId ? depsResult.blockerIds : new Map<string, Set<string>>()
   const rawDeps    = depsResult?.projectId === selectedId ? depsResult.rawDeps    : []
@@ -203,6 +216,27 @@ export function Board() {
     })
   }
 
+  function dismissTransitionFeedback() {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    setTransitionFeedback(null)
+  }
+
+  function handleUndoTransition(taskId: string, preState: TransitionFeedback['preState']) {
+    setTasksResult((prev) => {
+      if (prev?.status !== 'ready') return prev
+      return { ...prev, items: prev.items.map((t) => t.id === taskId ? { ...t, ...preState } : t) }
+    })
+    updateTask(taskId, preState).catch(() => {
+      listTasksByProject(selectedId)
+        .then((data) => setTasksResult((prev) => {
+          if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev
+          return { ...prev, items: data.filter((t) => t.status !== 'discarded') }
+        }))
+        .catch(() => {})
+      setTransitionError('Failed to undo — refreshed from server')
+    })
+  }
+
   function executeStatusChange(task: Task, newStatus: string) {
     setTransitionError(null)
     const update = buildStatusTransition(task, newStatus)
@@ -224,6 +258,19 @@ export function Board() {
           : 'Failed to move task — refreshed from server'
       setTransitionError(msg)
     })
+
+    const today    = new Date().toISOString().split('T')[0]
+    const preState = { status: task.status, actual_start: task.actual_start, actual_end: task.actual_end }
+    let dateField: TransitionFeedback['dateField']
+    if (newStatus === 'in_progress' && task.actual_start && task.actual_start !== today) {
+      dateField = 'actual_start'
+    } else if (newStatus === 'done' && task.actual_end && task.actual_end !== today) {
+      dateField = 'actual_end'
+    }
+
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    setTransitionFeedback({ taskId: task.id, statusLabel: STATUS_LABELS[newStatus] ?? newStatus, preState, dateField })
+    feedbackTimerRef.current = setTimeout(() => setTransitionFeedback(null), 7000)
   }
 
   function handleStatusChange(task: Task, newStatus: string) {
@@ -305,7 +352,7 @@ export function Board() {
             <select
               className="input select"
               value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
+              onChange={(e) => { dismissTransitionFeedback(); setSelectedId(e.target.value) }}
               aria-label="Select project"
             >
               {projects.map((p) => (
@@ -337,11 +384,11 @@ export function Board() {
         <div className="board-tabs">
           <button
             className={`board-tab${view.kind === 'board' ? ' board-tab--active' : ''}`}
-            onClick={() => { setTransitionError(null); setPendingTransition(null); setView({ kind: 'board' }) }}
+            onClick={() => { setTransitionError(null); setPendingTransition(null); dismissTransitionFeedback(); setView({ kind: 'board' }) }}
           >Board</button>
           <button
             className={`board-tab${view.kind === 'dag' ? ' board-tab--active' : ''}`}
-            onClick={() => { setTransitionError(null); setPendingTransition(null); setView({ kind: 'dag' }) }}
+            onClick={() => { setTransitionError(null); setPendingTransition(null); dismissTransitionFeedback(); setView({ kind: 'dag' }) }}
             disabled={!selectedId}
           >Dependencies</button>
         </div>
@@ -358,6 +405,41 @@ export function Board() {
                 executeStatusChange(pendingTransition.task, pendingTransition.newStatus)
                 setPendingTransition(null)
               }}>Proceed</button>
+            </div>
+          </div>
+        )}
+        {transitionFeedback && (
+          <div className="board-transition-feedback">
+            <button
+              className="board-transition-feedback-close"
+              onClick={dismissTransitionFeedback}
+              aria-label="Dismiss"
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+            <p className="board-transition-feedback-text">Moved to {transitionFeedback.statusLabel}.</p>
+            <div className="board-transition-feedback-actions">
+              {transitionFeedback.dateField && (
+                <button
+                  className="btn-outline"
+                  onClick={() => {
+                    const today = new Date().toISOString().split('T')[0]
+                    updateTask(transitionFeedback.taskId, { [transitionFeedback.dateField!]: today }).catch(() => {})
+                    dismissTransitionFeedback()
+                  }}
+                >
+                  Update {transitionFeedback.dateField === 'actual_start' ? 'start' : 'end'}
+                </button>
+              )}
+              <button
+                className="btn-outline"
+                onClick={() => {
+                  handleUndoTransition(transitionFeedback.taskId, transitionFeedback.preState)
+                  dismissTransitionFeedback()
+                }}
+              >
+                Undo
+              </button>
             </div>
           </div>
         )}

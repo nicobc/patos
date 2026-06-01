@@ -337,6 +337,62 @@ describe('Board — project switch clears stale dep state', () => {
   })
 })
 
+describe('Board — transition feedback banner', () => {
+  it('shows feedback banner with Undo after a status change', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+    await waitFor(() => expect(screen.getByText('Moved to Planned.')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /dismiss/i })).toBeInTheDocument()
+  })
+
+  it('shows "Update start" button when actual_start is stale on in_progress transition', async () => {
+    vi.setSystemTime(new Date('2026-06-01'))
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: '2026-05-01' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+    await waitFor(() => expect(screen.getByText('Moved to In Progress.')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /update start/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('shows "Update end" button when actual_end is stale on done transition', async () => {
+    vi.setSystemTime(new Date('2026-06-01'))
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'in_progress', actual_end: '2026-05-01' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+    await waitFor(() => expect(screen.getByText('Moved to Done.')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /update end/i })).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('does not show Update button when actual_start equals today', async () => {
+    vi.setSystemTime(new Date('2026-06-01'))
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: '2026-06-01' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+    await waitFor(() => expect(screen.getByText('Moved to In Progress.')).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: /update/i })).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('dismisses the banner when the X button is clicked', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /next status/i }))
+    await waitFor(() => expect(screen.getByText('Moved to Planned.')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: /dismiss/i }))
+    expect(screen.queryByText('Moved to Planned.')).not.toBeInTheDocument()
+  })
+})
+
 describe('Board — dep subscription isolation', () => {
   it('ignores dep events for task IDs not belonging to the current project', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ id: 't1' })])

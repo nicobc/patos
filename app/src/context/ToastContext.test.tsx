@@ -28,6 +28,7 @@ function ActionTrigger({ onAction }: { onAction: () => void }) {
   )
 }
 
+
 afterEach(() => vi.useRealTimers())
 
 describe('ToastProvider', () => {

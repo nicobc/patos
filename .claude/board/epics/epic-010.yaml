@@ -24,7 +24,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: TESTING
+    status: DONE
     title: Consistent custom popovers for Contractor, Status, Blocked by; design-system select primitives
     description: Contractor, Status, and Blocked by all had inconsistent form-control styling. Blocked by used a semantically wrong <details> element; Contractor and Status used native <select> elements with .dropdown applied incorrectly. This ticket replaces all three with a unified custom popover system and introduces .select / .select-wrap / .select-chevron design-system primitives. .dropdown is retained as a panel-only class. The UserMenu dropdown is also updated to the same panel border treatment and flush positioning.
     notes:

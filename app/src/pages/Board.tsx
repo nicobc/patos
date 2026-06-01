@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faGear, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faEye, faEyeSlash, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges, type Contractor } from '../services/contractorsService'
 import {
@@ -77,10 +77,11 @@ export function Board() {
   const [transitionFeedback, setTransitionFeedback] = useState<TransitionFeedback | null>(null)
   const [showDiscarded, setShowDiscarded]           = useState(false)
 
-  const columnsRef        = useRef<HTMLDivElement>(null)
-  const columnRefs        = useRef<Map<string, HTMLDivElement>>(new Map())
-  const taskIdsRef        = useRef<Set<string>>(new Set())
-  const feedbackTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const columnsRef          = useRef<HTMLDivElement>(null)
+  const columnRefs          = useRef<Map<string, HTMLDivElement>>(new Map())
+  const discardedColumnRef  = useRef<HTMLDivElement>(null)
+  const taskIdsRef          = useRef<Set<string>>(new Set())
+  const feedbackTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const blockerIds = depsResult?.projectId === selectedId ? depsResult.blockerIds : new Map<string, Set<string>>()
   const rawDeps    = depsResult?.projectId === selectedId ? depsResult.rawDeps    : []
@@ -93,6 +94,14 @@ export function Board() {
     if (!colEl || !container) return
     container.scrollLeft = colEl.offsetLeft - container.offsetLeft
   }, [view])
+
+  useEffect(() => {
+    if (!showDiscarded) return
+    const col       = discardedColumnRef.current
+    const container = columnsRef.current
+    if (!col || !container) return
+    container.scrollTo?.({ left: col.offsetLeft - container.offsetLeft, behavior: 'smooth' })
+  }, [showDiscarded])
 
   const tasksLoading = tasksResult === null ||
     (tasksResult.status === 'ready' && tasksResult.projectId !== selectedId)
@@ -374,7 +383,7 @@ export function Board() {
                   aria-pressed={showDiscarded}
                   aria-label="Show discarded tasks"
                 >
-                  <FontAwesomeIcon icon={faTrash} />
+                  <FontAwesomeIcon icon={showDiscarded ? faEye : faEyeSlash} />
                 </button>
               </>
             )}
@@ -501,7 +510,7 @@ export function Board() {
           )
         })}
         {showDiscarded && (
-          <div className="board-column board-column--discarded">
+          <div className="board-column board-column--discarded" ref={discardedColumnRef}>
             <span className="eyebrow">Discarded</span>
             <div className="board-column-body">
               {tasksLoading ? (

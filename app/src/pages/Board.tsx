@@ -76,10 +76,12 @@ export function Board() {
   const [pendingTransition, setPendingTransition]   = useState<PendingTransition | null>(null)
   const [transitionFeedback, setTransitionFeedback] = useState<TransitionFeedback | null>(null)
   const [showDiscarded, setShowDiscarded]           = useState(false)
+  const [filterQuery, setFilterQuery]               = useState('')
 
   const columnsRef          = useRef<HTMLDivElement>(null)
   const columnRefs          = useRef<Map<string, HTMLDivElement>>(new Map())
   const discardedColumnRef  = useRef<HTMLDivElement>(null)
+  const searchInputRef      = useRef<HTMLInputElement>(null)
   const taskIdsRef          = useRef<Set<string>>(new Set())
   const feedbackTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -298,6 +300,14 @@ export function Board() {
   const contractorName = (id: string | null) =>
     id ? (contractors.find((c) => c.id === id)?.name ?? null) : null
 
+  const filteredTasks = filterQuery
+    ? tasks.filter((t) => {
+        const q = filterQuery.toLowerCase()
+        return t.title.toLowerCase().includes(q) ||
+          (contractorName(t.contractor_id)?.toLowerCase() ?? '').includes(q)
+      })
+    : tasks
+
   if (view.kind === 'settings') {
     return (
       <div className="board">
@@ -356,7 +366,7 @@ export function Board() {
             <select
               className="input select"
               value={selectedId}
-              onChange={(e) => { dismissTransitionFeedback(); setShowDiscarded(false); setSelectedId(e.target.value) }}
+              onChange={(e) => { dismissTransitionFeedback(); setShowDiscarded(false); setFilterQuery(''); setSelectedId(e.target.value) }}
               aria-label="Select project"
             >
               {projects.map((p) => (
@@ -407,6 +417,28 @@ export function Board() {
             disabled={!selectedId}
           >Dependencies</button>
         </div>
+        {view.kind === 'board' && selectedId && (
+          <div className="board-search">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="input"
+              placeholder="Search tasks…"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              aria-label="Search tasks"
+            />
+            {filterQuery && (
+              <button
+                className="board-search-clear"
+                onClick={() => { setFilterQuery(''); searchInputRef.current?.focus() }}
+                aria-label="Clear search"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            )}
+          </div>
+        )}
         {tasksError && <p className="board-message board-message--error">{tasksError}</p>}
         {transitionError && <p className="board-message board-message--error">{transitionError}</p>}
         {pendingTransition && (
@@ -472,7 +504,7 @@ export function Board() {
 
       {view.kind !== 'dag' && <div className="board-columns" ref={columnsRef}>
         {COLUMNS.map(({ status, label }) => {
-          const colTasks = tasks.filter((t) =>
+          const colTasks = filteredTasks.filter((t) =>
             t.status === status || (status === 'in_progress' && t.status === 'on_hold')
           )
           return (

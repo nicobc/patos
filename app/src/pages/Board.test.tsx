@@ -436,6 +436,91 @@ describe('Board — transition feedback banner', () => {
   })
 })
 
+describe('Board — search and filter', () => {
+  it('search input is visible on board view with a project selected', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('combobox'))
+    expect(screen.getByRole('textbox', { name: /search tasks/i })).toBeInTheDocument()
+  })
+
+  it('search input is not visible on dag view', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /dependencies/i }))
+    await userEvent.click(screen.getByRole('button', { name: /dependencies/i }))
+    expect(screen.queryByRole('textbox', { name: /search tasks/i })).not.toBeInTheDocument()
+  })
+
+  it('filters tasks by title substring (case-insensitive)', async () => {
+    mockListTasksByProject.mockResolvedValue([
+      makeTask({ id: 't1', title: 'Paint walls' }),
+      makeTask({ id: 't2', title: 'Fix plumbing', status: 'ideation' }),
+    ])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'paint')
+    expect(screen.getByText('Paint walls')).toBeInTheDocument()
+    expect(screen.queryByText('Fix plumbing')).not.toBeInTheDocument()
+  })
+
+  it('filters tasks by contractor name (case-insensitive)', async () => {
+    mockListTasksByProject.mockResolvedValue([
+      makeTask({ id: 't1', title: 'Paint walls', contractor_id: 'c1' }),
+      makeTask({ id: 't2', title: 'Fix plumbing', status: 'ideation' }),
+    ])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'alice')
+    expect(screen.getByText('Paint walls')).toBeInTheDocument()
+    expect(screen.queryByText('Fix plumbing')).not.toBeInTheDocument()
+  })
+
+  it('empty column shows "No tasks" when filter matches nothing', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'zzz')
+    expect(screen.queryByText('Paint walls')).not.toBeInTheDocument()
+    expect(screen.getAllByText('No tasks')).toHaveLength(4)
+  })
+
+  it('clear button appears only when query is non-empty', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('textbox', { name: /search tasks/i }))
+    expect(screen.queryByRole('button', { name: /clear search/i })).not.toBeInTheDocument()
+
+    await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'x')
+    expect(screen.getByRole('button', { name: /clear search/i })).toBeInTheDocument()
+  })
+
+  it('clear button resets the filter and shows all tasks again', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'zzz')
+    expect(screen.queryByText('Paint walls')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /clear search/i }))
+    expect(screen.getByText('Paint walls')).toBeInTheDocument()
+  })
+
+  it('filter resets when selected project changes', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
+
+    const searchInput = screen.getByRole('textbox', { name: /search tasks/i }) as HTMLInputElement
+    await userEvent.type(searchInput, 'xyz')
+    expect(searchInput.value).toBe('xyz')
+
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'p2')
+    expect(searchInput.value).toBe('')
+  })
+})
+
 describe('Board — dep subscription isolation', () => {
   it('ignores dep events for task IDs not belonging to the current project', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ id: 't1' })])

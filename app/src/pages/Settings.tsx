@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useToast } from '../context/ToastContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -41,6 +42,7 @@ type ProjectDeleteState =
   | { id: string; kind: 'hard-confirm'; input: string; taskCount: number }
 
 export function Settings({ onBack }: { onBack: () => void }) {
+  const { showToast } = useToast()
   const [view, setView] = useState<SettingsView>({ kind: 'list' })
 
   const [projects, setProjects]             = useState<Project[]>([])
@@ -118,6 +120,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
       await deleteProject(id)
       setProjects((prev) => prev.filter((p) => p.id !== id))
       setProjectDeleteState(null)
+      showToast('Project deleted')
     } catch {
       setProjectsError('Failed to delete project')
     } finally {
@@ -125,12 +128,8 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }
 
-  function handleProjectSaved(project: Project, isEdit: boolean) {
-    setProjects((prev) =>
-      isEdit
-        ? prev.map((p) => (p.id === project.id ? project : p))
-        : [...prev, project].sort((a, b) => a.name.localeCompare(b.name))
-    )
+  function handleProjectSaved(_project: Project, isEdit: boolean) {
+    showToast(isEdit ? 'Project saved' : 'Project created')
     setView({ kind: 'list' })
   }
 
@@ -157,6 +156,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
       await deleteContractor(id)
       setContractors((prev) => prev.filter((c) => c.id !== id))
       setContractorDeleteState(null)
+      showToast('Contractor deleted')
     } catch {
       setContractorsError('Failed to delete contractor')
     } finally {
@@ -164,12 +164,8 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }
 
-  function handleContractorSaved(contractor: Contractor, isEdit: boolean) {
-    setContractors((prev) =>
-      isEdit
-        ? prev.map((c) => (c.id === contractor.id ? contractor : c))
-        : [...prev, contractor].sort((a, b) => a.name.localeCompare(b.name))
-    )
+  function handleContractorSaved(_contractor: Contractor, isEdit: boolean) {
+    showToast(isEdit ? 'Contractor saved' : 'Contractor created')
     setView({ kind: 'list' })
   }
 

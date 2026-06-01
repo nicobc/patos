@@ -105,7 +105,7 @@ tickets:
 
   - id: T7
     type: chore
-    status: TESTING
+    status: DONE
     title: Logo integration
     description: A reworked logo.svg containing the brand name has been prepared by the owner outside the repo. Integrate it as the primary app logo and favicon.
     acceptance_criteria:

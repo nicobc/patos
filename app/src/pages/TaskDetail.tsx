@@ -36,7 +36,7 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
     try {
       if (pending === 'discard') {
         await updateTask(task.id, { status: 'discarded' })
-        showToast('Task archived')
+        showToast('Task discarded')
       } else {
         await deleteTask(task.id)
         showToast('Task deleted')
@@ -44,6 +44,19 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
       onBack()
     } catch {
       setError(pending === 'discard' ? 'Failed to discard task' : 'Failed to delete task')
+      setLoading(false)
+    }
+  }
+
+  async function restore() {
+    setLoading(true)
+    setError(null)
+    try {
+      await updateTask(task.id, { status: 'ideation' })
+      showToast('Task restored')
+      onBack()
+    } catch {
+      setError('Failed to restore task')
       setLoading(false)
     }
   }
@@ -151,7 +164,13 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
           </>
         ) : (
           <div className="task-detail-action-row">
-            <button className="btn-ghost" onClick={() => setPending('discard')}>Discard</button>
+            {task.status === 'discarded' ? (
+              <button className="btn-outline" onClick={restore} disabled={loading}>
+                {loading ? '…' : 'Restore'}
+              </button>
+            ) : (
+              <button className="btn-ghost" onClick={() => setPending('discard')}>Discard</button>
+            )}
             <button className="btn-ghost task-detail-btn--danger" onClick={() => setPending('delete')}>Delete</button>
           </div>
         )}

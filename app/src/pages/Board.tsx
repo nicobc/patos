@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faEye, faEyeSlash, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
 import { listContractors, subscribeToContractorChanges, type Contractor } from '../services/contractorsService'
 import {
@@ -58,14 +58,8 @@ type TransitionFeedback = {
 }
 
 function applyTaskChange(items: Task[], event: TaskChangeEvent): Task[] {
-  if (event.eventType === 'INSERT') {
-    return event.record.status === 'discarded' ? items : [...items, event.record]
-  }
-  if (event.eventType === 'UPDATE') {
-    return items
-      .map((t) => (t.id === event.record.id ? event.record : t))
-      .filter((t) => t.status !== 'discarded')
-  }
+  if (event.eventType === 'INSERT') return [...items, event.record]
+  if (event.eventType === 'UPDATE') return items.map((t) => (t.id === event.record.id ? event.record : t))
   return items.filter((t) => t.id !== event.id)
 }
 
@@ -81,11 +75,13 @@ export function Board() {
   const [transitionError, setTransitionError]       = useState<string | null>(null)
   const [pendingTransition, setPendingTransition]   = useState<PendingTransition | null>(null)
   const [transitionFeedback, setTransitionFeedback] = useState<TransitionFeedback | null>(null)
+  const [showDiscarded, setShowDiscarded]           = useState(false)
 
-  const columnsRef        = useRef<HTMLDivElement>(null)
-  const columnRefs        = useRef<Map<string, HTMLDivElement>>(new Map())
-  const taskIdsRef        = useRef<Set<string>>(new Set())
-  const feedbackTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const columnsRef          = useRef<HTMLDivElement>(null)
+  const columnRefs          = useRef<Map<string, HTMLDivElement>>(new Map())
+  const discardedColumnRef  = useRef<HTMLDivElement>(null)
+  const taskIdsRef          = useRef<Set<string>>(new Set())
+  const feedbackTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const blockerIds = depsResult?.projectId === selectedId ? depsResult.blockerIds : new Map<string, Set<string>>()
   const rawDeps    = depsResult?.projectId === selectedId ? depsResult.rawDeps    : []
@@ -99,12 +95,20 @@ export function Board() {
     container.scrollLeft = colEl.offsetLeft - container.offsetLeft
   }, [view])
 
+  useEffect(() => {
+    if (!showDiscarded) return
+    const col       = discardedColumnRef.current
+    const container = columnsRef.current
+    if (!col || !container) return
+    container.scrollTo?.({ left: col.offsetLeft - container.offsetLeft, behavior: 'smooth' })
+  }, [showDiscarded])
+
   const tasksLoading = tasksResult === null ||
     (tasksResult.status === 'ready' && tasksResult.projectId !== selectedId)
-  const tasksError = tasksResult?.status === 'error' ? tasksResult.message : null
-  const tasks      = tasksResult?.status === 'ready' && tasksResult.projectId === selectedId
-    ? tasksResult.items
-    : []
+  const tasksError      = tasksResult?.status === 'error' ? tasksResult.message : null
+  const allItems        = tasksResult?.status === 'ready' && tasksResult.projectId === selectedId ? tasksResult.items : []
+  const tasks           = allItems.filter((t) => t.status !== 'discarded')
+  const discardedTasks  = allItems.filter((t) => t.status === 'discarded')
 
   useEffect(() => {
     taskIdsRef.current = new Set(tasks.map((t) => t.id))
@@ -158,10 +162,10 @@ export function Board() {
 
     listTasksByProject(selectedId)
       .then((data) => {
-        const visible = data.filter((t) => t.status !== 'discarded')
-        setTasksResult({ status: 'ready', projectId: selectedId, items: visible })
-        if (visible.length === 0) { setDepsResult({ projectId: selectedId, blockerIds: new Map(), rawDeps: [] }); return }
-        listRawDepsByTasks(visible.map((t) => t.id))
+        setTasksResult({ status: 'ready', projectId: selectedId, items: data })
+        const nonDiscarded = data.filter((t) => t.status !== 'discarded')
+        if (nonDiscarded.length === 0) { setDepsResult({ projectId: selectedId, blockerIds: new Map(), rawDeps: [] }); return }
+        listRawDepsByTasks(nonDiscarded.map((t) => t.id))
           .then((deps) => {
             const map = new Map<string, Set<string>>()
             for (const dep of deps) {
@@ -230,7 +234,7 @@ export function Board() {
       listTasksByProject(selectedId)
         .then((data) => setTasksResult((prev) => {
           if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev
-          return { ...prev, items: data.filter((t) => t.status !== 'discarded') }
+          return { ...prev, items: data }
         }))
         .catch(() => {})
       setTransitionError('Failed to undo — refreshed from server')
@@ -248,7 +252,7 @@ export function Board() {
       listTasksByProject(selectedId)
         .then((data) => setTasksResult((prev) => {
           if (prev?.status !== 'ready' || prev.projectId !== selectedId) return prev
-          return { ...prev, items: data.filter((t) => t.status !== 'discarded') }
+          return { ...prev, items: data }
         }))
         .catch(() => {})
       const msg = newStatus === 'on_hold'
@@ -352,7 +356,7 @@ export function Board() {
             <select
               className="input select"
               value={selectedId}
-              onChange={(e) => { dismissTransitionFeedback(); setSelectedId(e.target.value) }}
+              onChange={(e) => { dismissTransitionFeedback(); setShowDiscarded(false); setSelectedId(e.target.value) }}
               aria-label="Select project"
             >
               {projects.map((p) => (
@@ -363,14 +367,25 @@ export function Board() {
           </div>
           <div className="board-toolbar-actions">
             {view.kind === 'board' && (
-              <button
-                className="btn-outline"
-                onClick={() => setView({ kind: 'form' })}
-                disabled={!selectedId}
-                aria-label="New task"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-              </button>
+              <>
+                <button
+                  className="btn-outline"
+                  onClick={() => setView({ kind: 'form' })}
+                  disabled={!selectedId}
+                  aria-label="New task"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+                <button
+                  className={`btn-icon${showDiscarded ? ' board-toolbar-btn--active' : ''}`}
+                  onClick={() => setShowDiscarded((prev) => !prev)}
+                  disabled={!selectedId}
+                  aria-pressed={showDiscarded}
+                  aria-label="Show discarded tasks"
+                >
+                  <FontAwesomeIcon icon={showDiscarded ? faEye : faEyeSlash} />
+                </button>
+              </>
             )}
             <button
               className="btn-icon"
@@ -494,6 +509,31 @@ export function Board() {
             </div>
           )
         })}
+        {showDiscarded && (
+          <div className="board-column board-column--discarded" ref={discardedColumnRef}>
+            <span className="eyebrow">Discarded</span>
+            <div className="board-column-body">
+              {tasksLoading ? (
+                <p className="board-column-empty">Loading…</p>
+              ) : discardedTasks.length === 0 ? (
+                <p className="board-column-empty">No tasks</p>
+              ) : (
+                discardedTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    contractorName={contractorName(task.contractor_id)}
+                    prevStatus={null}
+                    nextStatus={null}
+                    isBlocked={false}
+                    onSelect={(t) => setView({ kind: 'detail', task: t })}
+                    onStatusChange={() => {}}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>}
     </div>
   )

@@ -155,6 +155,37 @@ describe('TaskDetail — delete', () => {
   })
 })
 
+describe('TaskDetail — restore (discarded task)', () => {
+  const discardedTask = { ...task, status: 'discarded' }
+
+  it('shows Restore button instead of Discard for discarded tasks', () => {
+    render(<TaskDetail task={discardedTask} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
+    expect(screen.getByRole('button', { name: /restore/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /discard/i })).not.toBeInTheDocument()
+  })
+
+  it('Restore calls updateTask with ideation status and triggers onBack', async () => {
+    mockUpdateTask.mockResolvedValue({ ...discardedTask, status: 'ideation' })
+    const onBack = vi.fn()
+    render(<TaskDetail task={discardedTask} contractorName={null} blockers={[]} blocks={[]} onBack={onBack} onSelectTask={onSelectTask} />)
+    await userEvent.click(screen.getByRole('button', { name: /restore/i }))
+    await waitFor(() => expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'ideation' }))
+    expect(onBack).toHaveBeenCalled()
+  })
+
+  it('shows error when restore fails', async () => {
+    mockUpdateTask.mockRejectedValue(new Error('fail'))
+    render(<TaskDetail task={discardedTask} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
+    await userEvent.click(screen.getByRole('button', { name: /restore/i }))
+    await waitFor(() => expect(screen.getByText('Failed to restore task')).toBeInTheDocument())
+  })
+
+  it('Delete button remains available for discarded tasks', () => {
+    render(<TaskDetail task={discardedTask} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+  })
+})
+
 describe('TaskDetail — dependency chips', () => {
   const blocker = { ...task, id: 'b1', title: 'Fix pipes' }
   const blocked = { ...task, id: 'd1', title: 'Paint ceiling' }

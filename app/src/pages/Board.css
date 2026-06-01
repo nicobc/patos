@@ -120,6 +120,15 @@
   padding: 2rem 0;
 }
 
+.board-toolbar-btn--active {
+  opacity: 1;
+  color: var(--fg);
+}
+
+.board-column--discarded .task-card {
+  opacity: var(--opacity-muted);
+}
+
 .board-blocker-warning {
   display: flex;
   flex-direction: column;

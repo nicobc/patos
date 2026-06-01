@@ -102,7 +102,7 @@ describe('Board — project selector', () => {
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
-  it('renders selector and 5 columns after load', async () => {
+  it('renders selector and 4 columns after load', async () => {
     render(<Board />)
     await waitFor(() =>
       expect(screen.getByRole('combobox', { name: /select project/i })).toBeInTheDocument()
@@ -301,6 +301,49 @@ describe('Board — status transitions', () => {
       expect(screen.getByText(/failed to move task/i)).toBeInTheDocument()
     )
     expect(mockListTasksByProject).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Board — discarded column', () => {
+  it('Show discarded toggle is visible on the board view', async () => {
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
+    expect(screen.getByRole('button', { name: /show discarded/i })).toBeInTheDocument()
+  })
+
+  it('Discarded column is hidden by default', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Hidden task' })])
+    render(<Board />)
+    await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(4))
+    expect(screen.queryByText('Discarded')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
+  })
+
+  it('clicking toggle renders Discarded column with discarded task', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
+    await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
+    expect(screen.getByText('Discarded')).toBeInTheDocument()
+    expect(screen.getByText('Old task')).toBeInTheDocument()
+  })
+
+  it('clicking toggle again hides the Discarded column', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
+    await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
+    await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
+    expect(screen.queryByText('Discarded')).not.toBeInTheDocument()
+  })
+
+  it('clicking a discarded card opens TaskDetail', async () => {
+    mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
+    render(<Board />)
+    await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
+    await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
+    await userEvent.click(screen.getByRole('button', { name: /old task/i }))
+    expect(screen.getByRole('heading', { name: 'Old task' })).toBeInTheDocument()
   })
 })
 

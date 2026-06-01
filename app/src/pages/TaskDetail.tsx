@@ -36,7 +36,7 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
     try {
       if (pending === 'discard') {
         await updateTask(task.id, { status: 'discarded' })
-        showToast('Task archived')
+        showToast('Task discarded')
       } else {
         await deleteTask(task.id)
         showToast('Task deleted')

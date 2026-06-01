@@ -32,8 +32,8 @@ export function AppShell() {
     <div className="shell">
       <header className="shell-header">
         <div className="shell-brand">
-          <img src="/logo.svg" alt="Patos" className="shell-logo" />
-          <span className="shell-brand-name">The Patos Project</span>
+          <img src="/logo.svg" alt="Nido" className="shell-logo" />
+          <span className="shell-brand-name">Nido</span>
         </div>
         <UserMenu />
       </header>

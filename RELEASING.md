@@ -12,6 +12,13 @@ Keep the PR description current: update the summary when new commits change the 
 
 Omit the test plan section when there is nothing to test — changes confined to `.claude/` files, `.md` files, or other non-executable assets do not require one.
 
+## Local setup
+
+After cloning, activate the pre-commit hook:
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Branching
 
 Work on short-lived feature branches cut directly from `main`. Branch name mirrors the commit type and scope: `type/scope` (e.g. `feat/cost-tracker`, `ci/deployment`, `fix/kanban`). Delete the branch after the PR merges.

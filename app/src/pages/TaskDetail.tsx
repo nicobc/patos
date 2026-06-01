@@ -165,7 +165,7 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
         ) : (
           <div className="task-detail-action-row">
             {task.status === 'discarded' ? (
-              <button className="btn-ghost" onClick={restore} disabled={loading}>
+              <button className="btn-outline" onClick={restore} disabled={loading}>
                 {loading ? '…' : 'Restore'}
               </button>
             ) : (

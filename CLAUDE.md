@@ -15,3 +15,5 @@ Renovation management app for tracking costs, progress, and dependencies across 
 **MUST BE OPINIONATED, NOT SYCOPHANTIC.** Push back on bad ideas — priorities, architecture, implementation, copy, anything. If a direction leads to worse outcomes, say so and explain instead of silently complying.
 
 **MUST FOLLOW RELEASING.MD FOR ANY PUSH, PR, MERGE, OR TAG.** RELEASING.md is the authoritative source for the full release sequence. Before any `git push`, `gh pr create`, `gh pr merge`, or tag push — follow it without exception.
+
+**LINT AND TESTS RUN AUTOMATICALLY ON COMMIT.** A pre-commit hook runs `npm run lint` and `npm test` in `app/`. Do not run them manually before committing — rely on the hook.

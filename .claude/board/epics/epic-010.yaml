@@ -76,15 +76,19 @@ tickets:
   - id: T5
     type: feat
     status: READY
-    title: Clarify Archive vs Delete in TaskDetail
-    description: TaskDetail shows "Discard" (soft-delete to status discarded) and "Delete" (hard delete) as identical-looking ghost buttons. Users conflate them because the labels alone do not signal the difference in reversibility. Rename, add sub-labels, and colour the hard-delete path.
+    title: Discarded task visibility and recovery
+    description: Discarded tasks vanish from the board with no visibility and no recovery path. This ticket gives them a home — an opt-in board column surfaced via a toolbar toggle — and adds a Restore action in TaskDetail that returns a discarded task to ideation for re-grooming. The Discard/Delete semantic distinction is preserved and unchanged; this ticket is purely additive. Discard means cancelled/abandoned (soft, recoverable via this ticket); Delete means permanently gone (hard, irreversible).
     acceptance_criteria:
-      - "Discard" button renamed to "Archive"; gains a sub-label in --fs-xs muted text reading "Hidden from board, not permanent"
-      - "Delete" button retains its label; gains a sub-label reading "Permanent, cannot be undone"; button text and sub-label use --accent colour to signal danger without the full btn-danger treatment
-      - Archive confirmation prompt updated to "Archive this task?" with body "It will be hidden from the board but not permanently deleted."
-      - Delete confirmation prompt unchanged
-      - STATUS_LABELS['discarded'] updated to "Archived" in TaskDetail and the status dropdown in TaskForm wherever 'discarded' appears as a displayed label
-      - the internal status value stored in the DB remains 'discarded' — no migration required
+      - board toolbar gains a "Show discarded" toggle; visible only when view.kind === 'board' and a project is selected; off by default on mount and reset to off whenever the selected project changes
+      - when toggled on, a "Discarded" column renders as the rightmost board column; toggling off removes it
+      - discarded cards use a muted visual treatment (reduced opacity) to signal they are outside the active task lifecycle
+      - clicking a discarded card opens TaskDetail as normal
+      - TaskDetail renders a "Restore" button in place of "Discard" when the viewed task has status discarded; clicking Restore sets status to ideation with an optimistic update and shows a "Task restored" toast (using the existing toast system from T3)
+      - on restore the task disappears from the Discarded column and reappears in the Ideation column; if the Discarded column is now empty it shows the standard column empty-state
+      - "Delete" button in TaskDetail is unchanged for discarded tasks — hard delete remains available
+      - "Discard" button, its label, confirmation prompt, and behaviour are unchanged for all non-discarded tasks
+      - STATUS_LABELS and all other status display strings are unchanged — discarded is not renamed
+      - no data model changes required
 
   - id: T6
     type: feat

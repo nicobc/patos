@@ -59,15 +59,19 @@ tickets:
   - id: T4
     type: feat
     status: READY
-    title: Undo accidental status transitions on board cards
-    description: The < > status arrows on board cards are instant and irreversible. A misclick moves a task permanently. Add an undo action via the toast from T3 — clicking < > shows a "Moved to [Status]. Undo?" toast for 7 seconds; clicking Undo restores the pre-transition state including actual_start and actual_end. Applies only to the card arrows, not to other status change surfaces.
+    title: Undo status transitions and offer stale-date update via card arrow toast
+    description: The < > status arrows on board cards are instant with no recovery path, and they silently leave stale dates when actual_start or actual_end are already set to a past value. Unify both concerns into a single post-action toast on every card arrow press — the toast covers undo (full rollback) and, when a stale date is detected, an inline "Update" shortcut to set it to today. A blocking pre-flight prompt is intentionally avoided to keep the board interaction fast and non-blocking. Applies only to the card arrows, not to other status change surfaces.
     acceptance_criteria:
       - requires T3
+      - the showToast API is extended to support an optional secondary action: showToast(message, options? { action?: { label, onAction }, secondaryAction?: { label, onAction } }); existing single-action call sites are unchanged
       - when < > is clicked, the full pre-transition task state { status, actual_start, actual_end } is captured before the optimistic update
-      - showToast is called with message "Moved to [Status Label]." and action { label "Undo", onAction } where onAction calls updateTask(task.id, preTransitionState) and applies the reverse optimistic update
-      - the undo toast uses a 7-second duration overriding the default 5-second auto-dismiss
-      - if the user navigates away or the toast auto-dismisses before Undo is clicked, no action is taken — the undo option expires silently
-      - the blocker-warning confirm flow (already present when moving a blocked task to in_progress) is unchanged — undo only applies to the direct < > tap path
+      - Case A — no stale date: showToast("Moved to [Status Label].", { action: { label: "Undo", onAction } }); Undo calls updateTask(task.id, preTransitionState) and applies the reverse optimistic update
+      - Case B — stale actual_start when transitioning to in_progress, or stale actual_end when transitioning to done: showToast("Moved to [Status Label].", { action: { label: "Update [start|end]", onAction: updateToToday }, secondaryAction: { label: "Undo", onAction: rollback } }); Update calls updateTask with the relevant date field set to today; Undo calls updateTask(task.id, preTransitionState) and reverses the optimistic update
+      - "stale" means the relevant date field is non-null and not equal to today's date; when the field is null the existing auto-set behaviour is preserved and no date action appears in the toast
+      - if both actual_start and actual_end are stale simultaneously (e.g. skipping directly to done), surface only the more relevant date field (actual_end for done transitions, actual_start for in_progress); document the choice in the PR
+      - all card arrow toasts use a 7-second duration, overriding the default; undo and date-update actions expire silently if not clicked before dismissal
+      - the blocker-warning confirm flow (already present when moving a blocked task to in_progress) is unchanged — the post-action toast appears after any blocker confirmation
+      - transitions triggered via the edit form are not affected — the user has explicit control over date fields there
 
   - id: T5
     type: feat
@@ -144,20 +148,6 @@ tickets:
       - no fixed pixel values introduced for spacing — all sizing uses existing design tokens or rem units
 
   - id: T11
-    type: feat
-    status: READY
-    title: Prompt to update dates on status transition
-    description: When a task transitions to in_progress via the card < > arrows and actual_start is already set to a past date, the current behaviour silently leaves the stale date unchanged. Same issue applies to actual_end when transitioning to done. Add a lightweight inline prompt so the user can choose to update to today or keep the existing date. Prompt is suppressed when the date is null (auto-set path is unchanged) or already equals today.
-    acceptance_criteria:
-      - when transitioning to in_progress and actual_start is set and is not today's date, an inline prompt appears in the board toolbar area (same slot as the blocker-warning already uses) — "actual_start is [date]. Update to today? [Keep] [Update]"
-      - choosing Update calls updateTask with actual_start set to today's date in addition to the status change; choosing Keep proceeds with only the status update
-      - when transitioning to done and actual_end is set and is not today's date, the same prompt pattern appears — "actual_end is [date]. Update to today? [Keep] [Update]"
-      - if both conditions apply simultaneously (actual_start and actual_end both stale, e.g. skipping directly to done), both prompts are shown sequentially or combined into a single prompt — decide at implementation; document the choice in the PR
-      - prompt is not shown when the relevant date is null (existing auto-set behaviour is preserved unchanged) or when the date already equals today
-      - prompt is not shown for transitions triggered via the edit form — the user has explicit control over date fields there
-      - the pending prompt state is cleared on project switch and on navigation away from the board view
-
-  - id: T12
     type: feat
     status: READY
     title: Replace expected_duration with expected_start / expected_end

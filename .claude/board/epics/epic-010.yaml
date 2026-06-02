@@ -117,13 +117,15 @@ tickets:
 
   - id: T8
     type: chore
-    status: READY
-    title: Icon audit for micro-interactions
-    description: Review and update FontAwesome icon choices for micro-interactions across the app based on the owner's selection. Specific icon swaps are defined by the owner at implementation time.
+    status: IN PROGRESS
+    title: Replace card nav text glyphs with FA angle icons; align hold toggle in controls row
+    description: The card nav buttons used ‹ › typographic characters — inconsistent rendering across platforms, not subject to FA sizing and color tokens. Replace with faAngleLeft / faAngleRight from free-solid-svg-icons. Also moves the hold toggle (pause/play) from the absolute-positioned overlay into the controls row, centering it between the nav icons on the same baseline. The blocked lock indicator stays absolute in the card body corner as a passive signal, with its right offset adjusted to align visually with the > button.
     acceptance_criteria:
-      - all identified icon swaps implemented using the existing @fortawesome/free-solid-svg-icons package; no new icon packages added unless the selected icons require it (confirm with owner before adding)
-      - icon sizes, opacity, and spacing follow the existing .btn-icon and .task-card-icon treatment — no new size classes introduced
-      - all interactive icons have meaningful aria-label attributes on their parent buttons
+      - faAngleLeft and faAngleRight from @fortawesome/free-solid-svg-icons replace the ‹ › text characters in .task-card-nav buttons
+      - hold toggle (pause/play button) moves from .task-card-icons absolute overlay into .task-card-controls, centered between the two nav buttons on the same baseline
+      - lock icon remains in .task-card-icons (position absolute, top-right of card) as a passive blocked indicator; right offset set to 0.625rem to align with the > button
+      - no new icon packages added; all icons from existing @fortawesome/free-solid-svg-icons
+      - all interactive icons retain meaningful aria-label attributes on their parent buttons
 
   - id: T9
     type: feat

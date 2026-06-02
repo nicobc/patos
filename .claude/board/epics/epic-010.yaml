@@ -129,7 +129,7 @@ tickets:
 
   - id: T9
     type: feat
-    status: IN PROGRESS
+    status: TESTING
     title: DAG pan/zoom with lazy-loaded DagView
     description: The DAG SVG is fixed-size from dagre's layout output. With a large graph it overflows or becomes too small to read with no way to navigate. Add pan/zoom via react-zoom-pan-pinch. This is also the right moment to lazy-load DagView — dagre and the zoom library are split into a separate chunk that is only fetched when the Dependencies tab is first opened.
     acceptance_criteria:

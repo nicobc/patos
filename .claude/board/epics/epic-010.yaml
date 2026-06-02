@@ -167,7 +167,7 @@ tickets:
 
   - id: T12
     type: feat
-    status: TESTING
+    status: DONE
     title: Redesign planning fields as expected/actual grid with K€ formatting
     description: The planning fields in TaskForm and TaskDetail (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are listed as six separate rows with inconsistent labels. Replace with a 2-column Option-A grid — each cell has a muted label above its value/input — giving a clean expected-vs-actual comparison without a dedicated row-label column. Both views share the same visual pattern. Also unifies field order across form and detail, and makes select triggers match text input background. No data model changes.
     acceptance_criteria:

@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLock, faPause, faPlay } from '@fortawesome/free-solid-svg-icons'
+import { faAngleLeft, faAngleRight, faLock, faPause, faPlay } from '@fortawesome/free-solid-svg-icons'
 import type { Task } from '../services/tasksService'
 import './TaskCard.css'
 
@@ -25,10 +25,18 @@ export function TaskCard({ task, contractorName, prevStatus, nextStatus, isBlock
           <span className="task-card-contractor">{contractorName}</span>
         )}
       </button>
-      <div className="task-card-icons">
-        {isBlocked && (
+      {isBlocked && (
+        <div className="task-card-icons">
           <FontAwesomeIcon icon={faLock} className="task-card-icon" aria-label="Blocked" />
-        )}
+        </div>
+      )}
+      <div className="task-card-controls">
+        <button
+          className="btn-icon task-card-nav"
+          disabled={!prevStatus || isOnHold}
+          onClick={() => prevStatus && onStatusChange(task, prevStatus)}
+          aria-label="Previous status"
+        ><FontAwesomeIcon icon={faAngleLeft} /></button>
         {showHoldToggle && (
           <button
             className={`task-card-icon task-card-icon--btn${isOnHold ? ' task-card-icon--active' : ''}`}
@@ -38,20 +46,12 @@ export function TaskCard({ task, contractorName, prevStatus, nextStatus, isBlock
             <FontAwesomeIcon icon={isOnHold ? faPlay : faPause} />
           </button>
         )}
-      </div>
-      <div className="task-card-controls">
-        <button
-          className="btn-icon task-card-nav"
-          disabled={!prevStatus || isOnHold}
-          onClick={() => prevStatus && onStatusChange(task, prevStatus)}
-          aria-label="Previous status"
-        >‹</button>
         <button
           className="btn-icon task-card-nav"
           disabled={!nextStatus || isOnHold}
           onClick={() => nextStatus && onStatusChange(task, nextStatus)}
           aria-label="Next status"
-        >›</button>
+        ><FontAwesomeIcon icon={faAngleRight} /></button>
       </div>
     </div>
   )

@@ -172,7 +172,7 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
           <TransformWrapper
             key={fitScale}
             initialScale={fitScale}
-            minScale={fitScale}
+            minScale={0.1}
             maxScale={3}
             centerOnInit
             doubleClick={{ disabled: true }}

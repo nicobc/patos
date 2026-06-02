@@ -147,7 +147,8 @@ export type Database = {
           created_at: string
           description: string | null
           expected_cost: number | null
-          expected_duration_days: number | null
+          expected_end: string | null
+          expected_start: string | null
           id: string
           owner_id: string | null
           project_id: string | null
@@ -162,7 +163,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           expected_cost?: number | null
-          expected_duration_days?: number | null
+          expected_end?: string | null
+          expected_start?: string | null
           id?: string
           owner_id?: string | null
           project_id?: string | null
@@ -177,7 +179,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           expected_cost?: number | null
-          expected_duration_days?: number | null
+          expected_end?: string | null
+          expected_start?: string | null
           id?: string
           owner_id?: string | null
           project_id?: string | null

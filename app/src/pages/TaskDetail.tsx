@@ -63,7 +63,6 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
 
   const fmtDate = (v: string | null) => v ? new Date(v).toLocaleDateString() : '—'
   const fmtCost = (v: number | null) => v != null ? `€${v.toLocaleString()}` : '—'
-  const fmtDays = (v: number | null) => v != null ? `${v} days` : '—'
 
   return (
     <div className="task-detail">
@@ -94,13 +93,16 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
         <dt>Actual cost</dt>
         <dd>{fmtCost(task.actual_cost)}</dd>
 
-        <dt>Expected duration</dt>
-        <dd>{fmtDays(task.expected_duration_days)}</dd>
+        <dt>Expected start</dt>
+        <dd>{fmtDate(task.expected_start)}</dd>
 
-        <dt>Start</dt>
+        <dt>Actual start</dt>
         <dd>{fmtDate(task.actual_start)}</dd>
 
-        <dt>End</dt>
+        <dt>Expected end</dt>
+        <dd>{fmtDate(task.expected_end)}</dd>
+
+        <dt>Actual end</dt>
         <dd>{fmtDate(task.actual_end)}</dd>
 
         {blockers.length > 0 && (

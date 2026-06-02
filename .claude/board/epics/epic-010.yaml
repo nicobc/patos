@@ -167,7 +167,7 @@ tickets:
 
   - id: T12
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Redesign planning fields as expected/actual grid with K€ formatting
     description: The planning fields in TaskForm and TaskDetail (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are listed as six separate rows with inconsistent labels ("start date" vs "actual start"). Replace with a compact 2-row × 2-column grid — column headers "Expected" / "Actual", row labels "Cost" / "Dates" — that makes the expected-vs-actual comparison a single visual scan. Date cells use a paired native date-input range (`start → end`) in edit mode and a formatted span string in read-only mode. Cost cells apply K€ abbreviation when the value is ≥ 1000. No data model changes — purely a layout and display ticket. Must be implemented before T10 so the mobile pass covers the new form structure.
     acceptance_criteria:

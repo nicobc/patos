@@ -27,27 +27,30 @@
   color: var(--fg);
 }
 
-.task-detail-fields {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.625rem 1.5rem;
-  font-size: var(--fs-sm);
+.task-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1rem 0;
   border-top: 1px solid var(--border-faint);
   border-bottom: 1px solid var(--border-faint);
-  color: var(--fg);
+  font-size: var(--fs-sm);
 }
 
-.task-detail-fields dt {
-  color: var(--fg);
-  opacity: var(--opacity-muted);
-  white-space: nowrap;
-  align-self: start;
+.task-detail-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
-.task-detail-fields dd {
-  color: var(--fg);
-  line-height: 1.5;
+.task-detail-cell-label {
+  color: color-mix(in srgb, var(--fg) 60%, transparent);
+}
+
+.planning-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 0.75rem;
 }
 
 .task-detail-error {
@@ -102,4 +105,3 @@
 
   &:hover { opacity: 1; }
 }
-

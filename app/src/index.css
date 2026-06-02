@@ -217,14 +217,18 @@ main {
   &:focus          { outline: none; border-color: var(--border-emphasis); }
   &::placeholder   { opacity: var(--opacity-subtle); }
 
+  &[type="number"] {
+    -moz-appearance: textfield;
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  }
+
   @media (width <= 768px) { font-size: 1rem; }
 }
 
 /* ── select ──────────────────────────────────────────────────────────────────── */
 
 .select {
-  background: var(--bg);
-  border-color: var(--border-faint);
   border-radius: var(--br-md);
 }
 
@@ -257,6 +261,8 @@ main {
   border-radius: var(--br-md);
   z-index: 100;
 }
+
+
 
 /* ── utilities ───────────────────────────────────────────────────────────────── */
 

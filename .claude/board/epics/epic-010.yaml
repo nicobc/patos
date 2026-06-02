@@ -167,16 +167,16 @@ tickets:
 
   - id: T12
     type: feat
-    status: READY
+    status: DONE
     title: Redesign planning fields as expected/actual grid with K€ formatting
-    description: The planning fields in TaskForm and TaskDetail (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are listed as six separate rows with inconsistent labels ("start date" vs "actual start"). Replace with a compact 2-row × 2-column grid — column headers "Expected" / "Actual", row labels "Cost" / "Dates" — that makes the expected-vs-actual comparison a single visual scan. Date cells use a paired native date-input range (`start → end`) in edit mode and a formatted span string in read-only mode. Cost cells apply K€ abbreviation when the value is ≥ 1000. No data model changes — purely a layout and display ticket. Must be implemented before T10 so the mobile pass covers the new form structure.
+    description: The planning fields in TaskForm and TaskDetail (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are listed as six separate rows with inconsistent labels. Replace with a 2-column Option-A grid — each cell has a muted label above its value/input — giving a clean expected-vs-actual comparison without a dedicated row-label column. Both views share the same visual pattern. Also unifies field order across form and detail, and makes select triggers match text input background. No data model changes.
     acceptance_criteria:
-      - no DB or TypeScript type changes; all six field names (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are unchanged
-      - a formatCost(value number | null) string utility is added — returns "XK€" (one decimal, e.g. "1.2K€") when value ≥ 1000, "€X" otherwise, "—" when null; used in TaskDetail cost cells
-      - a formatDateSpan(start string | null, end string | null) string utility is added — returns "MMM D – MMM D" when both are set, "MMM D – —" or "— – MMM D" when only one is set, "—" when neither; used in TaskDetail date cells
-      - TaskForm replaces the six separate field rows with a planning grid; column headers "Expected" / "Actual"; row labels "Cost" / "Dates"
-      - Cost row in TaskForm: two number inputs (expected_cost left, actual_cost right); existing validation and currency prefix unchanged
-      - Dates row in TaskForm: each cell contains two native <input type="date"> inputs styled as a range pair (start, a "→" separator, end); left cell binds expected_start / expected_end; right cell binds actual_start / actual_end
-      - TaskDetail renders the same 2×2 grid in read-only mode; cost cells use formatCost; date cells use formatDateSpan
-      - each input carries an aria-label combining column and row context (e.g. "Expected start date", "Actual end date", "Expected cost")
-      - at ≤ 768px the date pair inputs in each cell stack vertically (start above end, separator hidden) so the grid does not overflow horizontally; cost inputs retain side-by-side layout (number inputs are narrower)
+      - no DB or TypeScript type changes; all six field names unchanged
+      - formatCost(value number | null) utility added in src/lib/formatters.ts — "X.YK€" when ≥ 1000, "€X" otherwise, "—" when null
+      - formatDate(value string | null) utility added — "MMM D" format, "—" when null; avoids timezone shift by constructing Date from parsed parts
+      - TaskForm replaces six separate field rows with a 2-column planning grid (.planning-form-grid); each cell is a <label class="task-form-label"> with label text above the input; cost labels include "(€)"; number inputs have spinner arrows removed via CSS
+      - TaskForm field order: title, description, status, contractor, blocked by, planning grid
+      - TaskDetail drops the dl layout entirely; all fields rendered as uniform .task-detail-cell (label above value); planning fields use a nested .planning-detail-grid (2-column)
+      - TaskDetail field order: description, status, contractor, blocked by, blocks, planning grid, created
+      - select/multiselect triggers use the same background as .input (var(--surface-faint)) — background and border-color overrides removed from .select
+      - planning grid inputs constrained to their column via min-width: 0 on container and input

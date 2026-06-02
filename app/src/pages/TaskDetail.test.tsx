@@ -52,11 +52,19 @@ describe('TaskDetail — display', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument()
   })
 
-  it('renders cost and expected date fields', () => {
+  it('renders planning section with expected and actual field labels', () => {
     render(<TaskDetail task={task} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
-    expect(screen.getByText(/^€1.500$/)).toBeInTheDocument()
+    expect(screen.getByText('Expected cost')).toBeInTheDocument()
+    expect(screen.getByText('Actual cost')).toBeInTheDocument()
     expect(screen.getByText('Expected start')).toBeInTheDocument()
+    expect(screen.getByText('Actual start')).toBeInTheDocument()
     expect(screen.getByText('Expected end')).toBeInTheDocument()
+    expect(screen.getByText('Actual end')).toBeInTheDocument()
+  })
+
+  it('formats cost with K€ abbreviation for values >= 1000', () => {
+    render(<TaskDetail task={task} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
+    expect(screen.getByText('1.5K€')).toBeInTheDocument()
   })
 
   it('shows — for null cost and dates', () => {

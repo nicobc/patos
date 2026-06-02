@@ -7,7 +7,7 @@ description: First-pass polish after the MVP. Covers mobile correctness, interac
 notes:
   - T3 (toast) must ship before or together with T4 (undo) since undo is delivered via a toast action
   - T9 (DAG pan/zoom) is also the right moment to introduce React.lazy on DagView — bundle split comes for free
-  - T10 (mobile pass) is best done last so it catches any layout regressions from earlier tickets
+  - T12 (planning grid) restructures TaskForm/TaskDetail layout; T10 (mobile pass) must follow T12 so it catches regressions on the final form structure
   - T7 and T8 are blocked on owner providing the new logo.svg file and the icon selection list
 
 tickets:
@@ -164,3 +164,19 @@ tickets:
       - TaskForm replaces the expected_duration input with expected_start and expected_end date inputs, styled and validated identically to the existing actual_start / actual_end fields
       - TaskDetail displays expected_start and expected_end alongside actual_start and actual_end; layout groups them as expected/actual pairs (e.g. expected start + actual start on one row, expected end + actual end on the next) or as a dedicated expected row and actual row — decide at implementation
       - no changes to DAG, task_deps, or blocking/blocker logic
+
+  - id: T12
+    type: feat
+    status: READY
+    title: Redesign planning fields as expected/actual grid with K€ formatting
+    description: The planning fields in TaskForm and TaskDetail (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are listed as six separate rows with inconsistent labels ("start date" vs "actual start"). Replace with a compact 2-row × 2-column grid — column headers "Expected" / "Actual", row labels "Cost" / "Dates" — that makes the expected-vs-actual comparison a single visual scan. Date cells use a paired native date-input range (`start → end`) in edit mode and a formatted span string in read-only mode. Cost cells apply K€ abbreviation when the value is ≥ 1000. No data model changes — purely a layout and display ticket. Must be implemented before T10 so the mobile pass covers the new form structure.
+    acceptance_criteria:
+      - no DB or TypeScript type changes; all six field names (expected_cost, actual_cost, expected_start, expected_end, actual_start, actual_end) are unchanged
+      - a formatCost(value number | null) string utility is added — returns "XK€" (one decimal, e.g. "1.2K€") when value ≥ 1000, "€X" otherwise, "—" when null; used in TaskDetail cost cells
+      - a formatDateSpan(start string | null, end string | null) string utility is added — returns "MMM D – MMM D" when both are set, "MMM D – —" or "— – MMM D" when only one is set, "—" when neither; used in TaskDetail date cells
+      - TaskForm replaces the six separate field rows with a planning grid; column headers "Expected" / "Actual"; row labels "Cost" / "Dates"
+      - Cost row in TaskForm: two number inputs (expected_cost left, actual_cost right); existing validation and currency prefix unchanged
+      - Dates row in TaskForm: each cell contains two native <input type="date"> inputs styled as a range pair (start, a "→" separator, end); left cell binds expected_start / expected_end; right cell binds actual_start / actual_end
+      - TaskDetail renders the same 2×2 grid in read-only mode; cost cells use formatCost; date cells use formatDateSpan
+      - each input carries an aria-label combining column and row context (e.g. "Expected start date", "Actual end date", "Expected cost")
+      - at ≤ 768px the date pair inputs in each cell stack vertically (start above end, separator hidden) so the grid does not overflow horizontally; cost inputs retain side-by-side layout (number inputs are narrower)

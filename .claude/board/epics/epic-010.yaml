@@ -143,7 +143,7 @@ tickets:
 
   - id: T10
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Mobile layout and spacing pass
     description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed.
     acceptance_criteria:

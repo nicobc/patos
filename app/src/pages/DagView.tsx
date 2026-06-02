@@ -175,6 +175,7 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
             minScale={0.1}
             maxScale={3}
             centerOnInit
+            centerZoomedOut
             doubleClick={{ disabled: true }}
             panning={{ excluded: ['button'] }}
             onInit={(ref) => { transformRef.current = ref }}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faEye, faEyeSlash, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
@@ -18,7 +18,7 @@ import { TaskCard } from './TaskCard'
 import { TaskDetail } from './TaskDetail'
 import { TaskForm } from './TaskForm'
 import { Settings } from './Settings'
-import { DagView } from './DagView'
+const DagView = lazy(() => import('./DagView').then(m => ({ default: m.DagView })))
 import { type RawDep } from '../lib/dagResolver'
 import './Board.css'
 
@@ -495,11 +495,13 @@ export function Board() {
       {view.kind === 'dag' && (
         tasksLoading
           ? <p className="board-message dag-placeholder">Loading…</p>
-          : <DagView
-              tasks={tasks}
-              rawDeps={rawDeps}
-              onSelectTask={(t) => setView({ kind: 'detail', task: t, from: { kind: 'dag' } })}
-            />
+          : <Suspense fallback={<p className="board-message dag-placeholder">Loading…</p>}>
+              <DagView
+                tasks={tasks}
+                rawDeps={rawDeps}
+                onSelectTask={(t) => setView({ kind: 'detail', task: t, from: { kind: 'dag' } })}
+              />
+            </Suspense>
       )}
 
       {view.kind !== 'dag' && <div className="board-columns" ref={columnsRef}>

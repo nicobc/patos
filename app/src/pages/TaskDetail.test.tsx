@@ -25,7 +25,8 @@ const task = {
   contractor_id: 'c1',
   expected_cost: 1500,
   actual_cost: null,
-  expected_duration_days: 3,
+  expected_start: '2026-04-01',
+  expected_end: '2026-04-03',
   actual_start: '2026-03-01',
   actual_end: null,
   status: 'planned',
@@ -51,10 +52,11 @@ describe('TaskDetail — display', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument()
   })
 
-  it('renders numeric fields', () => {
+  it('renders cost and expected date fields', () => {
     render(<TaskDetail task={task} contractorName={null} blockers={[]} blocks={[]} onBack={vi.fn()} onSelectTask={onSelectTask} />)
-    expect(screen.getByText('3 days')).toBeInTheDocument()
     expect(screen.getByText(/^€1.500$/)).toBeInTheDocument()
+    expect(screen.getByText('Expected start')).toBeInTheDocument()
+    expect(screen.getByText('Expected end')).toBeInTheDocument()
   })
 
   it('shows — for null cost and dates', () => {

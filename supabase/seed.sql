@@ -14,87 +14,87 @@ insert into contractors (id, name, email, phone) values
 
 -- tasks  (owner_id left null — no real auth users in dev seed)
 insert into tasks (id, title, description, project_id, contractor_id,
-                   expected_cost, actual_cost, expected_duration_days,
+                   expected_cost, actual_cost, expected_start, expected_end,
                    actual_start, actual_end, status) values
   -- Short-Term Fixes -------------------------------------------------------
   ('00000000-0000-0000-0003-000000000001',
    'Fix bathroom tap',
    'Replace worn washer and reseat the mixer tap',
    '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0002-000000000001',
-   350.00, 380.00, 1, '2026-03-10', '2026-03-10', 'done'),
+   350.00, 380.00, '2026-03-10', '2026-03-10', '2026-03-10', '2026-03-10', 'done'),
 
   ('00000000-0000-0000-0003-000000000002',
    'Paint hallway',
    'Strip, prime, and repaint hallway walls and ceiling',
    '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0002-000000000004',
-   800.00, null, 3, '2026-05-20', null, 'in_progress'),
+   800.00, null, '2026-05-20', '2026-05-22', '2026-05-20', null, 'in_progress'),
 
   ('00000000-0000-0000-0003-000000000003',
    'Replace kitchen cabinet handles',
    'Swap all cabinet and drawer handles for brushed brass',
    '00000000-0000-0000-0000-000000000001', null,
-   200.00, null, 1, null, null, 'planned'),
+   200.00, null, '2026-06-05', '2026-06-05', null, null, 'planned'),
 
   ('00000000-0000-0000-0003-000000000004',
    'Install bedroom 1 blackout blinds',
    'Measure and fit blackout roller blinds on both windows',
    '00000000-0000-0000-0000-000000000001', null,
-   450.00, null, 1, null, null, 'planned'),
+   450.00, null, null, null, null, null, 'planned'),
 
   ('00000000-0000-0000-0003-000000000005',
    'Patch living room wall cracks',
    'Fill hairline cracks above the window lintel',
    '00000000-0000-0000-0000-000000000001', null,
-   null, null, 1, null, null, 'ideation'),
+   null, null, null, null, null, null, 'ideation'),
 
   -- Full Renovation ---------------------------------------------------------
   ('00000000-0000-0000-0003-000000000006',
    'Gut bathroom and retile',
    'Strip to shell, new tiles, new fixtures throughout',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000001',
-   8500.00, null, 10, null, null, 'planned'),
+   8500.00, null, '2026-09-01', '2026-09-14', null, null, 'planned'),
 
   ('00000000-0000-0000-0003-000000000007',
    'Full kitchen remodel',
    'Replace units, worktops, appliances, and plumbing',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000002',
-   22000.00, null, 21, null, null, 'ideation'),
+   22000.00, null, null, null, null, null, 'ideation'),
 
   ('00000000-0000-0000-0003-000000000008',
    'Install kitchen island',
    'Build and fit bespoke island with integrated hob',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000002',
-   4500.00, null, 5, null, null, 'ideation'),
+   4500.00, null, null, null, null, null, 'ideation'),
 
   ('00000000-0000-0000-0003-000000000009',
    'Rewire bedroom 2 lighting',
    'Replace ceiling rose and add two bedside wall lights',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000003',
-   1200.00, null, 2, null, null, 'planned'),
+   1200.00, null, '2026-08-04', '2026-08-05', null, null, 'planned'),
 
   ('00000000-0000-0000-0003-000000000010',
    'Lay new hallway flooring',
    'Remove carpet, level subfloor, lay LVT planks',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000003',
-   2400.00, null, 4, '2026-05-10', null, 'in_progress'),
+   2400.00, null, '2026-05-10', '2026-05-13', '2026-05-10', null, 'in_progress'),
 
   ('00000000-0000-0000-0003-000000000011',
    'Paint all day-zone walls',
    'Two coats across kitchen, living room, and hallway',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000004',
-   3200.00, null, 5, null, null, 'planned'),
+   3200.00, null, null, null, null, null, 'planned'),
 
   ('00000000-0000-0000-0003-000000000012',
    'Install bathroom extractor fan',
    'Fit inline extractor to existing duct run',
    '00000000-0000-0000-0000-000000000002', null,
-   320.00, null, 1, null, null, 'discarded'),
+   320.00, null, null, null, null, null, 'discarded'),
 
   ('00000000-0000-0000-0003-000000000013',
    'Resurface bedroom 1 floors',
    'Sand, stain, and lacquer original timber boards',
    '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0002-000000000003',
-   3200.00, 3150.00, 3, '2026-04-01', '2026-04-03', 'done');
+   3200.00, 3150.00, '2026-04-01', '2026-04-03', '2026-04-01', '2026-04-03', 'done');
 
 -- task_deps  (task_id must wait for depends_on_task_id)
 insert into task_deps (task_id, depends_on_task_id) values

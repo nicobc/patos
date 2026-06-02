@@ -48,7 +48,8 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
   const [status, setStatus]             = useState(task?.status ?? 'ideation')
   const [expectedCost, setExpectedCost] = useState(task?.expected_cost?.toString() ?? '')
   const [actualCost, setActualCost]     = useState(task?.actual_cost?.toString() ?? '')
-  const [expectedDuration, setExpectedDuration] = useState(task?.expected_duration_days?.toString() ?? '')
+  const [expectedStart, setExpectedStart]       = useState(task?.expected_start ?? '')
+  const [expectedEnd, setExpectedEnd]           = useState(task?.expected_end ?? '')
   const [actualStart, setActualStart]   = useState(task?.actual_start ?? '')
   const [actualEnd, setActualEnd]       = useState(task?.actual_end ?? '')
   const [selectedBlockerIds, setSelectedBlockerIds] = useState<string[]>([])
@@ -121,12 +122,13 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
       status !== task.status ||
       expectedCost !== (task.expected_cost?.toString() ?? '') ||
       actualCost !== (task.actual_cost?.toString() ?? '') ||
-      expectedDuration !== (task.expected_duration_days?.toString() ?? '') ||
+      expectedStart !== (task.expected_start ?? '') ||
+      expectedEnd !== (task.expected_end ?? '') ||
       actualStart !== (task.actual_start ?? '') ||
       actualEnd !== (task.actual_end ?? '') ||
       blockersDirty
     : title !== '' || description !== '' || contractorId !== '' ||
-      expectedCost !== '' || actualCost !== '' || expectedDuration !== '' || actualStart !== '' || actualEnd !== '' ||
+      expectedCost !== '' || actualCost !== '' || expectedStart !== '' || expectedEnd !== '' || actualStart !== '' || actualEnd !== '' ||
       blockersDirty
 
   function handleBack() {
@@ -172,7 +174,8 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
           status,
           expected_cost: expectedCost ? parseFloat(expectedCost) : null,
           actual_cost: actualCost ? parseFloat(actualCost) : null,
-          expected_duration_days: expectedDuration ? parseInt(expectedDuration, 10) : null,
+          expected_start: expectedStart || null,
+          expected_end: expectedEnd || null,
           actual_start: actualStart || null,
           actual_end: actualEnd || null,
         }
@@ -190,7 +193,8 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
           status: 'ideation',
           expected_cost: expectedCost ? parseFloat(expectedCost) : null,
           actual_cost: actualCost ? parseFloat(actualCost) : null,
-          expected_duration_days: expectedDuration ? parseInt(expectedDuration, 10) : null,
+          expected_start: expectedStart || null,
+          expected_end: expectedEnd || null,
           actual_start: actualStart || null,
           actual_end: actualEnd || null,
         }
@@ -393,14 +397,22 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         </label>
 
         <label className="task-form-label">
-          <span>Expected duration (days)</span>
+          <span>Expected start</span>
           <input
             className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={expectedDuration}
-            onChange={(e) => setExpectedDuration(e.target.value)}
+            type="date"
+            value={expectedStart}
+            onChange={(e) => setExpectedStart(e.target.value)}
+          />
+        </label>
+
+        <label className="task-form-label">
+          <span>Expected end</span>
+          <input
+            className="input"
+            type="date"
+            value={expectedEnd}
+            onChange={(e) => setExpectedEnd(e.target.value)}
           />
         </label>
 

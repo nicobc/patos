@@ -155,7 +155,7 @@ tickets:
 
   - id: T11
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Replace expected_duration with expected_start / expected_end
     description: expected_duration is unplannable without an anchor date and the current UX is broken — users have been setting expected dates in the actual_start field. Replace with expected_start and expected_end date fields, mirroring the actual_start / actual_end pair already on the task. These are planning-only fields; they do not affect the dependency graph or blocking logic (which remains driven by task_deps). They will feed the Gantt chart in EPIC-007.
     acceptance_criteria:

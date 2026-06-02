@@ -1,6 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useLayoutEffect, useState, useCallback } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import dagre from '@dagrejs/dagre'
 import { buildAdjacency, topoSort, type RawDep } from '../lib/dagResolver'
 import type { Task } from '../services/tasksService'
@@ -84,6 +86,11 @@ function edgePath(pts: { x: number; y: number }[]): string {
 }
 
 export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const transformRef  = useRef<ReactZoomPanPinchRef | null>(null)
+  const lastTapRef    = useRef(0)
+  const [fitScale, setFitScale] = useState<number | null>(null)
+
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks])
 
   const { graphs, standaloneCount, cycleNodeIds } = useMemo(() => {
@@ -107,6 +114,28 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
     return { graphs, standaloneCount, cycleNodeIds }
   }, [tasks, rawDeps])
 
+  const maxGraphWidth = useMemo(
+    () => Math.max(...graphs.map(g => g.graph().width ?? 0), 1),
+    [graphs]
+  )
+
+  useLayoutEffect(() => {
+    if (!containerRef.current || graphs.length === 0) return
+    const containerWidth = containerRef.current.offsetWidth
+    const scale = Math.min(1, containerWidth / maxGraphWidth)
+    setFitScale(scale > 0 ? scale : 1)
+  }, [maxGraphWidth, graphs.length])
+
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTapRef.current < 300 && transformRef.current) {
+      transformRef.current.centerView(fitScale ?? 1, 200)
+      lastTapRef.current = 0
+    } else {
+      lastTapRef.current = now
+    }
+  }, [fitScale])
+
   if (graphs.length === 0) {
     return (
       <div className="dag-view">
@@ -119,7 +148,7 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
   }
 
   return (
-    <div className="dag-view">
+    <div className="dag-view" ref={containerRef}>
       {cycleNodeIds.size > 0 && (
         <p className="dag-cycle-warning">
           <FontAwesomeIcon icon={faTriangleExclamation} />
@@ -138,47 +167,68 @@ export function DagView({ tasks, rawDeps, onSelectTask }: Props) {
         </defs>
       </svg>
 
-      {graphs.map((g, idx) => {
-        const { width = 0, height = 0 } = g.graph()
-        return (
-          <svg
-            key={idx}
-            className="dag-graph"
-            width={width}
-            height={height}
-            viewBox={`0 0 ${width} ${height}`}
-            style={idx < graphs.length - 1 ? { marginBottom: COMP_GAP } : undefined}
+      <div className="dag-zoom-container" onClick={handleDoubleTap}>
+        {fitScale !== null && (
+          <TransformWrapper
+            key={fitScale}
+            initialScale={fitScale}
+            minScale={fitScale}
+            maxScale={3}
+            centerOnInit
+            doubleClick={{ disabled: true }}
+            panning={{ excluded: ['button'] }}
+            onInit={(ref) => { transformRef.current = ref }}
           >
-            {g.edges().map(e => {
-              const isCycleEdge = cycleNodeIds.has(e.v) && cycleNodeIds.has(e.w)
-              return (
-                <path
-                  key={`${e.v}→${e.w}`}
-                  d={edgePath(g.edge(e).points ?? [])}
-                  className={`dag-edge${isCycleEdge ? ' dag-edge--cycle' : ''}`}
-                  markerEnd={`url(#${isCycleEdge ? ARROW_CYCLE_ID : ARROW_ID})`}
-                />
-              )
-            })}
-            {g.nodes().map(id => {
-              const { x, y } = g.node(id)
-              const task = taskMap.get(id)
-              if (!task) return null
-              return (
-                <foreignObject key={id} x={x - NODE_W / 2} y={y - NODE_H / 2} width={NODE_W} height={NODE_H}>
-                  <button
-                    className={`dag-node${cycleNodeIds.has(id) ? ' dag-node--cycle' : ''}`}
-                    onClick={() => onSelectTask(task)}
-                  >
-                    <span className="dag-node-title">{task.title}</span>
-                    <span className="dag-node-status">{STATUS_LABELS[task.status] ?? task.status}</span>
-                  </button>
-                </foreignObject>
-              )
-            })}
-          </svg>
-        )
-      })}
+            <TransformComponent
+              wrapperStyle={{ width: '100%', height: '100%' }}
+            >
+              <div className="dag-graphs-stack">
+                {graphs.map((g, idx) => {
+                  const { width = 0, height = 0 } = g.graph()
+                  return (
+                    <svg
+                      key={idx}
+                      className="dag-graph"
+                      width={width}
+                      height={height}
+                      viewBox={`0 0 ${width} ${height}`}
+                      style={idx < graphs.length - 1 ? { marginBottom: COMP_GAP } : undefined}
+                    >
+                      {g.edges().map(e => {
+                        const isCycleEdge = cycleNodeIds.has(e.v) && cycleNodeIds.has(e.w)
+                        return (
+                          <path
+                            key={`${e.v}→${e.w}`}
+                            d={edgePath(g.edge(e).points ?? [])}
+                            className={`dag-edge${isCycleEdge ? ' dag-edge--cycle' : ''}`}
+                            markerEnd={`url(#${isCycleEdge ? ARROW_CYCLE_ID : ARROW_ID})`}
+                          />
+                        )
+                      })}
+                      {g.nodes().map(id => {
+                        const { x, y } = g.node(id)
+                        const task = taskMap.get(id)
+                        if (!task) return null
+                        return (
+                          <foreignObject key={id} x={x - NODE_W / 2} y={y - NODE_H / 2} width={NODE_W} height={NODE_H}>
+                            <button
+                              className={`dag-node${cycleNodeIds.has(id) ? ' dag-node--cycle' : ''}`}
+                              onClick={() => onSelectTask(task)}
+                            >
+                              <span className="dag-node-title">{task.title}</span>
+                              <span className="dag-node-status">{STATUS_LABELS[task.status] ?? task.status}</span>
+                            </button>
+                          </foreignObject>
+                        )
+                      })}
+                    </svg>
+                  )
+                })}
+              </div>
+            </TransformComponent>
+          </TransformWrapper>
+        )}
+      </div>
 
       {standaloneCount > 0 && (
         <p className="dag-standalone-count">

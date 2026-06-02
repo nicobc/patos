@@ -1,19 +1,36 @@
 .dag-view {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem 1rem;
-  overflow-x: auto;
+  padding: 1.5rem 1rem 1rem;
+  gap: 1rem;
 }
 
 .dag-defs {
   position: absolute;
 }
 
+.dag-zoom-container {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  cursor: grab;
+
+  &:active { cursor: grabbing; }
+}
+
+.dag-graphs-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .dag-graph {
   display: block;
   overflow: visible;
-  max-width: 100%;
 }
 
 .dag-edge {
@@ -65,8 +82,8 @@
 .dag-standalone-count {
   font-size: var(--fs-sm);
   opacity: var(--opacity-muted);
-  margin-top: 1.5rem;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .dag-placeholder {
@@ -81,7 +98,7 @@
   font-size: var(--fs-base);
   font-weight: var(--fw-medium);
   color: var(--accent);
-  margin-bottom: 1.25rem;
+  flex-shrink: 0;
 }
 
 .dag-node--cycle {

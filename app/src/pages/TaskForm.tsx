@@ -274,31 +274,6 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
           />
         </label>
 
-        <div className="task-form-label">
-          <span>Contractor</span>
-          <div className="task-form-multiselect" ref={contractorRef}>
-            <button
-              type="button"
-              ref={contractorTriggerRef}
-              className={`input select task-form-multiselect-trigger${contractorOpen ? ' open' : ''}`}
-              onClick={() => setContractorOpen((o) => !o)}
-            >
-              <span>{contractors.find((c) => c.id === contractorId)?.name ?? 'Unassigned'}</span>
-              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
-            </button>
-            {contractorOpen && (
-              <div className="task-form-multiselect-panel">
-                {[{ id: '', name: 'Unassigned' }, ...contractors].map((c) => (
-                  <div key={c.id} className="task-form-multiselect-option" onClick={() => { setContractorId(c.id); setContractorOpen(false) }}>
-                    <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${contractorId === c.id ? ' checked' : ''}`} />
-                    <span>{c.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
         {isEdit && (
           <div className="task-form-label">
             <span>Status</span>
@@ -327,6 +302,31 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
             </div>
           </div>
         )}
+
+        <div className="task-form-label">
+          <span>Contractor</span>
+          <div className="task-form-multiselect" ref={contractorRef}>
+            <button
+              type="button"
+              ref={contractorTriggerRef}
+              className={`input select task-form-multiselect-trigger${contractorOpen ? ' open' : ''}`}
+              onClick={() => setContractorOpen((o) => !o)}
+            >
+              <span>{contractors.find((c) => c.id === contractorId)?.name ?? 'Unassigned'}</span>
+              <FontAwesomeIcon icon={faChevronDown} className="select-chevron" />
+            </button>
+            {contractorOpen && (
+              <div className="task-form-multiselect-panel">
+                {[{ id: '', name: 'Unassigned' }, ...contractors].map((c) => (
+                  <div key={c.id} className="task-form-multiselect-option" onClick={() => { setContractorId(c.id); setContractorOpen(false) }}>
+                    <FontAwesomeIcon icon={faCheck} className={`task-form-multiselect-check${contractorId === c.id ? ' checked' : ''}`} />
+                    <span>{c.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="task-form-label">
           <span>Blocked by</span>
@@ -372,69 +372,34 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
           </div>
         </div>
 
-        <label className="task-form-label">
-          <span>Expected cost (€)</span>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.01"
-            value={expectedCost}
-            onChange={(e) => setExpectedCost(e.target.value)}
-          />
-        </label>
+        <div className="planning-form-grid">
+          <label className="task-form-label">
+            <span>Expected cost (€)</span>
+            <input className="input" type="number" min="0" step="0.01" value={expectedCost} onChange={(e) => setExpectedCost(e.target.value)} />
+          </label>
+          <label className="task-form-label">
+            <span>Actual cost (€)</span>
+            <input className="input" type="number" min="0" step="0.01" value={actualCost} onChange={(e) => setActualCost(e.target.value)} />
+          </label>
 
-        <label className="task-form-label">
-          <span>Actual cost (€)</span>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.01"
-            value={actualCost}
-            onChange={(e) => setActualCost(e.target.value)}
-          />
-        </label>
+          <label className="task-form-label">
+            <span>Expected start</span>
+            <input className="input" type="date" value={expectedStart} onChange={(e) => setExpectedStart(e.target.value)} />
+          </label>
+          <label className="task-form-label">
+            <span>Actual start</span>
+            <input className="input" type="date" value={actualStart} onChange={(e) => setActualStart(e.target.value)} />
+          </label>
 
-        <label className="task-form-label">
-          <span>Expected start</span>
-          <input
-            className="input"
-            type="date"
-            value={expectedStart}
-            onChange={(e) => setExpectedStart(e.target.value)}
-          />
-        </label>
-
-        <label className="task-form-label">
-          <span>Expected end</span>
-          <input
-            className="input"
-            type="date"
-            value={expectedEnd}
-            onChange={(e) => setExpectedEnd(e.target.value)}
-          />
-        </label>
-
-        <label className="task-form-label">
-          <span>Start date{startRequired(status) && <span className="task-form-required"> *</span>}</span>
-          <input
-            className="input"
-            type="date"
-            value={actualStart}
-            onChange={(e) => setActualStart(e.target.value)}
-          />
-        </label>
-
-        <label className="task-form-label">
-          <span>End date{endRequired(status) && <span className="task-form-required"> *</span>}</span>
-          <input
-            className="input"
-            type="date"
-            value={actualEnd}
-            onChange={(e) => setActualEnd(e.target.value)}
-          />
-        </label>
+          <label className="task-form-label">
+            <span>Expected end</span>
+            <input className="input" type="date" value={expectedEnd} onChange={(e) => setExpectedEnd(e.target.value)} />
+          </label>
+          <label className="task-form-label">
+            <span>Actual end</span>
+            <input className="input" type="date" value={actualEnd} onChange={(e) => setActualEnd(e.target.value)} />
+          </label>
+        </div>
 
         {error && <p className="task-form-error">{error}</p>}
 

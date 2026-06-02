@@ -201,6 +201,20 @@ main {
   &:hover { opacity: 1; }
 }
 
+@media (width <= 768px) {
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-outline,
+  .btn-danger {
+    min-height: 2.75rem;
+  }
+
+  .btn-icon {
+    padding: 0.75rem;
+  }
+}
+
 /* ── form inputs ─────────────────────────────────────────────────────────────── */
 
 .input {

@@ -19,7 +19,6 @@
   overflow: hidden;
   cursor: grab;
   touch-action: none;
-  overscroll-behavior: none;
 
   &:active { cursor: grabbing; }
 }

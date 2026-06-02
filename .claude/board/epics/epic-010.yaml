@@ -117,7 +117,7 @@ tickets:
 
   - id: T8
     type: chore
-    status: IN PROGRESS
+    status: DONE
     title: Replace card nav text glyphs with FA angle icons; align hold toggle in controls row
     description: The card nav buttons used ‹ › typographic characters — inconsistent rendering across platforms, not subject to FA sizing and color tokens. Replace with faAngleLeft / faAngleRight from free-solid-svg-icons. Also moves the hold toggle (pause/play) from the absolute-positioned overlay into the controls row, centering it between the nav icons on the same baseline. The blocked lock indicator stays absolute in the card body corner as a passive signal, with its right offset adjusted to align visually with the > button.
     acceptance_criteria:

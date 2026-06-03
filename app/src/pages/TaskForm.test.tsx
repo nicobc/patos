@@ -119,10 +119,10 @@ describe('TaskForm — create', () => {
     expect(screen.getByText('Bob')).toBeInTheDocument()
   })
 
-  it('back arrow (← Board) with no changes calls onBack directly', async () => {
+  it('close button with no changes calls onBack directly', async () => {
     const onBack = vi.fn()
     render(<TaskForm projectId="p1" contractors={contractors} onBack={onBack} onSaved={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /← board/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
@@ -157,10 +157,7 @@ describe('TaskForm — create', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('edit mode back arrow reads ← Task', () => {
-    render(<TaskForm task={task} projectId="p1" contractors={contractors} onBack={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByRole('button', { name: /← task/i })).toBeInTheDocument()
-  })
+
 })
 
 describe('TaskForm — edit', () => {

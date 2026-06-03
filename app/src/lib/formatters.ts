@@ -6,6 +6,6 @@ export function formatCost(value: number | null): string {
 
 export function formatDate(value: string | null): string {
   if (!value) return '—'
-  const [y, m, day] = value.split('-').map(Number)
-  return new Date(y, m - 1, day).toLocaleDateString('en', { month: 'short', day: 'numeric' })
+  const [y, m, day] = value.split('T')[0].split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' })
 }

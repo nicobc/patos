@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../context/useToast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faMobileScreen, faMoon, faPen, faSun, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import {
   listContractors,
   subscribeToContractorChanges,
@@ -41,9 +41,25 @@ type ProjectDeleteState =
   | { id: string; kind: 'confirm' }
   | { id: string; kind: 'hard-confirm'; input: string; taskCount: number }
 
+type Theme = 'auto' | 'light' | 'dark'
+
+function applyTheme(t: Theme) {
+  if (t === 'auto') {
+    delete document.documentElement.dataset.theme
+    localStorage.removeItem('theme')
+  } else {
+    document.documentElement.dataset.theme = t
+    localStorage.setItem('theme', t)
+  }
+}
+
 export function Settings({ onBack }: { onBack: () => void }) {
   const { showToast } = useToast()
   const [view, setView] = useState<SettingsView>({ kind: 'list' })
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = localStorage.getItem('theme')
+    return stored === 'dark' || stored === 'light' ? stored : 'auto'
+  })
 
   const [projects, setProjects]             = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
@@ -207,11 +223,33 @@ export function Settings({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="settings">
-      <div className="settings-toolbar">
-        <button className="btn-ghost settings-back" onClick={onBack}>← Board</button>
+      <div className="page-header">
+        <h2 className="page-title">Settings</h2>
+        <button className="btn-icon" onClick={onBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
       </div>
 
-      <h2 className="settings-heading">Settings</h2>
+      {/* Appearance section */}
+      <section className="settings-section">
+        <h3 className="settings-section-title">Appearance</h3>
+        <div className="settings-theme-toggle">
+          {([
+            { value: 'auto',  icon: faMobileScreen,      label: 'Auto'  },
+            { value: 'light', icon: faSun,               label: 'Light' },
+            { value: 'dark',  icon: faMoon,              label: 'Dark'  },
+          ] as const).map(({ value, icon, label }) => (
+            <button
+              key={value}
+              className={`settings-theme-btn${theme === value ? ' active' : ''}`}
+              onClick={() => { setTheme(value); applyTheme(value) }}
+            >
+              <FontAwesomeIcon icon={icon} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Projects section */}
       <section className="settings-section">
@@ -417,11 +455,12 @@ function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
 
   return (
     <div className="settings">
-      <div className="settings-toolbar">
-        <button className="btn-ghost settings-back" onClick={onBack}>← Settings</button>
+      <div className="page-header">
+        <h2 className="page-title">{isEdit ? 'Edit project' : 'New project'}</h2>
+        <button className="btn-icon" onClick={onBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
       </div>
-
-      <h2 className="settings-heading">{isEdit ? 'Edit project' : 'New project'}</h2>
 
       <form className="settings-form" onSubmit={handleSubmit} noValidate>
         <label className="settings-form-label">
@@ -497,11 +536,12 @@ function ContractorForm({ contractor, onBack, onSaved }: ContractorFormProps) {
 
   return (
     <div className="settings">
-      <div className="settings-toolbar">
-        <button className="btn-ghost settings-back" onClick={onBack}>← Settings</button>
+      <div className="page-header">
+        <h2 className="page-title">{isEdit ? 'Edit contractor' : 'New contractor'}</h2>
+        <button className="btn-icon" onClick={onBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
       </div>
-
-      <h2 className="settings-heading">{isEdit ? 'Edit contractor' : 'New contractor'}</h2>
 
       <form className="settings-form" onSubmit={handleSubmit} noValidate>
         <label className="settings-form-label">

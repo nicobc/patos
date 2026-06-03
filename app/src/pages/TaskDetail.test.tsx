@@ -93,7 +93,7 @@ describe('TaskDetail — navigation', () => {
   it('Back button calls onBack', async () => {
     const onBack = vi.fn()
     render(<TaskDetail task={task} contractorName={null} blockers={[]} blocks={[]} onBack={onBack} onSelectTask={onSelectTask} />)
-    await userEvent.click(screen.getByRole('button', { name: /board/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 

@@ -1,6 +1,19 @@
 /* ── themes ──────────────────────────────────────────────────────────────────── */
 
-:root,
+:root {
+  --bg: #1a1b1e;
+  --fg: #fff;
+  --code-bg: color-mix(in srgb, var(--fg) 16%, transparent);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f4f6;
+    --fg: #1a1b1e;
+    --code-bg: color-mix(in srgb, var(--fg) 9%, transparent);
+  }
+}
+
 [data-theme='dark'] {
   --bg: #1a1b1e;
   --fg: #fff;
@@ -125,7 +138,7 @@ main {
   padding: 4rem 3rem;
 
   @media (width <= 768px) {
-    padding: 2.5rem 1.5rem;
+    padding: 1.25rem 1.5rem;
   }
 }
 
@@ -215,6 +228,24 @@ main {
   }
 }
 
+/* ── page primitives ────────────────────────────────────────────────────────── */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-faint);
+}
+
+.page-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+}
+
 /* ── form inputs ─────────────────────────────────────────────────────────────── */
 
 .input {
@@ -236,6 +267,8 @@ main {
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   }
+
+  &[type="date"][value=""] { color: color-mix(in srgb, var(--fg) calc(var(--opacity-subtle) * 100%), transparent); }
 
   @media (width <= 768px) { font-size: 1rem; }
 }

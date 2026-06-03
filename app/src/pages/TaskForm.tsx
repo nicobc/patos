@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronDown, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../context/useAuth'
 import { useToast } from '../context/useToast'
 import {
@@ -245,13 +245,12 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
 
   return (
     <div className="task-form">
-      <div className="task-form-toolbar">
-        <button className="btn-ghost task-form-back" onClick={handleBack}>
-          {isEdit ? '← Task' : '← Board'}
+      <div className="page-header">
+        <h2 className="page-title">{isEdit ? 'Edit task' : 'New task'}</h2>
+        <button className="btn-icon" onClick={handleBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
         </button>
       </div>
-
-      <h2 className="task-form-heading">{isEdit ? 'Edit task' : 'New task'}</h2>
 
       <form className="task-form-fields" onSubmit={handleSubmit} noValidate>
         <label className="task-form-label">
@@ -375,11 +374,11 @@ export function TaskForm({ task, projectId, contractors, projectTasks = [], onBa
         <div className="planning-form-grid">
           <label className="task-form-label">
             <span>Expected cost (€)</span>
-            <input className="input" type="number" min="0" step="0.01" value={expectedCost} onChange={(e) => setExpectedCost(e.target.value)} />
+            <input className="input" type="number" min="0" step="0.01" placeholder="—" value={expectedCost} onChange={(e) => setExpectedCost(e.target.value)} />
           </label>
           <label className="task-form-label">
             <span>Actual cost (€)</span>
-            <input className="input" type="number" min="0" step="0.01" value={actualCost} onChange={(e) => setActualCost(e.target.value)} />
+            <input className="input" type="number" min="0" step="0.01" placeholder="—" value={actualCost} onChange={(e) => setActualCost(e.target.value)} />
           </label>
 
           <label className="task-form-label">

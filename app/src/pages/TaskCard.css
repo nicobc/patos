@@ -92,3 +92,9 @@
     pointer-events: none;
   }
 }
+
+@media (width <= 768px) {
+  .task-card-contractor {
+    font-size: var(--fs-sm);
+  }
+}

@@ -90,6 +90,8 @@
   padding-bottom: 0.5rem;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
 
 .board-column {
@@ -216,3 +218,10 @@
     scroll-snap-type: none;
   }
 }
+
+@media (width <= 768px) {
+  .board-toolbar-actions .btn-icon {
+    min-height: 2.75rem;
+  }
+}
+

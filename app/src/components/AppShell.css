@@ -11,6 +11,11 @@
   align-items: flex-end;
   gap: 0.5rem;
   min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
 .shell-logo {
@@ -57,7 +62,7 @@
   padding: 1.5rem 1.25rem;
 }
 
-/* ── nav items (shared mobile + desktop) ─────────────────── */
+/* ── nav items ───────────────────────────────────────────── */
 
 .shell-nav-item {
   display: flex;
@@ -76,18 +81,7 @@
   &:hover:not(.active) { opacity: var(--opacity-subtle); }
 }
 
-/* ── mobile bottom nav ───────────────────────────────────── */
-
 .shell-sidebar { display: none; }
-
-.shell-bottom-nav {
-  flex-shrink: 0;
-  height: var(--nav-height);
-  display: flex;
-  border-top: 1px solid var(--border-faint);
-
-  & .shell-nav-item { flex: 1; }
-}
 
 /* ── desktop ─────────────────────────────────────────────── */
 
@@ -104,8 +98,6 @@
   .shell-header  { grid-area: header; }
   .shell-sidebar { grid-area: sidebar; }
   .shell-content { grid-area: content; }
-
-  .shell-bottom-nav { display: none; }
 
   .shell-sidebar {
     display: flex;

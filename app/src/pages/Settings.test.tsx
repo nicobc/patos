@@ -98,10 +98,10 @@ describe('Settings — project list', () => {
     await waitFor(() => expect(screen.getByText(/failed to load projects/i)).toBeInTheDocument())
   })
 
-  it('calls onBack when ← Board is clicked', async () => {
+  it('calls onBack when close is clicked', async () => {
     const onBack = vi.fn()
     render(<Settings onBack={onBack} />)
-    await userEvent.click(screen.getByRole('button', { name: /board/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(onBack).toHaveBeenCalled()
   })
 })

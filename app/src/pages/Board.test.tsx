@@ -1,8 +1,11 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Board } from './Board'
 import type { TaskChangeEvent, DepChangeEvent } from '../services/tasksService'
+
+const renderBoard = () => render(<MemoryRouter><Board /></MemoryRouter>)
 
 vi.mock('../context/useToast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
@@ -20,7 +23,7 @@ vi.mock('../services/contractorsService', async (importOriginal) => {
   return { ...actual, listContractors: vi.fn(), subscribeToContractorChanges: vi.fn() }
 })
 vi.mock('../pages/Settings', () => ({ Settings: ({ onBack }: { onBack: () => void }) =>
-  <div><span>Settings page</span><button onClick={onBack}>← Board</button></div>
+  <div><span>Settings page</span><button onClick={onBack} aria-label="Close">×</button></div>
 }))
 vi.mock('../services/tasksService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/tasksService')>()
@@ -80,17 +83,17 @@ beforeEach(() => {
 
 describe('Board — settings', () => {
   it('navigates to settings when gear icon is clicked', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /settings/i }))
     await userEvent.click(screen.getByRole('button', { name: /settings/i }))
     expect(screen.getByText('Settings page')).toBeInTheDocument()
   })
 
   it('returns to board when back is clicked from settings', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /settings/i }))
     await userEvent.click(screen.getByRole('button', { name: /settings/i }))
-    await userEvent.click(screen.getByRole('button', { name: /← board/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 })
@@ -98,12 +101,12 @@ describe('Board — settings', () => {
 describe('Board — project selector', () => {
   it('shows loading state initially', () => {
     mockListProjects.mockImplementation(() => new Promise(() => {}))
-    render(<Board />)
+    renderBoard()
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders selector and 4 columns after load', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() =>
       expect(screen.getByRole('combobox', { name: /select project/i })).toBeInTheDocument()
     )
@@ -113,14 +116,14 @@ describe('Board — project selector', () => {
   })
 
   it('auto-selects the first project', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => {
       expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('p1')
     })
   })
 
   it('updates selected project on change', async () => {
-    render(<Board />)
+    renderBoard()
     const select = await screen.findByRole('combobox')
     await userEvent.selectOptions(select, 'p2')
     expect((select as HTMLSelectElement).value).toBe('p2')
@@ -128,7 +131,7 @@ describe('Board — project selector', () => {
 
   it('shows error state when projects fetch fails', async () => {
     mockListProjects.mockRejectedValue(new Error('network error'))
-    render(<Board />)
+    renderBoard()
     await waitFor(() =>
       expect(screen.getByText('Failed to load projects')).toBeInTheDocument()
     )
@@ -138,14 +141,14 @@ describe('Board — project selector', () => {
 describe('Board — task cards', () => {
   it('renders cards in the correct column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask()])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     expect(screen.getAllByText('No tasks')).toHaveLength(3)
   })
 
   it('shows contractor name when present', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ contractor_id: 'c1' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument())
   })
 
@@ -153,14 +156,14 @@ describe('Board — task cards', () => {
     mockListTasksByProject.mockResolvedValue([
       makeTask({ status: 'discarded', title: 'Hidden task' }),
     ])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(4))
     expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
   })
 
   it('renders on_hold task in the in_progress column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'on_hold' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     expect(screen.getAllByText('No tasks')).toHaveLength(3)
     expect(screen.getByRole('button', { name: /resume task/i })).toBeInTheDocument()
@@ -168,7 +171,7 @@ describe('Board — task cards', () => {
 
   it('shows tasks error when fetch fails', async () => {
     mockListTasksByProject.mockRejectedValue(new Error('fail'))
-    render(<Board />)
+    renderBoard()
     await waitFor(() =>
       expect(screen.getByText('Failed to load tasks')).toBeInTheDocument()
     )
@@ -176,23 +179,23 @@ describe('Board — task cards', () => {
 
   it('shows task detail view when a card is clicked', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask()])
-    render(<Board />)
+    renderBoard()
     const card = await screen.findByRole('button', { name: /paint walls/i })
     await userEvent.click(card)
     expect(screen.getByRole('heading', { name: 'Paint walls' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /board/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument()
   })
 
   it('returns to board when Back is clicked from detail view', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask()])
-    render(<Board />)
+    renderBoard()
     await userEvent.click(await screen.findByRole('button', { name: /paint walls/i }))
-    await userEvent.click(screen.getByRole('button', { name: /board/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
   it('subscribes to task changes for the selected project', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() =>
       expect(mockSubscribeToTaskChanges).toHaveBeenCalledWith('p1', expect.any(Function))
     )
@@ -205,7 +208,7 @@ describe('Board — task cards', () => {
       return vi.fn()
     })
 
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(changeCallback).not.toBeNull())
 
     act(() => changeCallback!({ eventType: 'INSERT', record: makeTask({ title: 'New task' }) }))
@@ -221,7 +224,7 @@ describe('Board — task cards', () => {
       return vi.fn()
     })
 
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     act(() => changeCallback!({ eventType: 'DELETE', id: 't1' }))
@@ -233,7 +236,7 @@ describe('Board — status transitions', () => {
   it('optimistically moves a card to the next column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
     mockUpdateTask.mockResolvedValue(makeTask({ status: 'planned' }))
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
@@ -247,7 +250,7 @@ describe('Board — status transitions', () => {
     vi.setSystemTime(new Date('2026-05-24'))
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: null })])
     mockUpdateTask.mockResolvedValue(makeTask({ status: 'in_progress', actual_start: '2026-05-24' }))
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
@@ -262,7 +265,7 @@ describe('Board — status transitions', () => {
     vi.setSystemTime(new Date('2026-05-24'))
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'in_progress', actual_end: null })])
     mockUpdateTask.mockResolvedValue(makeTask({ status: 'done', actual_end: '2026-05-24' }))
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
@@ -275,7 +278,7 @@ describe('Board — status transitions', () => {
 
   it('prev button is disabled in ideation column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /previous status/i })).toBeDisabled()
@@ -283,7 +286,7 @@ describe('Board — status transitions', () => {
 
   it('next button is disabled in done column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'done' })])
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /next status/i })).toBeDisabled()
@@ -292,7 +295,7 @@ describe('Board — status transitions', () => {
   it('re-fetches from server and shows error on transition failure', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
     mockUpdateTask.mockRejectedValue(new Error('network error'))
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
@@ -306,14 +309,14 @@ describe('Board — status transitions', () => {
 
 describe('Board — discarded column', () => {
   it('Show discarded toggle is visible on the board view', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
     expect(screen.getByRole('button', { name: /show discarded/i })).toBeInTheDocument()
   })
 
   it('Discarded column is hidden by default', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Hidden task' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getAllByText('No tasks')).toHaveLength(4))
     expect(screen.queryByText('Discarded')).not.toBeInTheDocument()
     expect(screen.queryByText('Hidden task')).not.toBeInTheDocument()
@@ -321,7 +324,7 @@ describe('Board — discarded column', () => {
 
   it('clicking toggle renders Discarded column with discarded task', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
     await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
     expect(screen.getByText('Discarded')).toBeInTheDocument()
@@ -330,7 +333,7 @@ describe('Board — discarded column', () => {
 
   it('clicking toggle again hides the Discarded column', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
     await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
     await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
@@ -339,7 +342,7 @@ describe('Board — discarded column', () => {
 
   it('clicking a discarded card opens TaskDetail', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'discarded', title: 'Old task' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /show discarded/i }))
     await userEvent.click(screen.getByRole('button', { name: /show discarded/i }))
     await userEvent.click(screen.getByRole('button', { name: /old task/i }))
@@ -369,7 +372,7 @@ describe('Board — project switch clears stale dep state', () => {
       .mockResolvedValueOnce([{ task_id: sharedId, depends_on_task_id: blockerId }])
       .mockImplementationOnce(() => new Promise(() => {})) // p2 deps never resolve
 
-    render(<Board />)
+    renderBoard()
 
     await waitFor(() => expect(screen.getByLabelText('Blocked')).toBeInTheDocument())
 
@@ -383,7 +386,7 @@ describe('Board — project switch clears stale dep state', () => {
 describe('Board — transition feedback banner', () => {
   it('shows feedback banner with Undo after a status change', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
     await waitFor(() => expect(screen.getByText('Moved to Planned.')).toBeInTheDocument())
@@ -394,7 +397,7 @@ describe('Board — transition feedback banner', () => {
   it('shows "Update start" button when actual_start is stale on in_progress transition', async () => {
     vi.setSystemTime(new Date('2026-06-01'))
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: '2026-05-01' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
     await waitFor(() => expect(screen.getByText('Moved to In Progress.')).toBeInTheDocument())
@@ -406,7 +409,7 @@ describe('Board — transition feedback banner', () => {
   it('shows "Update end" button when actual_end is stale on done transition', async () => {
     vi.setSystemTime(new Date('2026-06-01'))
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'in_progress', actual_end: '2026-05-01' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
     await waitFor(() => expect(screen.getByText('Moved to Done.')).toBeInTheDocument())
@@ -417,7 +420,7 @@ describe('Board — transition feedback banner', () => {
   it('does not show Update button when actual_start equals today', async () => {
     vi.setSystemTime(new Date('2026-06-01'))
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'planned', actual_start: '2026-06-01' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
     await waitFor(() => expect(screen.getByText('Moved to In Progress.')).toBeInTheDocument())
@@ -427,7 +430,7 @@ describe('Board — transition feedback banner', () => {
 
   it('dismisses the banner when the X button is clicked', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ status: 'ideation' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: /next status/i }))
     await waitFor(() => expect(screen.getByText('Moved to Planned.')).toBeInTheDocument())
@@ -438,13 +441,13 @@ describe('Board — transition feedback banner', () => {
 
 describe('Board — search and filter', () => {
   it('search input is visible on board view with a project selected', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('combobox'))
     expect(screen.getByRole('textbox', { name: /search tasks/i })).toBeInTheDocument()
   })
 
   it('search input is not visible on dag view', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('button', { name: /dependencies/i }))
     await userEvent.click(screen.getByRole('button', { name: /dependencies/i }))
     expect(screen.queryByRole('textbox', { name: /search tasks/i })).not.toBeInTheDocument()
@@ -455,7 +458,7 @@ describe('Board — search and filter', () => {
       makeTask({ id: 't1', title: 'Paint walls' }),
       makeTask({ id: 't2', title: 'Fix plumbing', status: 'ideation' }),
     ])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'paint')
@@ -468,7 +471,7 @@ describe('Board — search and filter', () => {
       makeTask({ id: 't1', title: 'Paint walls', contractor_id: 'c1' }),
       makeTask({ id: 't2', title: 'Fix plumbing', status: 'ideation' }),
     ])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'alice')
@@ -478,7 +481,7 @@ describe('Board — search and filter', () => {
 
   it('empty column shows "No tasks" when filter matches nothing', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'zzz')
@@ -487,7 +490,7 @@ describe('Board — search and filter', () => {
   })
 
   it('clear button appears only when query is non-empty', async () => {
-    render(<Board />)
+    renderBoard()
     await waitFor(() => screen.getByRole('textbox', { name: /search tasks/i }))
     expect(screen.queryByRole('button', { name: /clear search/i })).not.toBeInTheDocument()
 
@@ -497,7 +500,7 @@ describe('Board — search and filter', () => {
 
   it('clear button resets the filter and shows all tasks again', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     await userEvent.type(screen.getByRole('textbox', { name: /search tasks/i }), 'zzz')
@@ -509,7 +512,7 @@ describe('Board — search and filter', () => {
 
   it('filter resets when selected project changes', async () => {
     mockListTasksByProject.mockResolvedValue([makeTask({ title: 'Paint walls' })])
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 
     const searchInput = screen.getByRole('textbox', { name: /search tasks/i }) as HTMLInputElement
@@ -531,7 +534,7 @@ describe('Board — dep subscription isolation', () => {
       return vi.fn()
     })
 
-    render(<Board />)
+    renderBoard()
     await waitFor(() => expect(depsCallback).not.toBeNull())
     await waitFor(() => expect(screen.getByText('Paint walls')).toBeInTheDocument())
 

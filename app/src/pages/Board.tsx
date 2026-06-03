@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faEye, faEyeSlash, faGear, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { listProjects, subscribeToProjectChanges, type Project, type ProjectChangeEvent } from '../services/projectsService'
@@ -64,6 +65,7 @@ function applyTaskChange(items: Task[], event: TaskChangeEvent): Task[] {
 }
 
 export function Board() {
+  const location = useLocation()
   const [projects, setProjects]       = useState<Project[]>([])
   const [selectedId, setSelectedId]   = useState('')
   const [contractors, setContractors] = useState<Contractor[]>([])
@@ -87,6 +89,12 @@ export function Board() {
 
   const blockerIds = depsResult?.projectId === selectedId ? depsResult.blockerIds : new Map<string, Set<string>>()
   const rawDeps    = depsResult?.projectId === selectedId ? depsResult.rawDeps    : []
+
+  useEffect(() => {
+    if (!(location.state as { reset?: number } | null)?.reset) return
+    const id = setTimeout(() => setView({ kind: 'board' }), 0)
+    return () => clearTimeout(id)
+  }, [location.state])
 
   useEffect(() => {
     if (view.kind !== 'board' || !view.scrollToStatus) return
@@ -333,7 +341,6 @@ export function Board() {
           contractorName={contractorName(view.task.contractor_id)}
           blockers={blockerTasks}
           blocks={blocksTasks}
-          backLabel={view.from ? '← Back' : '← Board'}
           onBack={() => setView(view.from ?? { kind: 'board', scrollToStatus: view.task.status })}
           onEdit={() => setView({ kind: 'form', task: view.task })}
           onSelectTask={(t) => setView({ kind: 'detail', task: t, from: view })}

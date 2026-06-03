@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { updateTask, deleteTask, type Task } from '../services/tasksService'
 import { useToast } from '../context/useToast'
 import { formatCost, formatDate } from '../lib/formatters'
@@ -18,13 +20,12 @@ interface Props {
   contractorName: string | null
   blockers: Task[]
   blocks: Task[]
-  backLabel?: string
   onBack: () => void
   onEdit?: () => void
   onSelectTask: (task: Task) => void
 }
 
-export function TaskDetail({ task, contractorName, blockers, blocks, backLabel = '← Board', onBack, onEdit, onSelectTask }: Props) {
+export function TaskDetail({ task, contractorName, blockers, blocks, onBack, onEdit, onSelectTask }: Props) {
   const { showToast } = useToast()
   const [pending, setPending] = useState<'discard' | 'delete' | null>(null)
   const [loading, setLoading] = useState(false)
@@ -62,16 +63,17 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
     }
   }
 
-  const fmtDate = (v: string | null) => v ? new Date(v).toLocaleDateString() : '—'
-
   return (
     <div className="task-detail">
-      <div className="task-detail-toolbar">
-        <button className="btn-ghost task-detail-back" onClick={onBack}>{backLabel}</button>
-        <button className="btn-outline" onClick={onEdit}>Edit</button>
+      <div className="page-header">
+        <h2 className="page-title">{task.title}</h2>
+        <button className="btn-icon task-detail-edit-btn" onClick={onEdit} aria-label="Edit task">
+          <FontAwesomeIcon icon={faPen} />
+        </button>
+        <button className="btn-icon" onClick={onBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
       </div>
-
-      <h2 className="task-detail-title">{task.title}</h2>
 
       <div className="task-detail-body">
         {task.description && (
@@ -142,7 +144,7 @@ export function TaskDetail({ task, contractorName, blockers, blocks, backLabel =
 
         <div className="task-detail-cell">
           <span className="task-detail-cell-label">Created</span>
-          <span>{fmtDate(task.created_at)}</span>
+          <span>{formatDate(task.created_at)}</span>
         </div>
       </div>
 

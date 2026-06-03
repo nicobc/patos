@@ -2,7 +2,7 @@ id: EPIC-010
 title: UI/UX improvements
 scope: ui-ux
 category: polish
-status: IN PROGRESS
+status: DONE
 description: First-pass polish after the MVP. Covers mobile correctness, interaction quality, toast feedback, the broken details multi-select, search, undo for accidental status changes, brand application, and DAG navigability. No new data model changes — purely presentation and interaction improvements.
 notes:
   - T3 (toast) must ship before or together with T4 (undo) since undo is delivered via a toast action
@@ -143,7 +143,7 @@ tickets:
 
   - id: T10
     type: feat
-    status: TESTING
+    status: DONE
     title: Mobile layout and spacing pass
     description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed. Includes adaptive theming and UX polish accumulated during the pass.
     acceptance_criteria:

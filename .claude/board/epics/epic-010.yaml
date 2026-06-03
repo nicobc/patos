@@ -145,13 +145,17 @@ tickets:
     type: feat
     status: IN PROGRESS
     title: Mobile layout and spacing pass
-    description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed.
+    description: Final pass to ensure the app is usable on mobile viewports (≤ 768px). Consolidates spacing, padding, and alignment decisions across all views after all other tickets in this epic have landed. Includes adaptive theming and UX polish accumulated during the pass.
     acceptance_criteria:
       - board toolbar, tabs row, and task cards have no horizontal overflow at mobile viewport widths (≤ 768px)
       - TaskForm, TaskDetail, and Settings forms have comfortable tap targets (minimum 44px height for interactive elements) at mobile viewport widths
       - board columns horizontal scroll does not trigger simultaneous body scroll (touch-action isolation applied)
       - all text is readable without zoom at default mobile font size
       - no fixed pixel values introduced for spacing — all sizing uses existing design tokens or rem units
+      - adaptive theme follows prefers-color-scheme by default (dark fallback); explicit override persisted to localStorage; Settings exposes Auto / Light / Dark segmented toggle with faMobileScreen / faSun / faMoon icons; inline script in index.html prevents flash of wrong theme on load
+      - empty date inputs render template values at --opacity-subtle via color-mix so they are visually muted but visible; cost inputs show — placeholder at the same opacity tier
+      - TaskDetail Discard / Delete action row uses justify-content space-between to spatially signal their semantic difference
+      - bottom nav removed; AppShell simplified to desktop sidebar only; .page-header and .page-title extracted as shared design-system primitives used by TaskForm, TaskDetail, and Settings
 
   - id: T11
     type: feat

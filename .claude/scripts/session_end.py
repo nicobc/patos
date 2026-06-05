@@ -12,31 +12,6 @@ CLAUDE_BIN = shutil.which("claude") or str(Path.home() / ".local/bin/claude")
 MAX_TRANSCRIPT_CHARS = 40_000
 
 
-def has_meaningful_work(transcript_path: str, cwd: str) -> bool:
-    result = subprocess.run(
-        ["git", "status", "--short"],
-        capture_output=True, text=True, cwd=cwd
-    )
-    if result.stdout.strip():
-        return True
-
-    with open(transcript_path, encoding="utf-8") as f:
-        for line in f:
-            try:
-                entry = json.loads(line)
-                if entry.get("type") != "assistant":
-                    continue
-                for block in entry.get("message", {}).get("content", []):
-                    if (block.get("type") == "tool_use"
-                            and block.get("name") == "Bash"
-                            and {"git", "commit"}.issubset(
-                                block.get("input", {}).get("command", "").split())):
-                        return True
-            except (json.JSONDecodeError, AttributeError):
-                continue
-    return False
-
-
 def extract_transcript(transcript_path: str) -> str:
     parts = []
     with open(transcript_path, encoding="utf-8") as f:
@@ -114,12 +89,8 @@ def main() -> None:
     try:
         data = json.loads(sys.stdin.read())
         transcript_path = data.get("transcript_path", "")
-        cwd = data.get("cwd", str(PROJECT_ROOT))
 
         if not transcript_path or not Path(transcript_path).exists():
-            sys.exit(0)
-
-        if not has_meaningful_work(transcript_path, cwd):
             sys.exit(0)
 
         transcript = extract_transcript(transcript_path)

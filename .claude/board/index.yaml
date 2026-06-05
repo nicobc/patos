@@ -1,29 +1,28 @@
 in_progress:
 ready:
 done:
-  - id: EPIC-010
+  - id: EPIC-10
     title: UI/UX improvements
-  - id: EPIC-009
+  - id: EPIC-09
     title: Tech debt
-  - id: EPIC-005
+  - id: EPIC-05
     title: DAG resolver
-  - id: EPIC-008
+  - id: EPIC-08
     title: CI & local dev environment
-  - id: EPIC-004
+  - id: EPIC-04
     title: Basic Kanban
-  - id: EPIC-003
+  - id: EPIC-03
     title: Data model
-  - id: EPIC-002
+  - id: EPIC-02
     title: Auth
-  - id: EPIC-001
+  - id: EPIC-01
     title: Site skeleton
 ideation:
-  - id: EPIC-011
+  - id: EPIC-11
     title: Rooms
-  - id: EPIC-012
+  - id: EPIC-12
     title: Editable DAG
-  - id: EPIC-006
+  - id: EPIC-06
     title: Cost tracker
-  - id: EPIC-007
+  - id: EPIC-07
     title: Drag and drop + Gantt
-maintenance: []

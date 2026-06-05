@@ -27,5 +27,31 @@
       "Bash(/opt/homebrew/bin/gh run view:*)",
       "Bash(/opt/homebrew/bin/gh run list:*)"
     ]
+  },
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/uv run .claude/scripts/session_end.py",
+            "timeout": 60,
+            "statusMessage": "Saving session summary..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/uv run .claude/scripts/session_start.py",
+            "timeout": 15,
+            "statusMessage": "Loading board context..."
+          }
+        ]
+      }
+    ]
   }
 }

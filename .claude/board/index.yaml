@@ -1,7 +1,7 @@
 in_progress:
-ready:
   - id: EPIC-11
     title: Rooms
+ready:
 done:
   - id: EPIC-10
     title: UI/UX improvements

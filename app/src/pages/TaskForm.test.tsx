@@ -23,8 +23,8 @@ const mockCreateTask = vi.mocked(createTask)
 const mockUpdateTask = vi.mocked(updateTask)
 
 const contractors = [
-  { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: '555-0001', created_at: '2026-01-01T00:00:00Z' },
-  { id: 'c2', name: 'Bob',   email: 'bob@example.com',   phone: '555-0002', created_at: '2026-01-01T00:00:00Z' },
+  { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: '555-0001', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+  { id: 'c2', name: 'Bob',   email: 'bob@example.com',   phone: '555-0002', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
 ]
 
 const task = {
@@ -42,6 +42,7 @@ const task = {
   actual_end: null,
   status: 'planned',
   created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
 }
 
 const saved = { ...task, title: 'Updated' }

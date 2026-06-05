@@ -41,6 +41,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -48,6 +49,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -55,8 +57,39 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          updated_at?: string
         }
         Relationships: []
+      }
+      project_rooms: {
+        Row: {
+          project_id: string
+          room_id: string
+        }
+        Insert: {
+          project_id: string
+          room_id: string
+        }
+        Update: {
+          project_id?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_rooms_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -64,18 +97,45 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
           name: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -102,6 +162,36 @@ export type Database = {
           },
           {
             foreignKeyName: "task_deps_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_rooms: {
+        Row: {
+          room_id: string
+          task_id: string
+        }
+        Insert: {
+          room_id: string
+          task_id: string
+        }
+        Update: {
+          room_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_rooms_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
@@ -154,6 +244,7 @@ export type Database = {
           project_id: string | null
           status: string
           title: string
+          updated_at: string
         }
         Insert: {
           actual_cost?: number | null
@@ -170,6 +261,7 @@ export type Database = {
           project_id?: string | null
           status?: string
           title: string
+          updated_at?: string
         }
         Update: {
           actual_cost?: number | null
@@ -186,6 +278,7 @@ export type Database = {
           project_id?: string | null
           status?: string
           title?: string
+          updated_at?: string
         }
         Relationships: [
           {

@@ -53,12 +53,12 @@ const mockSubscribeToDepsChanges = vi.mocked(subscribeToDepsChanges)
 const mockUpdateTask             = vi.mocked(updateTask)
 
 const projects = [
-  { id: 'p1', name: 'Short-term reno', description: null, created_at: '' },
-  { id: 'p2', name: 'Long-term reno',  description: null, created_at: '' },
+  { id: 'p1', name: 'Short-term reno', description: null, created_at: '', updated_at: '' },
+  { id: 'p2', name: 'Long-term reno',  description: null, created_at: '', updated_at: '' },
 ]
 
 const contractors = [
-  { id: 'c1', name: 'Alice', email: null, phone: null, created_at: '' },
+  { id: 'c1', name: 'Alice', email: null, phone: null, created_at: '', updated_at: '' },
 ]
 
 const makeTask = (overrides = {}) => ({
@@ -66,7 +66,7 @@ const makeTask = (overrides = {}) => ({
   project_id: 'p1', owner_id: null, contractor_id: null,
   expected_cost: null, actual_cost: null, expected_start: null, expected_end: null,
   actual_start: null, actual_end: null, status: 'ideation',
-  created_at: '2026-01-01T00:00:00Z',
+  created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
   ...overrides,
 })
 

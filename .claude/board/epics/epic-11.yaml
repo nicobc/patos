@@ -2,7 +2,7 @@ id: EPIC-11
 title: Rooms
 scope: rooms
 category: feature
-status: READY
+status: IN PROGRESS
 description: Introduce rooms as a first-class concept for tagging tasks by physical space in the flat. Room metadata feeds both the board (pill on task cards) and the cost tracker (EPIC-006 breakdown by room). Designed from scratch — the original spaces and task_spaces tables were dropped in EPIC-009/T6.
 notes:
   - tasks and rooms are many-to-many (a task can span multiple rooms, e.g. "repaint hallway and kitchen")
@@ -17,7 +17,7 @@ notes:
 tickets:
   - id: T1
     type: chore
-    status: READY
+    status: DONE
     title: Schema + migration — rooms, project_rooms, task_rooms
     description: Lay the data foundation for the Rooms feature. Three new tables — rooms (global room catalogue with name and color), project_rooms (bridge table linking rooms to projects), and task_rooms (junction for the many-to-many task↔room relationship). Schema must be compatible with the EPIC-006 cost-per-room aggregation query pattern so EPIC-006 can join directly against task_rooms without schema changes.
     acceptance_criteria:

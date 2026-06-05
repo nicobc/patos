@@ -9,6 +9,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [[ -z "${TICKET:-}" ]]; then
   echo "Error: TICKET env var not set. Run: export TICKET=EPIC-XX/TN" >&2; exit 1
 fi
+echo "$TICKET" > "$PROJECT_ROOT/.claude/.current-ticket"
 
 read -r _TYPE _SCOPE EPIC_ID TID < <(bash "$SCRIPT_DIR/read-ticket.sh")
 

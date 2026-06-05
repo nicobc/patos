@@ -27,32 +27,26 @@ Each branch gets its own Cloudflare Pages preview deployment.
 
 ## Commit modes
 
-`commit.sh`, `open-pr.sh`, `cut-branch.sh`, and `cleanup-branch.sh` each support three modes via an optional leading flag:
+`commit.sh`, `open-pr.sh`, `push-pr.sh`, and `cut-branch.sh` each support three modes via an optional leading flag:
 
-- _(default)_ — code commit; requires `export TICKET=EPIC-XX/TN`; branch named `type/scope`; omitting the flag and not setting TICKET exits with a clear error pointing to the other modes
+- _(default)_ — code commit; requires `TICKET` env var or a `.current-ticket` file written by `start-ticket.sh`; branch named `type/scope`
 - `--board` — grooming; use when writing or updating epic/ticket files and `index.yaml`; branch named `chore/board`
 - `--agent` — harness or agent infrastructure work; branch named `chore/agent`
 
 ## Coding process
 
-1. `export TICKET=EPIC-XX/TN && scripts/start-ticket.sh` — validates, marks IN PROGRESS, cuts branch.
-2. Implement. Run `scripts/commit.sh "<description>"` for each commit.
+1. `export TICKET=EPIC-XX/TN && scripts/start-ticket.sh` — validates, marks IN PROGRESS, cuts branch, saves ticket to `.current-ticket`.
+2. Implement. Run `scripts/commit.sh "<description>"` for each commit. (auto-stages all changes)
 3. `scripts/mark-done.sh` — marks ticket DONE, closes epic if all tickets done.
-4. `git push origin HEAD`
-5. `scripts/open-pr.sh "<description>" "<body>"`
-6. `scripts/watch-ci.sh <pr>` — CI is authoritative; fix and re-push on failure; never merge a failing PR.
-7. Get explicit approval, then `scripts/merge-pr.sh <pr>`.
-8. `scripts/cleanup-branch.sh`
-9. After a `feat` or `fix` merge: ask "Ship a new tag?"
-10. _(If yes)_ `scripts/create-release-tag.sh`. Watch the deploy and report success or failure.
+4. `scripts/push-pr.sh "<title>" "<body>"` — pushes, opens PR, watches CI.
+5. Get explicit approval, then `scripts/finish-ticket.sh <pr>` — merges and cleans up branch.
+6. After a `feat` or `fix` merge: ask "Ship a new tag?"
+7. _(If yes)_ `scripts/create-release-tag.sh`. Watch the deploy and report success or failure.
 
 ## Grooming process
 
 1. `scripts/cut-branch.sh --board`
 2. Edit epic files and/or `index.yaml`.
 3. `git add .claude/board/... && scripts/commit.sh --board "<description>"`
-4. `git push origin HEAD`
-5. `scripts/open-pr.sh --board "<description>" "<body>"`
-6. `scripts/watch-ci.sh <pr>` — wait for green.
-7. Get explicit approval, then `scripts/merge-pr.sh <pr>`.
-8. `scripts/cleanup-branch.sh --board`
+4. `scripts/push-pr.sh --board "<title>" "<body>"` — pushes, opens PR, watches CI.
+5. Get explicit approval, then `scripts/finish-ticket.sh <pr>` — merges and cleans up branch.

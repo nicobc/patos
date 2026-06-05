@@ -6,9 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-if [[ -z "${TICKET:-}" ]]; then
-  echo "Error: TICKET env var not set. Run: export TICKET=EPIC-XX/TN" >&2; exit 1
-fi
+source "$SCRIPT_DIR/_load-ticket.sh"
 
 read -r _TYPE _SCOPE EPIC_ID TID < <(bash "$SCRIPT_DIR/read-ticket.sh")
 

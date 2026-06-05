@@ -31,14 +31,16 @@ case "$MODE" in
   board) HEADER="chore(board): $DESCRIPTION" ;;
   agent) HEADER="chore(agent): $DESCRIPTION" ;;
   code)
-    if [[ -z "${TICKET:-}" ]]; then
-      echo "Error: MODE is 'code' but TICKET is not set. Run: export TICKET=EPIC-XX/TN or use --board for grooming or --agent for harness/agent work" >&2; exit 1
-    fi
+    source "$SCRIPT_DIR/_load-ticket.sh"
     read -r TYPE SCOPE _ _ < <(bash "$SCRIPT_DIR/read-ticket.sh")
     DESCRIPTION="${DESCRIPTION% \[$TICKET\]}"
     HEADER="$TYPE($SCOPE): $DESCRIPTION [$TICKET]"
     ;;
 esac
+
+if [[ "$MODE" != "board" ]]; then
+  git add -A
+fi
 
 if [[ -n "$BODY" ]]; then
   git commit -m "$HEADER" -m "$BODY"

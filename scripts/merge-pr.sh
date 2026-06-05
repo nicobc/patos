@@ -8,3 +8,4 @@ if [[ -z "$PR" ]]; then
 fi
 
 /opt/homebrew/bin/gh pr merge "$PR" --squash --delete-branch --repo nicobc/patos
+echo "Merged PR #$PR"

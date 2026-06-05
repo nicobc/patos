@@ -8,3 +8,4 @@ dist/
 .idea/
 .claude/settings.local.json
 .claude/session_summary.md
+.claude/.current-ticket

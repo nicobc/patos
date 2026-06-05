@@ -48,9 +48,11 @@ def extract_transcript(transcript_path: str) -> str:
                 if t == "user":
                     content = entry.get("message", {}).get("content", "")
                     if isinstance(content, str):
-                        text = re.sub(r"<[^>]+>", "", content).strip()
+                        # Drop injected system blocks before stripping tags
+                        text = re.sub(r"<system-reminder>.*?</system-reminder>", "", content, flags=re.DOTALL)
+                        text = re.sub(r"<[^>]+>", "", text).strip()
                         if text:
-                            parts.append(f"USER: {text}")
+                            parts.append(f"USER: {text[:400]}")
 
                 elif t == "assistant":
                     for block in entry.get("message", {}).get("content", []):
@@ -76,13 +78,13 @@ def extract_transcript(transcript_path: str) -> str:
 
 def summarize(transcript: str) -> str:
     today = date.today().strftime("%Y-%m-%d")
-    prompt = f"""Summarize this Claude Code session for a renovation management app (Patos).
+    prompt = f"""You are a session summarizer. Produce a concise summary of the Claude Code session transcript below.
+Output ONLY the summary in the exact format shown — no preamble, no echoing of the transcript.
 
-Output EXACTLY this format, omitting sections with nothing to report:
-
+Format (omit sections with nothing to report):
 # Session summary — {today}
 ## Ticket
-EPIC-XXX/TN — title  (write "none" if no specific ticket was worked on)
+EPIC-XXX/TN — title  (or "none" if no ticket was worked)
 ## Done
 - one bullet per meaningful action
 ## Decisions
@@ -90,9 +92,11 @@ EPIC-XXX/TN — title  (write "none" if no specific ticket was worked on)
 ## Open / next action
 - one line
 
-Keep it dense. No prose. Transcript:
+Dense bullets only. No prose.
 
-{transcript}"""
+<transcript>
+{transcript}
+</transcript>"""
 
     result = subprocess.run(
         [CLAUDE_BIN, "-p", "--output-format", "text"],

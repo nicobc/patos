@@ -30,4 +30,5 @@ if python3 "$SCRIPT_DIR/update-board.py" all-done "$EPIC_ID"; then
   python3 "$SCRIPT_DIR/update-board.py" index "$EPIC_ID" "done"
 fi
 
+git add "$EPIC_FILE" "$PROJECT_ROOT/.claude/board/index.yaml"
 bash "$SCRIPT_DIR/commit.sh" --board "mark $TICKET DONE"

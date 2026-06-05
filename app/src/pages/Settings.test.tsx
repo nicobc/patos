@@ -25,6 +25,14 @@ vi.mock('../services/contractorsService', () => ({
   subscribeToContractorChanges: vi.fn(),
 }))
 
+vi.mock('../services/roomsService', () => ({
+  listRooms:              vi.fn(),
+  createRoom:             vi.fn(),
+  updateRoom:             vi.fn(),
+  deleteRoom:             vi.fn(),
+  subscribeToRoomChanges: vi.fn(),
+}))
+
 import {
   listProjects,
   createProject,
@@ -43,6 +51,14 @@ import {
   subscribeToContractorChanges,
 } from '../services/contractorsService'
 
+import {
+  listRooms,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+  subscribeToRoomChanges,
+} from '../services/roomsService'
+
 const mockListProjects        = vi.mocked(listProjects)
 const mockCreateProject       = vi.mocked(createProject)
 const mockUpdateProject       = vi.mocked(updateProject)
@@ -57,10 +73,18 @@ const mockDeleteContractor    = vi.mocked(deleteContractor)
 const mockCountByContractor   = vi.mocked(countTasksByContractor)
 const mockSubContractors      = vi.mocked(subscribeToContractorChanges)
 
+const mockListRooms    = vi.mocked(listRooms)
+const mockCreateRoom   = vi.mocked(createRoom)
+const mockUpdateRoom   = vi.mocked(updateRoom)
+const mockDeleteRoom   = vi.mocked(deleteRoom)
+const mockSubRooms     = vi.mocked(subscribeToRoomChanges)
+
 const proj1 = { id: 'p1', name: 'Full Reno',    description: 'Complete overhaul', created_at: '', updated_at: '' }
 const proj2 = { id: 'p2', name: 'Quick Fixes',  description: null,                created_at: '', updated_at: '' }
 const alice  = { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: null,       created_at: '', updated_at: '' }
 const bob    = { id: 'c2', name: 'Bob',   email: null,                phone: '555-1234', created_at: '', updated_at: '' }
+const kitchen  = { id: 'r1', name: 'Kitchen',  color: '#e74c3c', created_at: '', updated_at: '' }
+const bathroom = { id: 'r2', name: 'Bathroom', color: '#3498db', created_at: '', updated_at: '' }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -70,6 +94,8 @@ beforeEach(() => {
   mockListContractors.mockResolvedValue([alice, bob])
   mockCountByContractor.mockResolvedValue(0)
   mockSubContractors.mockReturnValue(vi.fn())
+  mockListRooms.mockResolvedValue([kitchen, bathroom])
+  mockSubRooms.mockReturnValue(vi.fn())
 })
 
 // ─── Projects list ────────────────────────────────────────────────────────────
@@ -382,5 +408,146 @@ describe('Settings — delete contractor', () => {
     await waitFor(() => screen.getByText(/1 task is assigned/i))
     await userEvent.click(screen.getByRole('button', { name: /dismiss/i }))
     expect(screen.queryByText(/task is assigned/i)).not.toBeInTheDocument()
+  })
+})
+
+// ─── Rooms list ───────────────────────────────────────────────────────────────
+
+describe('Settings — rooms list', () => {
+  it('renders room names after load', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => expect(screen.getByText('Kitchen')).toBeInTheDocument())
+    expect(screen.getByText('Bathroom')).toBeInTheDocument()
+  })
+
+  it('shows empty state when no rooms', async () => {
+    mockListRooms.mockResolvedValue([])
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => expect(screen.getByText(/no rooms yet/i)).toBeInTheDocument())
+  })
+
+  it('shows error when rooms fetch fails', async () => {
+    mockListRooms.mockRejectedValue(new Error('fail'))
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => expect(screen.getByText(/failed to load rooms/i)).toBeInTheDocument())
+  })
+})
+
+// ─── Add room ─────────────────────────────────────────────────────────────────
+
+describe('Settings — add room', () => {
+  it('shows the add form when Add room is clicked', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /add room/i }))
+    expect(screen.getByRole('textbox', { name: /room name/i })).toBeInTheDocument()
+  })
+
+  it('add button disabled when name is empty', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /add room/i }))
+    await userEvent.click(screen.getByRole('button', { name: '#e74c3c' }))
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeDisabled()
+  })
+
+  it('add button disabled when no color is selected', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /add room/i }))
+    await userEvent.type(screen.getByRole('textbox', { name: /room name/i }), 'Living Room')
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeDisabled()
+  })
+
+  it('creates a room and resets the form', async () => {
+    const newRoom = { id: 'r3', name: 'Living Room', color: '#e74c3c', created_at: '', updated_at: '' }
+    mockCreateRoom.mockResolvedValue(newRoom)
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+
+    await userEvent.click(screen.getByRole('button', { name: /add room/i }))
+    await userEvent.type(screen.getByRole('textbox', { name: /room name/i }), 'Living Room')
+    await userEvent.click(screen.getByRole('button', { name: '#e74c3c' }))
+    await userEvent.click(screen.getByRole('button', { name: /^add$/i }))
+
+    await waitFor(() => expect(screen.getByText('Living Room')).toBeInTheDocument())
+    expect(mockCreateRoom).toHaveBeenCalledWith(expect.objectContaining({ name: 'Living Room', color: '#e74c3c' }))
+    expect(screen.queryByRole('textbox', { name: /room name/i })).not.toBeInTheDocument()
+  })
+
+  it('cancels add form without saving', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /add room/i }))
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByRole('textbox', { name: /room name/i })).not.toBeInTheDocument()
+    expect(mockCreateRoom).not.toHaveBeenCalled()
+  })
+})
+
+// ─── Edit room ────────────────────────────────────────────────────────────────
+
+describe('Settings — edit room', () => {
+  it('shows inline edit pre-filled when Edit is clicked', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /edit kitchen/i }))
+    expect(screen.getByRole('textbox', { name: /room name/i })).toHaveValue('Kitchen')
+    expect(screen.getByRole('button', { name: '#e74c3c' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('saves updated room and closes edit form', async () => {
+    const updated = { ...kitchen, name: 'Main Kitchen' }
+    mockUpdateRoom.mockResolvedValue(updated)
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+
+    await userEvent.click(screen.getByRole('button', { name: /edit kitchen/i }))
+    const nameInput = screen.getByRole('textbox', { name: /room name/i })
+    await userEvent.clear(nameInput)
+    await userEvent.type(nameInput, 'Main Kitchen')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() => expect(screen.getByText('Main Kitchen')).toBeInTheDocument())
+    expect(mockUpdateRoom).toHaveBeenCalledWith('r1', expect.objectContaining({ name: 'Main Kitchen' }))
+  })
+
+  it('cancels inline edit without saving', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /edit kitchen/i }))
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByRole('textbox', { name: /room name/i })).not.toBeInTheDocument()
+    expect(mockUpdateRoom).not.toHaveBeenCalled()
+  })
+})
+
+// ─── Delete room ──────────────────────────────────────────────────────────────
+
+describe('Settings — delete room', () => {
+  it('shows confirmation when trash is clicked', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /delete kitchen/i }))
+    expect(screen.getByText(/delete kitchen\?/i)).toBeInTheDocument()
+  })
+
+  it('deletes room on confirm and removes from list', async () => {
+    mockDeleteRoom.mockResolvedValue(undefined)
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /delete kitchen/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    await waitFor(() => expect(screen.queryByText('Kitchen')).not.toBeInTheDocument())
+    expect(mockDeleteRoom).toHaveBeenCalledWith('r1')
+  })
+
+  it('cancels delete without removing room', async () => {
+    render(<Settings onBack={vi.fn()} />)
+    await waitFor(() => screen.getByText('Kitchen'))
+    await userEvent.click(screen.getByRole('button', { name: /delete kitchen/i }))
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByText(/delete kitchen\?/i)).not.toBeInTheDocument()
+    expect(mockDeleteRoom).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,7 @@
 in_progress:
 ready:
+  - id: EPIC-11
+    title: Rooms
 done:
   - id: EPIC-10
     title: UI/UX improvements
@@ -18,8 +20,6 @@ done:
   - id: EPIC-01
     title: Site skeleton
 ideation:
-  - id: EPIC-11
-    title: Rooms
   - id: EPIC-12
     title: Editable DAG
   - id: EPIC-06

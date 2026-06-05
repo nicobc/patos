@@ -31,6 +31,9 @@ case "$MODE" in
   board) HEADER="chore(board): $DESCRIPTION" ;;
   agent) HEADER="chore(agent): $DESCRIPTION" ;;
   code)
+    if [[ -z "${TICKET:-}" ]]; then
+      echo "Error: MODE is 'code' but TICKET is not set. Run: export TICKET=EPIC-XX/TN or use --board for grooming or --agent for harness/agent work" >&2; exit 1
+    fi
     read -r TYPE SCOPE _ _ < <(bash "$SCRIPT_DIR/read-ticket.sh")
     HEADER="$TYPE($SCOPE): $DESCRIPTION [$TICKET]"
     ;;

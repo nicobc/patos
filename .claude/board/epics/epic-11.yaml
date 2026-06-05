@@ -2,7 +2,7 @@ id: EPIC-11
 title: Rooms
 scope: rooms
 category: feature
-status: IDEATION
+status: READY
 description: Introduce rooms as a first-class concept for tagging tasks by physical space in the flat. Room metadata feeds both the board (pill on task cards) and the cost tracker (EPIC-006 breakdown by room). Designed from scratch — the original spaces and task_spaces tables were dropped in EPIC-009/T6.
 notes:
   - tasks and rooms are many-to-many (a task can span multiple rooms, e.g. "repaint hallway and kitchen")
@@ -14,4 +14,77 @@ notes:
   - the junction table schema must be compatible with the EPIC-006 cost-per-room aggregation query pattern; design with that join in mind
   - EPIC-006 cost breakdown by room depends on this epic being stable — groom and ship EPIC-011 before EPIC-006
 
-tickets: []
+tickets:
+  - id: T1
+    type: chore
+    status: READY
+    title: Schema + migration — rooms, project_rooms, task_rooms
+    description: Lay the data foundation for the Rooms feature. Three new tables — rooms (global room catalogue with name and color), project_rooms (bridge table linking rooms to projects), and task_rooms (junction for the many-to-many task↔room relationship). Schema must be compatible with the EPIC-006 cost-per-room aggregation query pattern so EPIC-006 can join directly against task_rooms without schema changes.
+    acceptance_criteria:
+      - migration creates rooms table — id (uuid pk default gen_random_uuid()), name (text not null), color (text not null, stores hex string e.g. "#e74c3c"), created_at (timestamptz not null default now()), updated_at (timestamptz not null default now())
+      - migration creates project_rooms table — project_id (uuid not null references projects(id) on delete cascade), room_id (uuid not null references rooms(id) on delete cascade), primary key (project_id, room_id)
+      - migration creates task_rooms table — task_id (uuid not null references tasks(id) on delete cascade), room_id (uuid not null references rooms(id) on delete cascade), primary key (task_id, room_id)
+      - RLS enabled on all three tables; policies follow the same pattern as existing tables in the project (permissive select/insert/update/delete for authenticated users)
+      - updated_at trigger on rooms fires on row update (same pattern as tasks)
+      - Supabase TypeScript types regenerated and committed; all three tables appear in the generated types
+      - no application code changes in this ticket — schema only
+
+  - id: T2
+    type: feat
+    status: READY
+    title: Global Rooms CRUD in Settings
+    description: Add a Rooms section to the Settings page so users can manage the global room catalogue. Follows the Contractors section pattern — a list of existing rooms with inline edit/delete, and a form to add new ones. Each room has a name and a color chosen from a fixed palette of swatches (no free hex picker — a curated palette is simpler and produces a consistent visual result on the board).
+    acceptance_criteria:
+      - requires T1
+      - Settings page gains a Rooms section rendered in the same layout pattern as the Contractors section
+      - color palette contains 10–12 distinct swatches covering warm, cool, and neutral tones; palette is defined as a constant (not hardcoded inline); swatches render as small clickable circles; selected swatch shows a check mark or ring indicator
+      - add-room form: name text input + palette picker; submit disabled when name is empty or no color selected; on success the new room appears in the list and the form resets
+      - existing room row: displays color swatch + name; edit icon opens an inline edit state with the same name input and palette picker pre-filled; save updates the row; cancel discards changes
+      - delete: trash icon on each row; clicking triggers a confirmation step ("Delete [name]?") inline on the row; confirmed delete removes the row with an optimistic update
+      - all mutations (create, update, delete) show a toast on success using the existing useToast() hook
+      - rooms list is sorted alphabetically by name
+      - empty state shown when no rooms exist yet
+
+  - id: T3
+    type: feat
+    status: READY
+    title: Project-rooms assignment in Project Settings
+    description: Add a Rooms section to the Project Settings tab so users can choose which global rooms are active in a given project. Only rooms assigned here will appear in the task-form room selector (T4). This is a simple multi-select toggle list — no drag-and-drop or ordering needed.
+    acceptance_criteria:
+      - requires T1 and T2
+      - Project Settings tab gains a Rooms section below the existing fields
+      - section renders the full global rooms list as a toggleable checklist; each row shows the color swatch and room name with a checkbox or toggle on the right
+      - on mount the section fetches project_rooms for the current project and pre-checks the active rooms
+      - toggling a room immediately upserts or deletes the project_rooms row (no save button — auto-save on toggle); shows a brief success toast on each change using the existing useToast() hook
+      - rooms list sorted alphabetically; empty state shown if no global rooms exist yet (with a link or note to add rooms in Settings)
+      - no changes to the project name/description/dates form or its save flow
+
+  - id: T4
+    type: feat
+    status: READY
+    title: Task-room multi-select in task form
+    description: Add a Rooms field to TaskForm so users can assign one or more rooms to a task. Uses the popover multi-select pattern introduced in EPIC-010/T2 (same as Blocked by). Only rooms assigned to the current project (via project_rooms) appear in the popover. Selections are persisted to task_rooms.
+    acceptance_criteria:
+      - requires T1, T2, and T3
+      - TaskForm gains a Rooms field rendered below the Blocked by field (consistent field order)
+      - popover trigger button shows selected room pills (color dot + name) when rooms are assigned, or a "Select rooms…" placeholder when none are selected; uses .input and .select classes consistent with other popover triggers in the form
+      - popover panel lists only rooms active in the current project (joined via project_rooms); sorted alphabetically
+      - each option shows the color swatch and room name; clicking toggles selection; selected options show a faCheck indicator
+      - on task save (create or update) the task_rooms rows are reconciled — insert newly selected, delete deselected; reconciliation runs in the same mutation handler as the task upsert
+      - on task load (edit mode) the Rooms field is pre-populated from the existing task_rooms rows
+      - if the project has no active rooms the field shows a disabled state with a note ("No rooms — add some in Settings")
+      - popover open/close, Escape, and outside-click follow the same pattern as the Blocked by popover
+
+  - id: T5
+    type: feat
+    status: READY
+    title: Room pills on task cards
+    description: Display color-coded room pills on task cards so room membership is visible directly on the board without opening the task. Pills appear below the task title, one per assigned room, showing a color dot and the room name. Follows the visual pattern of contractor display on cards.
+    acceptance_criteria:
+      - requires T1 and T4
+      - Board fetches task_rooms (with room name and color) alongside tasks; rooms data joined in the existing tasks query or via a separate query loaded once per project load — no per-card fetches
+      - each task card renders its assigned rooms as a row of small pills below the title; pills show a filled color dot (matching the room color) and the room name in muted text
+      - pill row is hidden when the task has no assigned rooms (no empty space reserved)
+      - pill row wraps gracefully on narrow cards rather than overflowing
+      - pill design uses existing design-system tokens (--fs-xs, --radius-sm, --text-muted) — no new CSS classes unless genuinely needed
+      - no visual regression on cards without rooms; existing contractor display and card layout unchanged

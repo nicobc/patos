@@ -25,9 +25,15 @@ Work on short-lived feature branches cut directly from `main`. Branch name mirro
 
 Each branch gets its own Cloudflare Pages preview deployment.
 
-## Process
+## Commit modes
 
-Ship `feat`/`fix` tickets continuously — don't batch. After each merge, ask "Ship a new tag?"
+`commit.sh`, `open-pr.sh`, `cut-branch.sh`, and `cleanup-branch.sh` each support three modes via an optional leading flag:
+
+- _(default)_ — code commit; requires `export TICKET=EPIC-XX/TN`; branch named `type/scope`; omitting the flag and not setting TICKET exits with a clear error pointing to the other modes
+- `--board` — grooming; use when writing or updating epic/ticket files and `index.yaml`; branch named `chore/board`
+- `--agent` — harness or agent infrastructure work; branch named `chore/agent`
+
+## Coding process
 
 1. `export TICKET=EPIC-XX/TN && scripts/start-ticket.sh` — validates, marks IN PROGRESS, cuts branch.
 2. Implement. Run `scripts/commit.sh "<description>"` for each commit.
@@ -40,6 +46,13 @@ Ship `feat`/`fix` tickets continuously — don't batch. After each merge, ask "S
 9. After a `feat` or `fix` merge: ask "Ship a new tag?"
 10. _(If yes)_ `scripts/create-release-tag.sh`. Watch the deploy and report success or failure.
 
-## GHA workflow testing
+## Grooming process
 
-When iterating on a GHA workflow: commit and push the change, dispatch with `gh workflow run <file> --ref <branch> --repo nicobc/patos`, then immediately watch with `gh run watch <run-id> --repo nicobc/patos`. On failure, fetch logs with `gh run view <run-id> --log-failed --repo nicobc/patos`, diagnose, fix, and repeat — without waiting for the user to paste output. `gh` is at `/opt/homebrew/bin/gh`.
+1. `scripts/cut-branch.sh --board`
+2. Edit epic files and/or `index.yaml`.
+3. `git add .claude/board/... && scripts/commit.sh --board "<description>"`
+4. `git push origin HEAD`
+5. `scripts/open-pr.sh --board "<description>" "<body>"`
+6. `scripts/watch-ci.sh <pr>` — wait for green.
+7. Get explicit approval, then `scripts/merge-pr.sh <pr>`.
+8. `scripts/cleanup-branch.sh --board`

@@ -24,6 +24,14 @@ import {
   type ProjectInsert,
   type ProjectUpdate,
 } from '../services/projectsService'
+import {
+  listRooms,
+  subscribeToRoomChanges,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+  type Room,
+} from '../services/roomsService'
 import './Settings.css'
 
 type SettingsView =
@@ -42,6 +50,23 @@ type ProjectDeleteState =
   | { id: string; kind: 'hard-confirm'; input: string; taskCount: number }
 
 type Theme = 'auto' | 'light' | 'dark'
+
+type RoomEditState = { id: string; name: string; color: string; saving: boolean }
+
+const ROOM_PALETTE = [
+  '#e74c3c',
+  '#e67e22',
+  '#f1c40f',
+  '#27ae60',
+  '#1abc9c',
+  '#3498db',
+  '#2980b9',
+  '#9b59b6',
+  '#e91e63',
+  '#795548',
+  '#607d8b',
+  '#95a5a6',
+] as const
 
 function applyTheme(t: Theme) {
   if (t === 'auto') {
@@ -72,6 +97,17 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [contractorsError, setContractorsError] = useState<string | null>(null)
   const [contractorDeleteState, setContractorDeleteState] = useState<ContractorDeleteState | null>(null)
   const [contractorDeleting, setContractorDeleting] = useState(false)
+
+  const [rooms, setRooms]                     = useState<Room[]>([])
+  const [roomsLoading, setRoomsLoading]       = useState(true)
+  const [roomsError, setRoomsError]           = useState<string | null>(null)
+  const [showRoomAddForm, setShowRoomAddForm] = useState(false)
+  const [addRoomName, setAddRoomName]         = useState('')
+  const [addRoomColor, setAddRoomColor]       = useState('')
+  const [addRoomSaving, setAddRoomSaving]     = useState(false)
+  const [roomEditState, setRoomEditState]     = useState<RoomEditState | null>(null)
+  const [roomDeleteState, setRoomDeleteState] = useState<{ id: string } | null>(null)
+  const [roomDeleting, setRoomDeleting]       = useState(false)
 
   useEffect(() => {
     listProjects()
@@ -114,7 +150,27 @@ export function Settings({ onBack }: { onBack: () => void }) {
       }
     })
 
-    return () => { unsubProjects(); unsubContractors() }
+    listRooms()
+      .then(setRooms)
+      .catch(() => setRoomsError('Failed to load rooms'))
+      .finally(() => setRoomsLoading(false))
+
+    const unsubRooms = subscribeToRoomChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setRooms((prev) => prev.filter((r) => r.id !== event.id))
+        setRoomDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        setRooms((prev) =>
+          event.eventType === 'INSERT'
+            ? prev.some((r) => r.id === event.record.id)
+              ? prev
+              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((r) => r.id === event.record.id ? event.record : r)
+        )
+      }
+    })
+
+    return () => { unsubProjects(); unsubContractors(); unsubRooms() }
   }, [])
 
   // --- Project handlers ---
@@ -197,6 +253,59 @@ export function Settings({ onBack }: { onBack: () => void }) {
     )
     showToast(isEdit ? 'Contractor saved' : 'Contractor created')
     setView({ kind: 'list' })
+  }
+
+  // --- Room handlers ---
+
+  function handleCancelAddRoom() {
+    setShowRoomAddForm(false)
+    setAddRoomName('')
+    setAddRoomColor('')
+    setAddRoomSaving(false)
+  }
+
+  async function handleCreateRoom() {
+    setAddRoomSaving(true)
+    try {
+      const room = await createRoom({ name: addRoomName.trim(), color: addRoomColor })
+      setRooms((prev) =>
+        prev.some((r) => r.id === room.id)
+          ? prev
+          : [...prev, room].sort((a, b) => a.name.localeCompare(b.name))
+      )
+      showToast('Room added')
+      handleCancelAddRoom()
+    } catch {
+      setRoomsError('Failed to create room')
+      setAddRoomSaving(false)
+    }
+  }
+
+  async function handleRoomSave(es: RoomEditState) {
+    setRoomEditState({ ...es, saving: true })
+    try {
+      const updated = await updateRoom(es.id, { name: es.name.trim(), color: es.color })
+      setRooms((prev) => prev.map((r) => r.id === updated.id ? updated : r))
+      setRoomEditState(null)
+      showToast('Room saved')
+    } catch {
+      setRoomsError('Failed to save room')
+      setRoomEditState({ ...es, saving: false })
+    }
+  }
+
+  async function handleRoomConfirmDelete(id: string) {
+    setRoomDeleting(true)
+    try {
+      await deleteRoom(id)
+      setRooms((prev) => prev.filter((r) => r.id !== id))
+      setRoomDeleteState(null)
+      showToast('Room deleted')
+    } catch {
+      setRoomsError('Failed to delete room')
+    } finally {
+      setRoomDeleting(false)
+    }
   }
 
   // --- Form routing ---
@@ -329,6 +438,151 @@ export function Settings({ onBack }: { onBack: () => void }) {
                         onClick={() => handleProjectDeleteClick(p)}
                         disabled={ds?.kind === 'checking'}
                         aria-label={`Delete ${p.name}`}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+
+      {/* Rooms section */}
+      <section className="settings-section">
+        <div className="settings-section-header">
+          <h3 className="settings-section-title">Rooms</h3>
+          {!showRoomAddForm && (
+            <button
+              aria-label="Add room"
+              className="btn-outline"
+              onClick={() => { setRoomDeleteState(null); setRoomEditState(null); setShowRoomAddForm(true) }}
+            >
+              + Add
+            </button>
+          )}
+        </div>
+
+        {roomsError && <p className="settings-message settings-message--error">{roomsError}</p>}
+        {roomsLoading && <p className="settings-message">Loading…</p>}
+
+        {showRoomAddForm && (
+          <div className="room-inline-form">
+            <div className="room-inline-form-fields">
+              <input
+                className="input"
+                type="text"
+                placeholder="Room name"
+                aria-label="Room name"
+                value={addRoomName}
+                onChange={(e) => setAddRoomName(e.target.value)}
+              />
+              <div className="room-palette" role="group" aria-label="Color">
+                {ROOM_PALETTE.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`room-palette-swatch${addRoomColor === color ? ' selected' : ''}`}
+                    style={{ backgroundColor: color }}
+                    aria-label={color}
+                    aria-pressed={addRoomColor === color}
+                    onClick={() => setAddRoomColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="room-inline-form-actions">
+              <button className="btn-ghost" onClick={handleCancelAddRoom}>Cancel</button>
+              <button
+                className="btn-primary"
+                onClick={handleCreateRoom}
+                disabled={addRoomSaving || !addRoomName.trim() || !addRoomColor}
+              >
+                {addRoomSaving ? '…' : 'Add'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!roomsLoading && rooms.length === 0 && !roomsError && !showRoomAddForm && (
+          <p className="settings-message">No rooms yet.</p>
+        )}
+
+        <ul className="settings-list">
+          {rooms.map((r) => {
+            const ds = roomDeleteState?.id === r.id ? roomDeleteState : null
+            const es = roomEditState?.id === r.id ? roomEditState : null
+            return (
+              <li key={r.id} className="settings-list-item">
+                {ds ? (
+                  <div className="settings-item-state">
+                    <span className="settings-item-confirm-msg">Delete {r.name}?</span>
+                    <div className="settings-item-confirm-actions">
+                      <button className="btn-ghost" onClick={() => setRoomDeleteState(null)}>Cancel</button>
+                      <button
+                        className="btn-danger"
+                        onClick={() => handleRoomConfirmDelete(r.id)}
+                        disabled={roomDeleting}
+                      >
+                        {roomDeleting ? '…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                ) : es ? (
+                  <div className="settings-item-hard-confirm">
+                    <div className="room-inline-form-fields">
+                      <input
+                        className="input"
+                        type="text"
+                        aria-label="Room name"
+                        value={es.name}
+                        onChange={(e) => setRoomEditState({ ...es, name: e.target.value })}
+                      />
+                      <div className="room-palette" role="group" aria-label="Color">
+                        {ROOM_PALETTE.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`room-palette-swatch${es.color === color ? ' selected' : ''}`}
+                            style={{ backgroundColor: color }}
+                            aria-label={color}
+                            aria-pressed={es.color === color}
+                            onClick={() => setRoomEditState({ ...es, color })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="room-inline-form-actions">
+                      <button className="btn-ghost" onClick={() => setRoomEditState(null)}>Cancel</button>
+                      <button
+                        className="btn-primary"
+                        onClick={() => handleRoomSave(es)}
+                        disabled={es.saving || !es.name.trim() || !es.color}
+                      >
+                        {es.saving ? '…' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="room-item-info">
+                      <span className="room-color-dot" style={{ backgroundColor: r.color }} aria-hidden="true" />
+                      <span className="settings-item-name">{r.name}</span>
+                    </div>
+                    <div className="settings-item-actions">
+                      <button
+                        className="btn-icon"
+                        onClick={() => { setRoomDeleteState(null); setShowRoomAddForm(false); setRoomEditState({ id: r.id, name: r.name, color: r.color, saving: false }) }}
+                        aria-label={`Edit ${r.name}`}
+                      >
+                        <FontAwesomeIcon icon={faPen} />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => { setRoomEditState(null); setRoomDeleteState({ id: r.id }) }}
+                        aria-label={`Delete ${r.name}`}
                       >
                         <FontAwesomeIcon icon={faTrash} />
                       </button>

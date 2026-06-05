@@ -31,7 +31,7 @@ tickets:
 
   - id: T2
     type: feat
-    status: READY
+    status: IN PROGRESS
     title: Global Rooms CRUD in Settings
     description: Add a Rooms section to the Settings page so users can manage the global room catalogue. Follows the Contractors section pattern — a list of existing rooms with inline edit/delete, and a form to add new ones. Each room has a name and a color chosen from a fixed palette of swatches (no free hex picker — a curated palette is simpler and produces a consistent visual result on the board).
     acceptance_criteria:

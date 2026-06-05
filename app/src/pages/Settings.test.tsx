@@ -57,10 +57,10 @@ const mockDeleteContractor    = vi.mocked(deleteContractor)
 const mockCountByContractor   = vi.mocked(countTasksByContractor)
 const mockSubContractors      = vi.mocked(subscribeToContractorChanges)
 
-const proj1 = { id: 'p1', name: 'Full Reno',    description: 'Complete overhaul', created_at: '' }
-const proj2 = { id: 'p2', name: 'Quick Fixes',  description: null,                created_at: '' }
-const alice  = { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: null,      created_at: '' }
-const bob    = { id: 'c2', name: 'Bob',   email: null,                 phone: '555-1234', created_at: '' }
+const proj1 = { id: 'p1', name: 'Full Reno',    description: 'Complete overhaul', created_at: '', updated_at: '' }
+const proj2 = { id: 'p2', name: 'Quick Fixes',  description: null,                created_at: '', updated_at: '' }
+const alice  = { id: 'c1', name: 'Alice', email: 'alice@example.com', phone: null,       created_at: '', updated_at: '' }
+const bob    = { id: 'c2', name: 'Bob',   email: null,                phone: '555-1234', created_at: '', updated_at: '' }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -117,7 +117,7 @@ describe('Settings — add project', () => {
   })
 
   it('creates a project and returns to list', async () => {
-    const newProject = { id: 'p3', name: 'Garden', description: null, created_at: '' }
+    const newProject = { id: 'p3', name: 'Garden', description: null, created_at: '', updated_at: '' }
     mockCreateProject.mockResolvedValue(newProject)
     render(<Settings onBack={vi.fn()} />)
     await waitFor(() => screen.getByText('Full Reno'))

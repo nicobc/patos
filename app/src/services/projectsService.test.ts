@@ -58,7 +58,7 @@ describe('createProject', () => {
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    expect(await createProject({ name: 'Flat' })).toEqual(project)
+    expect(await createProject({ name: 'Flat', property_id: 'prop1' })).toEqual(project)
   })
 
   it('throws on error', async () => {
@@ -70,7 +70,7 @@ describe('createProject', () => {
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    await expect(createProject({ name: 'Flat' })).rejects.toThrow('fail')
+    await expect(createProject({ name: 'Flat', property_id: 'prop1' })).rejects.toThrow('fail')
   })
 })
 

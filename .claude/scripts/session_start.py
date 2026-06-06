@@ -73,10 +73,6 @@ def main() -> None:
     if git_parts:
         parts.append("## Git state\n" + "\n\n".join(git_parts))
 
-    summary = read_file(PROJECT_ROOT / ".claude" / "session_summary.md")
-    if summary:
-        parts.append(f"## Previous session summary\n{summary.strip()}")
-
     if not parts:
         sys.exit(0)
 

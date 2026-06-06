@@ -47,7 +47,7 @@ tickets:
 
   - id: T3
     type: feat
-    status: IN PROGRESS
+    status: DONE
     title: Properties — schema, CRUD in Settings, and project/room assignment
     description: Introduce properties as the physical container that owns both rooms and projects. A property (e.g. "Flat 4B") holds a named collection of rooms and is assigned to projects. This supersedes the global room catalogue from T2 and replaces the project_rooms bridge table with a cleaner project → property → rooms hierarchy.
     acceptance_criteria:

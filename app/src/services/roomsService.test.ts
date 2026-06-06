@@ -19,30 +19,34 @@ const mockFrom          = vi.mocked(supabase.from)
 const mockChannel       = vi.mocked(supabase.channel)
 const mockRemoveChannel = vi.mocked(supabase.removeChannel)
 
-const room: Room = { id: '1', name: 'Kitchen', color: '#e74c3c', created_at: '', updated_at: '' }
+const room: Room = { id: '1', name: 'Kitchen', color: '#e74c3c', property_id: 'pr1', created_at: '', updated_at: '' }
 
 beforeEach(() => vi.clearAllMocks())
 
 describe('listRooms', () => {
-  it('returns rooms ordered by name', async () => {
+  it('returns rooms for a property ordered by name', async () => {
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: [room], error: null }),
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [room], error: null }),
+        }),
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    expect(await listRooms()).toEqual([room])
+    expect(await listRooms('pr1')).toEqual([room])
     expect(mockFrom).toHaveBeenCalledWith('rooms')
   })
 
   it('throws when Supabase returns an error', async () => {
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: null, error: new Error('db error') }),
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: null, error: new Error('db error') }),
+        }),
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    await expect(listRooms()).rejects.toThrow('db error')
+    await expect(listRooms('pr1')).rejects.toThrow('db error')
   })
 })
 
@@ -56,7 +60,7 @@ describe('createRoom', () => {
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    expect(await createRoom({ name: 'Kitchen', color: '#e74c3c' })).toEqual(room)
+    expect(await createRoom({ name: 'Kitchen', color: '#e74c3c', property_id: 'pr1' })).toEqual(room)
   })
 
   it('throws on error', async () => {
@@ -68,7 +72,7 @@ describe('createRoom', () => {
       }),
     } as unknown as ReturnType<typeof supabase.from>)
 
-    await expect(createRoom({ name: 'Kitchen', color: '#e74c3c' })).rejects.toThrow('fail')
+    await expect(createRoom({ name: 'Kitchen', color: '#e74c3c', property_id: 'pr1' })).rejects.toThrow('fail')
   })
 })
 

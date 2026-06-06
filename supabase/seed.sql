@@ -1,9 +1,13 @@
 -- Seed data — fake only, no real names, emails, costs, or phone numbers.
 
+-- properties
+insert into properties (id, name) values
+  ('00000000-0000-0000-0004-000000000001', 'Flat 4B');
+
 -- projects
-insert into projects (id, name, description) values
-  ('00000000-0000-0000-0000-000000000001', 'Short-Term Fixes', 'Quick wins and repairs before the full renovation begins'),
-  ('00000000-0000-0000-0000-000000000002', 'Full Renovation',  'Complete overhaul of all rooms in the flat');
+insert into projects (id, name, description, property_id) values
+  ('00000000-0000-0000-0000-000000000001', 'Short-Term Fixes', 'Quick wins and repairs before the full renovation begins', '00000000-0000-0000-0004-000000000001'),
+  ('00000000-0000-0000-0000-000000000002', 'Full Renovation',  'Complete overhaul of all rooms in the flat',               '00000000-0000-0000-0004-000000000001');
 
 -- contractors
 insert into contractors (id, name, email, phone) values

@@ -25,6 +25,17 @@ import {
   type ProjectUpdate,
 } from '../services/projectsService'
 import {
+  listProperties,
+  subscribeToPropertyChanges,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+  countProjectsByProperty,
+  type Property,
+  type PropertyInsert,
+  type PropertyUpdate,
+} from '../services/propertiesService'
+import {
   listRooms,
   subscribeToRoomChanges,
   createRoom,
@@ -38,6 +49,7 @@ type SettingsView =
   | { kind: 'list' }
   | { kind: 'contractor-form'; contractor?: Contractor }
   | { kind: 'project-form'; project?: Project }
+  | { kind: 'property-form'; property?: Property }
 
 type ContractorDeleteState =
   | { id: string; kind: 'checking' }
@@ -49,9 +61,12 @@ type ProjectDeleteState =
   | { id: string; kind: 'confirm' }
   | { id: string; kind: 'hard-confirm'; input: string; taskCount: number }
 
-type Theme = 'auto' | 'light' | 'dark'
+type PropertyDeleteState =
+  | { id: string; kind: 'checking' }
+  | { id: string; kind: 'confirm' }
+  | { id: string; kind: 'blocked'; count: number }
 
-type RoomEditState = { id: string; name: string; color: string; saving: boolean }
+type Theme = 'auto' | 'light' | 'dark'
 
 const ROOM_PALETTE = [
   '#e74c3c',
@@ -86,30 +101,30 @@ export function Settings({ onBack }: { onBack: () => void }) {
     return stored === 'dark' || stored === 'light' ? stored : 'auto'
   })
 
-  const [projects, setProjects]             = useState<Project[]>([])
+  const [properties, setProperties]           = useState<Property[]>([])
+  const [propertiesLoading, setPropertiesLoading] = useState(true)
+  const [propertiesError, setPropertiesError]   = useState<string | null>(null)
+  const [propertyDeleteState, setPropertyDeleteState] = useState<PropertyDeleteState | null>(null)
+  const [propertyDeleting, setPropertyDeleting] = useState(false)
+
+  const [projects, setProjects]               = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(true)
-  const [projectsError, setProjectsError]   = useState<string | null>(null)
+  const [projectsError, setProjectsError]     = useState<string | null>(null)
   const [projectDeleteState, setProjectDeleteState] = useState<ProjectDeleteState | null>(null)
   const [projectDeleting, setProjectDeleting] = useState(false)
 
-  const [contractors, setContractors]       = useState<Contractor[]>([])
+  const [contractors, setContractors]         = useState<Contractor[]>([])
   const [contractorsLoading, setContractorsLoading] = useState(true)
   const [contractorsError, setContractorsError] = useState<string | null>(null)
   const [contractorDeleteState, setContractorDeleteState] = useState<ContractorDeleteState | null>(null)
   const [contractorDeleting, setContractorDeleting] = useState(false)
 
-  const [rooms, setRooms]                     = useState<Room[]>([])
-  const [roomsLoading, setRoomsLoading]       = useState(true)
-  const [roomsError, setRoomsError]           = useState<string | null>(null)
-  const [showRoomAddForm, setShowRoomAddForm] = useState(false)
-  const [addRoomName, setAddRoomName]         = useState('')
-  const [addRoomColor, setAddRoomColor]       = useState('')
-  const [addRoomSaving, setAddRoomSaving]     = useState(false)
-  const [roomEditState, setRoomEditState]     = useState<RoomEditState | null>(null)
-  const [roomDeleteState, setRoomDeleteState] = useState<{ id: string } | null>(null)
-  const [roomDeleting, setRoomDeleting]       = useState(false)
-
   useEffect(() => {
+    listProperties()
+      .then(setProperties)
+      .catch(() => setPropertiesError('Failed to load properties'))
+      .finally(() => setPropertiesLoading(false))
+
     listProjects()
       .then(setProjects)
       .catch(() => setProjectsError('Failed to load projects'))
@@ -119,6 +134,21 @@ export function Settings({ onBack }: { onBack: () => void }) {
       .then(setContractors)
       .catch(() => setContractorsError('Failed to load contractors'))
       .finally(() => setContractorsLoading(false))
+
+    const unsubProperties = subscribeToPropertyChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setProperties((prev) => prev.filter((p) => p.id !== event.id))
+        setPropertyDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        setProperties((prev) =>
+          event.eventType === 'INSERT'
+            ? prev.some((p) => p.id === event.record.id)
+              ? prev
+              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((p) => p.id === event.record.id ? event.record : p)
+        )
+      }
+    })
 
     const unsubProjects = subscribeToProjectChanges((event) => {
       if (event.eventType === 'DELETE') {
@@ -150,28 +180,49 @@ export function Settings({ onBack }: { onBack: () => void }) {
       }
     })
 
-    listRooms()
-      .then(setRooms)
-      .catch(() => setRoomsError('Failed to load rooms'))
-      .finally(() => setRoomsLoading(false))
-
-    const unsubRooms = subscribeToRoomChanges((event) => {
-      if (event.eventType === 'DELETE') {
-        setRooms((prev) => prev.filter((r) => r.id !== event.id))
-        setRoomDeleteState((prev) => prev?.id === event.id ? null : prev)
-      } else {
-        setRooms((prev) =>
-          event.eventType === 'INSERT'
-            ? prev.some((r) => r.id === event.record.id)
-              ? prev
-              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
-            : prev.map((r) => r.id === event.record.id ? event.record : r)
-        )
-      }
-    })
-
-    return () => { unsubProjects(); unsubContractors(); unsubRooms() }
+    return () => { unsubProperties(); unsubProjects(); unsubContractors() }
   }, [])
+
+  // --- Property handlers ---
+
+  async function handlePropertyDeleteClick(property: Property) {
+    setPropertyDeleteState({ id: property.id, kind: 'checking' })
+    try {
+      const count = await countProjectsByProperty(property.id)
+      setPropertyDeleteState(
+        count > 0
+          ? { id: property.id, kind: 'blocked', count }
+          : { id: property.id, kind: 'confirm' }
+      )
+    } catch {
+      setPropertiesError('Failed to check property projects')
+      setPropertyDeleteState(null)
+    }
+  }
+
+  async function handlePropertyConfirmDelete(id: string) {
+    setPropertyDeleting(true)
+    try {
+      await deleteProperty(id)
+      setProperties((prev) => prev.filter((p) => p.id !== id))
+      setPropertyDeleteState(null)
+      showToast('Property deleted')
+    } catch {
+      setPropertiesError('Failed to delete property')
+    } finally {
+      setPropertyDeleting(false)
+    }
+  }
+
+  function handlePropertySaved(property: Property, isEdit: boolean) {
+    setProperties((prev) =>
+      isEdit
+        ? prev.map((p) => (p.id === property.id ? property : p))
+        : [...prev, property].sort((a, b) => a.name.localeCompare(b.name))
+    )
+    showToast(isEdit ? 'Property saved' : 'Property created')
+    setView({ kind: 'list' })
+  }
 
   // --- Project handlers ---
 
@@ -255,65 +306,23 @@ export function Settings({ onBack }: { onBack: () => void }) {
     setView({ kind: 'list' })
   }
 
-  // --- Room handlers ---
-
-  function handleCancelAddRoom() {
-    setShowRoomAddForm(false)
-    setAddRoomName('')
-    setAddRoomColor('')
-    setAddRoomSaving(false)
-  }
-
-  async function handleCreateRoom() {
-    setAddRoomSaving(true)
-    try {
-      const room = await createRoom({ name: addRoomName.trim(), color: addRoomColor })
-      setRooms((prev) =>
-        prev.some((r) => r.id === room.id)
-          ? prev
-          : [...prev, room].sort((a, b) => a.name.localeCompare(b.name))
-      )
-      showToast('Room added')
-      handleCancelAddRoom()
-    } catch {
-      setRoomsError('Failed to create room')
-      setAddRoomSaving(false)
-    }
-  }
-
-  async function handleRoomSave(es: RoomEditState) {
-    setRoomEditState({ ...es, saving: true })
-    try {
-      const updated = await updateRoom(es.id, { name: es.name.trim(), color: es.color })
-      setRooms((prev) => prev.map((r) => r.id === updated.id ? updated : r))
-      setRoomEditState(null)
-      showToast('Room saved')
-    } catch {
-      setRoomsError('Failed to save room')
-      setRoomEditState({ ...es, saving: false })
-    }
-  }
-
-  async function handleRoomConfirmDelete(id: string) {
-    setRoomDeleting(true)
-    try {
-      await deleteRoom(id)
-      setRooms((prev) => prev.filter((r) => r.id !== id))
-      setRoomDeleteState(null)
-      showToast('Room deleted')
-    } catch {
-      setRoomsError('Failed to delete room')
-    } finally {
-      setRoomDeleting(false)
-    }
-  }
-
   // --- Form routing ---
+
+  if (view.kind === 'property-form') {
+    return (
+      <PropertyForm
+        property={view.property}
+        onBack={() => setView({ kind: 'list' })}
+        onSaved={(p) => handlePropertySaved(p, view.property != null)}
+      />
+    )
+  }
 
   if (view.kind === 'project-form') {
     return (
       <ProjectForm
         project={view.project}
+        properties={properties}
         onBack={() => setView({ kind: 'list' })}
         onSaved={(p) => handleProjectSaved(p, view.project != null)}
       />
@@ -344,9 +353,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
         <h3 className="settings-section-title">Appearance</h3>
         <div className="settings-theme-toggle">
           {([
-            { value: 'auto',  icon: faMobileScreen,      label: 'Auto'  },
-            { value: 'light', icon: faSun,               label: 'Light' },
-            { value: 'dark',  icon: faMoon,              label: 'Dark'  },
+            { value: 'auto',  icon: faMobileScreen, label: 'Auto'  },
+            { value: 'light', icon: faSun,           label: 'Light' },
+            { value: 'dark',  icon: faMoon,          label: 'Dark'  },
           ] as const).map(({ value, icon, label }) => (
             <button
               key={value}
@@ -358,6 +367,77 @@ export function Settings({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Properties section */}
+      <section className="settings-section">
+        <div className="settings-section-header">
+          <h3 className="settings-section-title">Properties</h3>
+          <button
+            aria-label="Add property"
+            className="btn-outline"
+            onClick={() => { setPropertyDeleteState(null); setView({ kind: 'property-form' }) }}
+          >
+            + Add
+          </button>
+        </div>
+
+        {propertiesError && <p className="settings-message settings-message--error">{propertiesError}</p>}
+        {propertiesLoading && <p className="settings-message">Loading…</p>}
+        {!propertiesLoading && properties.length === 0 && !propertiesError && (
+          <p className="settings-message">No properties yet.</p>
+        )}
+
+        <ul className="settings-list">
+          {properties.map((p) => {
+            const ds = propertyDeleteState?.id === p.id ? propertyDeleteState : null
+            return (
+              <li key={p.id} className="settings-list-item">
+                {ds?.kind === 'blocked' ? (
+                  <div className="settings-item-state">
+                    <span className="settings-item-block-msg">
+                      {ds.count} project{ds.count > 1 ? 's use' : ' uses'} this property — reassign them before deleting
+                    </span>
+                    <button className="btn-ghost" onClick={() => setPropertyDeleteState(null)}>Dismiss</button>
+                  </div>
+                ) : ds?.kind === 'confirm' ? (
+                  <div className="settings-item-state">
+                    <span className="settings-item-confirm-msg">Delete {p.name} and all its rooms?</span>
+                    <div className="settings-item-confirm-actions">
+                      <button className="btn-ghost" onClick={() => setPropertyDeleteState(null)}>Cancel</button>
+                      <button className="btn-danger" onClick={() => handlePropertyConfirmDelete(p.id)} disabled={propertyDeleting}>
+                        {propertyDeleting ? '…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="settings-item-info">
+                      <span className="settings-item-name">{p.name}</span>
+                    </div>
+                    <div className="settings-item-actions">
+                      <button
+                        className="btn-icon"
+                        onClick={() => { setPropertyDeleteState(null); setView({ kind: 'property-form', property: p }) }}
+                        aria-label={`Edit ${p.name}`}
+                      >
+                        <FontAwesomeIcon icon={faPen} />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => handlePropertyDeleteClick(p)}
+                        disabled={ds?.kind === 'checking'}
+                        aria-label={`Delete ${p.name}`}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       </section>
 
       {/* Projects section */}
@@ -450,151 +530,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
         </ul>
       </section>
 
-      {/* Rooms section */}
-      <section className="settings-section">
-        <div className="settings-section-header">
-          <h3 className="settings-section-title">Rooms</h3>
-          {!showRoomAddForm && (
-            <button
-              aria-label="Add room"
-              className="btn-outline"
-              onClick={() => { setRoomDeleteState(null); setRoomEditState(null); setShowRoomAddForm(true) }}
-            >
-              + Add
-            </button>
-          )}
-        </div>
-
-        {roomsError && <p className="settings-message settings-message--error">{roomsError}</p>}
-        {roomsLoading && <p className="settings-message">Loading…</p>}
-
-        {showRoomAddForm && (
-          <div className="room-inline-form">
-            <div className="room-inline-form-fields">
-              <input
-                className="input"
-                type="text"
-                placeholder="Room name"
-                aria-label="Room name"
-                value={addRoomName}
-                onChange={(e) => setAddRoomName(e.target.value)}
-              />
-              <div className="room-palette" role="group" aria-label="Color">
-                {ROOM_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`room-palette-swatch${addRoomColor === color ? ' selected' : ''}`}
-                    style={{ backgroundColor: color }}
-                    aria-label={color}
-                    aria-pressed={addRoomColor === color}
-                    onClick={() => setAddRoomColor(color)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="room-inline-form-actions">
-              <button className="btn-ghost" onClick={handleCancelAddRoom}>Cancel</button>
-              <button
-                className="btn-primary"
-                onClick={handleCreateRoom}
-                disabled={addRoomSaving || !addRoomName.trim() || !addRoomColor}
-              >
-                {addRoomSaving ? '…' : 'Add'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {!roomsLoading && rooms.length === 0 && !roomsError && !showRoomAddForm && (
-          <p className="settings-message">No rooms yet.</p>
-        )}
-
-        <ul className="settings-list">
-          {rooms.map((r) => {
-            const ds = roomDeleteState?.id === r.id ? roomDeleteState : null
-            const es = roomEditState?.id === r.id ? roomEditState : null
-            return (
-              <li key={r.id} className="settings-list-item">
-                {ds ? (
-                  <div className="settings-item-state">
-                    <span className="settings-item-confirm-msg">Delete {r.name}?</span>
-                    <div className="settings-item-confirm-actions">
-                      <button className="btn-ghost" onClick={() => setRoomDeleteState(null)}>Cancel</button>
-                      <button
-                        className="btn-danger"
-                        onClick={() => handleRoomConfirmDelete(r.id)}
-                        disabled={roomDeleting}
-                      >
-                        {roomDeleting ? '…' : 'Delete'}
-                      </button>
-                    </div>
-                  </div>
-                ) : es ? (
-                  <div className="settings-item-hard-confirm">
-                    <div className="room-inline-form-fields">
-                      <input
-                        className="input"
-                        type="text"
-                        aria-label="Room name"
-                        value={es.name}
-                        onChange={(e) => setRoomEditState({ ...es, name: e.target.value })}
-                      />
-                      <div className="room-palette" role="group" aria-label="Color">
-                        {ROOM_PALETTE.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            className={`room-palette-swatch${es.color === color ? ' selected' : ''}`}
-                            style={{ backgroundColor: color }}
-                            aria-label={color}
-                            aria-pressed={es.color === color}
-                            onClick={() => setRoomEditState({ ...es, color })}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="room-inline-form-actions">
-                      <button className="btn-ghost" onClick={() => setRoomEditState(null)}>Cancel</button>
-                      <button
-                        className="btn-primary"
-                        onClick={() => handleRoomSave(es)}
-                        disabled={es.saving || !es.name.trim() || !es.color}
-                      >
-                        {es.saving ? '…' : 'Save'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="room-item-info">
-                      <span className="room-color-dot" style={{ backgroundColor: r.color }} aria-hidden="true" />
-                      <span className="settings-item-name">{r.name}</span>
-                    </div>
-                    <div className="settings-item-actions">
-                      <button
-                        className="btn-icon"
-                        onClick={() => { setRoomDeleteState(null); setShowRoomAddForm(false); setRoomEditState({ id: r.id, name: r.name, color: r.color, saving: false }) }}
-                        aria-label={`Edit ${r.name}`}
-                      >
-                        <FontAwesomeIcon icon={faPen} />
-                      </button>
-                      <button
-                        className="btn-icon"
-                        onClick={() => { setRoomEditState(null); setRoomDeleteState({ id: r.id }) }}
-                        aria-label={`Delete ${r.name}`}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </section>
-
       {/* Contractors section */}
       <section className="settings-section">
         <div className="settings-section-header">
@@ -672,19 +607,110 @@ export function Settings({ onBack }: { onBack: () => void }) {
   )
 }
 
-interface ProjectFormProps {
-  project?: Project
+// ─── PropertyForm ─────────────────────────────────────────────────────────────
+
+type RoomEditState = { id: string; name: string; color: string; saving: boolean }
+
+interface PropertyFormProps {
+  property?: Property
   onBack: () => void
-  onSaved: (project: Project) => void
+  onSaved: (property: Property) => void
 }
 
-function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
-  const isEdit = project != null
-  const [name, setName]               = useState(project?.name ?? '')
-  const [description, setDescription] = useState(project?.description ?? '')
-  const [nameError, setNameError]     = useState(false)
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState<string | null>(null)
+function PropertyForm({ property, onBack, onSaved }: PropertyFormProps) {
+  const { showToast } = useToast()
+  const isEdit = property != null
+  const [name, setName]           = useState(property?.name ?? '')
+  const [nameError, setNameError] = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+
+  const [rooms, setRooms]                     = useState<Room[]>([])
+  const [roomsLoading, setRoomsLoading]       = useState(isEdit)
+  const [roomsError, setRoomsError]           = useState<string | null>(null)
+  const [showRoomAddForm, setShowRoomAddForm] = useState(false)
+  const [addRoomName, setAddRoomName]         = useState('')
+  const [addRoomColor, setAddRoomColor]       = useState('')
+  const [addRoomSaving, setAddRoomSaving]     = useState(false)
+  const [roomEditState, setRoomEditState]     = useState<RoomEditState | null>(null)
+  const [roomDeleteState, setRoomDeleteState] = useState<{ id: string } | null>(null)
+  const [roomDeleting, setRoomDeleting]       = useState(false)
+
+  useEffect(() => {
+    if (!isEdit) return
+    listRooms(property.id)
+      .then(setRooms)
+      .catch(() => setRoomsError('Failed to load rooms'))
+      .finally(() => setRoomsLoading(false))
+
+    const unsub = subscribeToRoomChanges((event) => {
+      if (event.eventType === 'DELETE') {
+        setRooms((prev) => prev.filter((r) => r.id !== event.id))
+        setRoomDeleteState((prev) => prev?.id === event.id ? null : prev)
+      } else {
+        if (event.record.property_id !== property.id) return
+        setRooms((prev) =>
+          event.eventType === 'INSERT'
+            ? prev.some((r) => r.id === event.record.id)
+              ? prev
+              : [...prev, event.record].sort((a, b) => a.name.localeCompare(b.name))
+            : prev.map((r) => r.id === event.record.id ? event.record : r)
+        )
+      }
+    })
+    return unsub
+  }, [isEdit, property?.id])
+
+  function handleCancelAddRoom() {
+    setShowRoomAddForm(false)
+    setAddRoomName('')
+    setAddRoomColor('')
+    setAddRoomSaving(false)
+  }
+
+  async function handleCreateRoom() {
+    setAddRoomSaving(true)
+    try {
+      const room = await createRoom({ name: addRoomName.trim(), color: addRoomColor, property_id: property!.id })
+      setRooms((prev) =>
+        prev.some((r) => r.id === room.id)
+          ? prev
+          : [...prev, room].sort((a, b) => a.name.localeCompare(b.name))
+      )
+      showToast('Room added')
+      handleCancelAddRoom()
+    } catch {
+      setRoomsError('Failed to create room')
+      setAddRoomSaving(false)
+    }
+  }
+
+  async function handleRoomSave(es: RoomEditState) {
+    setRoomEditState({ ...es, saving: true })
+    try {
+      const updated = await updateRoom(es.id, { name: es.name.trim(), color: es.color })
+      setRooms((prev) => prev.map((r) => r.id === updated.id ? updated : r))
+      setRoomEditState(null)
+      showToast('Room saved')
+    } catch {
+      setRoomsError('Failed to save room')
+      setRoomEditState({ ...es, saving: false })
+    }
+  }
+
+  async function handleRoomConfirmDelete(id: string) {
+    setRoomDeleting(true)
+    try {
+      await deleteRoom(id)
+      setRooms((prev) => prev.filter((r) => r.id !== id))
+      setRoomDeleteState(null)
+      showToast('Room deleted')
+    } catch {
+      setRoomsError('Failed to delete room')
+    } finally {
+      setRoomDeleting(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -693,9 +719,231 @@ function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
     if (!name.trim()) { setNameError(true); return }
     setLoading(true)
     try {
+      const data: PropertyInsert | PropertyUpdate = { name: name.trim() }
+      const saved = isEdit
+        ? await updateProperty(property.id, data as PropertyUpdate)
+        : await createProperty(data as PropertyInsert)
+      onSaved(saved)
+    } catch {
+      setError(isEdit ? 'Failed to save property' : 'Failed to create property')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="settings">
+      <div className="page-header">
+        <h2 className="page-title">{isEdit ? 'Edit property' : 'New property'}</h2>
+        <button className="btn-icon" onClick={onBack} aria-label="Close">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      </div>
+
+      <form className="settings-form" onSubmit={handleSubmit} noValidate>
+        <label className="settings-form-label">
+          <span>Name <span className="settings-form-required">*</span></span>
+          <input
+            className={`input${nameError ? ' settings-form-input--error' : ''}`}
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setNameError(false) }}
+          />
+          {nameError && <span className="settings-form-field-error">Required</span>}
+        </label>
+
+        {error && <p className="settings-form-error">{error}</p>}
+
+        <div className="settings-form-actions">
+          <button type="button" className="btn-outline" onClick={onBack} disabled={loading}>Cancel</button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? '…' : isEdit ? 'Save' : 'Create'}
+          </button>
+        </div>
+      </form>
+
+      {isEdit && (
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <h3 className="settings-section-title">Rooms</h3>
+            {!showRoomAddForm && (
+              <button
+                aria-label="Add room"
+                className="btn-outline"
+                onClick={() => { setRoomDeleteState(null); setRoomEditState(null); setShowRoomAddForm(true) }}
+              >
+                + Add
+              </button>
+            )}
+          </div>
+
+          {roomsError && <p className="settings-message settings-message--error">{roomsError}</p>}
+          {roomsLoading && <p className="settings-message">Loading…</p>}
+
+          {showRoomAddForm && (
+            <div className="room-inline-form">
+              <div className="room-inline-form-fields">
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Room name"
+                  aria-label="Room name"
+                  value={addRoomName}
+                  onChange={(e) => setAddRoomName(e.target.value)}
+                />
+                <div className="room-palette" role="group" aria-label="Color">
+                  {ROOM_PALETTE.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`room-palette-swatch${addRoomColor === color ? ' selected' : ''}`}
+                      style={{ backgroundColor: color }}
+                      aria-label={color}
+                      aria-pressed={addRoomColor === color}
+                      onClick={() => setAddRoomColor(color)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="room-inline-form-actions">
+                <button className="btn-ghost" onClick={handleCancelAddRoom}>Cancel</button>
+                <button
+                  className="btn-primary"
+                  onClick={handleCreateRoom}
+                  disabled={addRoomSaving || !addRoomName.trim() || !addRoomColor}
+                >
+                  {addRoomSaving ? '…' : 'Add'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!roomsLoading && rooms.length === 0 && !roomsError && !showRoomAddForm && (
+            <p className="settings-message">No rooms yet.</p>
+          )}
+
+          <ul className="settings-list">
+            {rooms.map((r) => {
+              const ds = roomDeleteState?.id === r.id ? roomDeleteState : null
+              const es = roomEditState?.id === r.id ? roomEditState : null
+              return (
+                <li key={r.id} className="settings-list-item">
+                  {ds ? (
+                    <div className="settings-item-state">
+                      <span className="settings-item-confirm-msg">Delete {r.name}?</span>
+                      <div className="settings-item-confirm-actions">
+                        <button className="btn-ghost" onClick={() => setRoomDeleteState(null)}>Cancel</button>
+                        <button
+                          className="btn-danger"
+                          onClick={() => handleRoomConfirmDelete(r.id)}
+                          disabled={roomDeleting}
+                        >
+                          {roomDeleting ? '…' : 'Delete'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : es ? (
+                    <div className="settings-item-hard-confirm">
+                      <div className="room-inline-form-fields">
+                        <input
+                          className="input"
+                          type="text"
+                          aria-label="Room name"
+                          value={es.name}
+                          onChange={(e) => setRoomEditState({ ...es, name: e.target.value })}
+                        />
+                        <div className="room-palette" role="group" aria-label="Color">
+                          {ROOM_PALETTE.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              className={`room-palette-swatch${es.color === color ? ' selected' : ''}`}
+                              style={{ backgroundColor: color }}
+                              aria-label={color}
+                              aria-pressed={es.color === color}
+                              onClick={() => setRoomEditState({ ...es, color })}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="room-inline-form-actions">
+                        <button className="btn-ghost" onClick={() => setRoomEditState(null)}>Cancel</button>
+                        <button
+                          className="btn-primary"
+                          onClick={() => handleRoomSave(es)}
+                          disabled={es.saving || !es.name.trim() || !es.color}
+                        >
+                          {es.saving ? '…' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="room-item-info">
+                        <span className="room-color-dot" style={{ backgroundColor: r.color }} aria-hidden="true" />
+                        <span className="settings-item-name">{r.name}</span>
+                      </div>
+                      <div className="settings-item-actions">
+                        <button
+                          className="btn-icon"
+                          onClick={() => { setRoomDeleteState(null); setShowRoomAddForm(false); setRoomEditState({ id: r.id, name: r.name, color: r.color, saving: false }) }}
+                          aria-label={`Edit ${r.name}`}
+                        >
+                          <FontAwesomeIcon icon={faPen} />
+                        </button>
+                        <button
+                          className="btn-icon"
+                          onClick={() => { setRoomEditState(null); setRoomDeleteState({ id: r.id }) }}
+                          aria-label={`Delete ${r.name}`}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
+// ─── ProjectForm ──────────────────────────────────────────────────────────────
+
+interface ProjectFormProps {
+  project?: Project
+  properties: Property[]
+  onBack: () => void
+  onSaved: (project: Project) => void
+}
+
+function ProjectForm({ project, properties, onBack, onSaved }: ProjectFormProps) {
+  const isEdit = project != null
+  const [name, setName]               = useState(project?.name ?? '')
+  const [description, setDescription] = useState(project?.description ?? '')
+  const [propertyId, setPropertyId]   = useState(project?.property_id ?? '')
+  const [nameError, setNameError]     = useState(false)
+  const [propertyError, setPropertyError] = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setNameError(false)
+    setPropertyError(false)
+    setError(null)
+    let valid = true
+    if (!name.trim()) { setNameError(true); valid = false }
+    if (!propertyId) { setPropertyError(true); valid = false }
+    if (!valid) return
+    setLoading(true)
+    try {
       const data: ProjectInsert | ProjectUpdate = {
         name: name.trim(),
         description: description.trim() || null,
+        property_id: propertyId,
       }
       const saved = isEdit
         ? await updateProject(project.id, data as ProjectUpdate)
@@ -738,11 +986,31 @@ function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
           />
         </label>
 
+        <label className="settings-form-label">
+          <span>Property <span className="settings-form-required">*</span></span>
+          {properties.length === 0 ? (
+            <p className="settings-message">No properties yet — add one in the Properties section first.</p>
+          ) : (
+            <select
+              className={`input${propertyError ? ' settings-form-input--error' : ''}`}
+              value={propertyId}
+              onChange={(e) => { setPropertyId(e.target.value); setPropertyError(false) }}
+              aria-label="Property"
+            >
+              <option value="">Select a property…</option>
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+          {propertyError && <span className="settings-form-field-error">Required</span>}
+        </label>
+
         {error && <p className="settings-form-error">{error}</p>}
 
         <div className="settings-form-actions">
           <button type="button" className="btn-outline" onClick={onBack} disabled={loading}>Cancel</button>
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading || properties.length === 0}>
             {loading ? '…' : isEdit ? 'Save' : 'Create'}
           </button>
         </div>
@@ -750,6 +1018,8 @@ function ProjectForm({ project, onBack, onSaved }: ProjectFormProps) {
     </div>
   )
 }
+
+// ─── ContractorForm ───────────────────────────────────────────────────────────
 
 interface ContractorFormProps {
   contractor?: Contractor

@@ -61,42 +61,13 @@ export type Database = {
         }
         Relationships: []
       }
-      project_rooms: {
-        Row: {
-          project_id: string
-          room_id: string
-        }
-        Insert: {
-          project_id: string
-          room_id: string
-        }
-        Update: {
-          project_id?: string
-          room_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_rooms_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_rooms_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       projects: {
         Row: {
           created_at: string
           description: string | null
           id: string
           name: string
+          property_id: string
           updated_at: string
         }
         Insert: {
@@ -104,11 +75,42 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          property_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string | null
+          id?: string
+          name?: string
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
           id?: string
           name?: string
           updated_at?: string
@@ -121,6 +123,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          property_id: string
           updated_at: string
         }
         Insert: {
@@ -128,6 +131,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          property_id: string
           updated_at?: string
         }
         Update: {
@@ -135,9 +139,18 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          property_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_deps: {
         Row: {

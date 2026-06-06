@@ -6,6 +6,5 @@ Output:
 **Up next** — READY feat tickets across epics, in file order
 **Needs grooming** — IDEATION epics blocking progress
 **Git** — last 5 commits, then working tree state and branch diff if non-empty
-**Previous session** — one-line summary from session summary if present; omit section if none
 
 Tight. No flourish.

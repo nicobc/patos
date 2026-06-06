@@ -29,18 +29,6 @@
     ]
   },
   "hooks": {
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.local/bin/uv run .claude/scripts/session_end.py",
-            "timeout": 60,
-            "statusMessage": "Saving session summary..."
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [

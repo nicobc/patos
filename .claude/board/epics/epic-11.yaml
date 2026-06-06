@@ -47,17 +47,26 @@ tickets:
 
   - id: T3
     type: feat
-    status: READY
-    title: Project-rooms assignment in Project Settings
-    description: Add a Rooms section to the Project Settings tab so users can choose which global rooms are active in a given project. Only rooms assigned here will appear in the task-form room selector (T4). This is a simple multi-select toggle list — no drag-and-drop or ordering needed.
+    status: DONE
+    title: Properties — schema, CRUD in Settings, and project/room assignment
+    description: Introduce properties as the physical container that owns both rooms and projects. A property (e.g. "Flat 4B") holds a named collection of rooms and is assigned to projects. This supersedes the global room catalogue from T2 and replaces the project_rooms bridge table with a cleaner project → property → rooms hierarchy.
     acceptance_criteria:
       - requires T1 and T2
-      - Project Settings tab gains a Rooms section below the existing fields
-      - section renders the full global rooms list as a toggleable checklist; each row shows the color swatch and room name with a checkbox or toggle on the right
-      - on mount the section fetches project_rooms for the current project and pre-checks the active rooms
-      - toggling a room immediately upserts or deletes the project_rooms row (no save button — auto-save on toggle); shows a brief success toast on each change using the existing useToast() hook
-      - rooms list sorted alphabetically; empty state shown if no global rooms exist yet (with a link or note to add rooms in Settings)
-      - no changes to the project name/description/dates form or its save flow
+      - migration creates properties table — id (uuid pk default gen_random_uuid()), name (text not null), created_at (timestamptz not null default now()), updated_at (timestamptz not null default now()); updated_at trigger; RLS policy (authenticated full access, same pattern as existing tables)
+      - migration adds property_id (uuid not null, FK → properties(id) on delete restrict) to projects
+      - migration adds property_id (uuid not null, FK → properties(id) on delete cascade) to rooms
+      - migration drops project_rooms table
+      - TypeScript types regenerated; properties table and property_id on projects/rooms appear in generated types
+      - Settings page gains a Properties section (positioned above Projects); same list/inline-form pattern as Contractors
+      - each property row shows the name; edit icon opens PropertyForm inline page; delete icon triggers a confirmation step if the property has no projects, or a block message if it does
+      - PropertyForm: name text input + Save/Cancel; below the form, a Rooms section (edit mode only) with inline add/edit/delete for rooms belonging to this property — same palette and form pattern as the former global Rooms CRUD from T2
+      - add-property form: name input; submit disabled when name is empty; on success the new property appears in the list
+      - edit-property: inline edit pre-filled with current name; save updates; cancel discards
+      - delete property: "Delete [name] and all its rooms?" confirmation when no projects reference it; block message listing project count when projects exist; confirmed delete removes from list with toast
+      - rooms within PropertyForm: CRUD behaviour identical to the former global Rooms section — sorted alphabetically; empty state when no rooms exist; scoped to the current property
+      - Project form gains a Property field (required, select/dropdown) rendered below Description; lists all properties sorted by name; empty-state note shown if no properties exist; property_id saved with the project on create and update
+      - all mutations show a toast on success using the existing useToast() hook
+      - task_rooms and Board are unchanged; T4/T5 will be updated in a subsequent grooming PR to replace project_rooms references
 
   - id: T4
     type: feat

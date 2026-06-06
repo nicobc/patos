@@ -53,8 +53,8 @@ const mockSubscribeToDepsChanges = vi.mocked(subscribeToDepsChanges)
 const mockUpdateTask             = vi.mocked(updateTask)
 
 const projects = [
-  { id: 'p1', name: 'Short-term reno', description: null, created_at: '', updated_at: '' },
-  { id: 'p2', name: 'Long-term reno',  description: null, created_at: '', updated_at: '' },
+  { id: 'p1', name: 'Short-term reno', description: null, created_at: '', updated_at: '', property_id: 'prop1' },
+  { id: 'p2', name: 'Long-term reno',  description: null, created_at: '', updated_at: '', property_id: 'prop1' },
 ]
 
 const contractors = [

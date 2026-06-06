@@ -27,7 +27,12 @@
   margin-bottom: 1px;
 }
 
-:root,
+:root                { --logo-invert: 1; }
+
+@media (prefers-color-scheme: light) {
+  :root { --logo-invert: 0; }
+}
+
 [data-theme='dark']  { --logo-invert: 1; }
 [data-theme='light'] { --logo-invert: 0; }
 

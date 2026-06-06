@@ -6,8 +6,9 @@ export type Room = Tables<'rooms'>
 export type RoomInsert = TablesInsert<'rooms'>
 export type RoomUpdate = TablesUpdate<'rooms'>
 
-export async function listRooms(): Promise<Room[]> {
-  const { data, error } = await supabase.from('rooms').select('*').order('name')
+export async function listRooms(propertyId: string): Promise<Room[]> {
+  const { data, error } = await supabase
+    .from('rooms').select('*').eq('property_id', propertyId).order('name')
   if (error) throw error
   return data
 }
